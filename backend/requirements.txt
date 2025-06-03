@@ -19,3 +19,4 @@ tensorflow==2.14.0
 torch==2.0.1
 transformers==4.31.0
 grpcio==1.56.0
+itsdangerous==2.1.2

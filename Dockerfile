@@ -26,8 +26,8 @@ COPY backend/ ./backend/
 ENV DOMAIN=quantum-ai.asia
 ENV FRONTEND_URL=https://quantum-ai.asia
 
-# Expose FastAPI port
-EXPOSE 8000
+# Expose the port Cloud Run expects
+EXPOSE 8080
 
-# Command to run FastAPI app with uvicorn
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Command to run FastAPI app on the port Cloud Run sets (default 8080)
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

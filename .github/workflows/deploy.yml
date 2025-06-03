@@ -1,0 +1,40 @@
+name: Deploy to GCP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - name: Configure Docker
+        run: |-
+          gcloud auth configure-docker
+
+      - name: Build Docker image
+        run: |-
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/ai-cyber-platform:latest .
+
+      - name: Push Docker image
+        run: |-
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/ai-cyber-platform:latest
+
+      - name: Deploy to GKE
+        run: |-
+          gcloud run deploy ai-cyber-platform \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/ai-cyber-platform:latest \
+            --region ${{ secrets.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated

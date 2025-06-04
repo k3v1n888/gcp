@@ -57,7 +57,7 @@ COPY run.sh /app/run.sh
 RUN chmod +x /app/run.sh
 
 # Expose port 80 (Nginx) and port 8000 (Uvicorn)
-EXPOSE 80 8000
+EXPOSE 8080
 
 # Start Nginx and Uvicorn together
 CMD ["/app/run.sh"]

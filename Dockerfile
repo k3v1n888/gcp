@@ -5,10 +5,13 @@ FROM node:18-alpine AS frontend-build
 
 # 1) Set working dir & copy package.json + lockfile to leverage cache
 WORKDIR /app
-COPY frontend/package.json frontend/package-lock.json ./
 
-# 2) Install JS dependencies
-RUN npm ci
+# Copy only package.json (no lockfile present)
+
+COPY frontend/package.json ./
+
+# Install JS dependencies
+RUN npm install
 
 # 3) Copy rest of frontend code & build
 COPY frontend/ ./

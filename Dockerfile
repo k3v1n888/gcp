@@ -4,11 +4,13 @@
 FROM node:20-alpine AS frontend-build
 WORKDIR /app
 
-# Copy package.json & package-lock.json so we only re-run npm ci when they change
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm ci
+# Copy package.json (we assume no lockfile in repo)
+COPY frontend/package.json ./
 
-# Copy the rest of the frontend sources and build
+# Install dependencies (npm install instead of npm ci)
+RUN npm install
+
+# Copy the rest of the frontend source and build it
 COPY frontend/ ./
 RUN npm run build
 

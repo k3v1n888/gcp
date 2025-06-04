@@ -4,7 +4,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from fastapi.staticfiles import StaticFiles
+#from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 
 # Import routers

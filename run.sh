@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # ────────────────────────────────────────────────────────────────────────────────
-# run.sh: Start Nginx (listening on 8080) and then start Uvicorn (FastAPI) on 127.0.0.1:8000
+# run.sh: Start Nginx on port 8080, then start Uvicorn on 127.0.0.1:8000
 # ────────────────────────────────────────────────────────────────────────────────
 
-# 1) Start Nginx in the background (it reads /etc/nginx/conf.d/default.conf)
+set -x
+echo ">>> run.sh: launching Nginx…"
 service nginx start
 
-# 2) Start Uvicorn (FastAPI) by absolute path (guarantees we hit the installed binary)
-#    Binding to localhost:8000 so that Nginx’s proxy_pass will work.
+echo ">>> run.sh: launching Uvicorn…"
+ls -l /usr/local/bin/uvicorn
+
+# The 'exec' ensures Uvicorn becomes PID 1 (so signals get forwarded correctly).
+# Adjust the path if you installed Uvicorn somewhere else, but in our image it lives at /usr/local/bin/uvicorn
 exec /usr/local/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8000

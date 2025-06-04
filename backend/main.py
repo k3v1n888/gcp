@@ -45,7 +45,8 @@ app.include_router(analytics_router)
 app.include_router(slack_router)
 
 # 4) Serve static React files (Nginx will handle this in production, but in development you can do this)
-app.mount("/static", StaticFiles(directory="frontend_build/static"), name="static")
+#commented to remove development 
+#app.mount("/static", StaticFiles(directory="frontend_build/static"), name="static")
 
 # 5) Catch-all for browser‐refresh on React routes
 @app.get("/{full_path:path}", include_in_schema=False)

@@ -1,33 +1,63 @@
-# Use official Python slim image as base
-FROM python:3.11-slim
-
-# Set working directory inside container
+# ───────────────────────────────────────────────────────────────────────────────
+# Stage 1: Build React frontend
+# ───────────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS frontend-build
 WORKDIR /app
 
-# Install system dependencies required for building Python packages and PostgreSQL client libs
+# Copy package.json & package-lock.json so we only re-run npm ci when they change
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci
+
+# Copy the rest of the frontend sources and build
+COPY frontend/ ./
+RUN npm run build
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Stage 2: Build FastAPI backend
+# ───────────────────────────────────────────────────────────────────────────────
+FROM python:3.11-slim AS backend-build
+WORKDIR /app
+
+# Install system dependencies needed for Python packages (e.g. psycopg2, etc.)
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip, setuptools, and wheel for better compatibility
-RUN pip install --upgrade pip setuptools wheel
-
-# Copy requirements file and install Python dependencies with verbose logging
+# Copy only requirements.txt first (for caching)
 COPY backend/requirements.txt .
-
-RUN pip install --no-cache-dir -r requirements.txt --verbose
+RUN pip install --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Copy backend source code
 COPY backend/ ./backend/
 
-# Set environment variables inside container (can be overridden by Docker Compose or runtime)
-ENV DOMAIN=quantum-ai.asia
-ENV FRONTEND_URL=https://quantum-ai.asia
+# ───────────────────────────────────────────────────────────────────────────────
+# Stage 3: Final image: Nginx + Uvicorn
+# ───────────────────────────────────────────────────────────────────────────────
+FROM python:3.11-slim
+WORKDIR /app
 
-# Expose the port Cloud Run expects
-EXPOSE 8080
+# Install Nginx
+RUN apt-get update && apt-get install -y nginx \
+    && rm -rf /var/lib/apt/lists/*
 
-# Command to run FastAPI app on the port Cloud Run sets (default 8080)
-CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# Copy Python packages + backend code from backend-build
+COPY --from=backend-build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=backend-build /app/backend /app/backend
+
+# Copy React static build from frontend-build into Nginx’s html folder
+COPY --from=frontend-build /app/build /usr/share/nginx/html
+
+# Copy custom Nginx configuration
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+
+# Copy the run.sh script (to launch Nginx + Uvicorn)
+COPY run.sh /app/run.sh
+RUN chmod +x /app/run.sh
+
+# Expose port 80 (Nginx) and port 8000 (Uvicorn)
+EXPOSE 80 8000
+
+# Start Nginx and Uvicorn together
+CMD ["/app/run.sh"]

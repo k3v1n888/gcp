@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 ################################################################################
-# run.sh: start Nginx (listening on 8080) in the background, then exec Uvicorn
+# run.sh: start Nginx (listening on 8080) in the background, then exec Uvicorn 
 ################################################################################
 
 set -e

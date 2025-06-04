@@ -44,28 +44,30 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y nginx \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the cached Python dependencies from backend-build
-COPY --from=backend-build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-# Copy the pip‐installed console scripts (uvicorn entrypoint, etc.)
-COPY --from=backend-build /usr/local/bin/uvicorn /usr/local/bin/uvicorn
-COPY --from=backend-build /usr/local/bin/gunicorn /usr/local/bin/gunicorn  || true
-COPY --from=backend-build /usr/local/bin/python* /usr/local/bin/  || true
+# 1) Copy installed Python packages (including 'uvicorn') from backend-build
+COPY --from=backend-build /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
 
-# Copy the backend source code itself
+# 2) Copy the uvicorn binary itself so `run.sh` can call it
+COPY --from=backend-build /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# (If you need gunicorn, you can add a similar line—without "|| true"—only if it actually exists:)
+# COPY --from=backend-build /usr/local/bin/gunicorn /usr/local/bin/gunicorn
+
+# 3) Copy your backend source code
 COPY --from=backend-build /app/backend /app/backend
 
-# Copy React’s build output into Nginx’s webroot
+# 4) Copy React build into Nginx’s html folder
 COPY --from=frontend-build /app/build /usr/share/nginx/html
 
-# Copy our Nginx configuration (listening on port 8080)
+# 5) Copy the Nginx config (now listening on port 8080)
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Copy the entry‐point script that starts Nginx + Uvicorn
+# 6) Copy and mark executable the run.sh script
 COPY run.sh /app/run.sh
 RUN chmod +x /app/run.sh
 
-# Expose port 8080 (Cloud Run will route HTTPS → 8080)
+# Expose port 8080 (Cloud Run will forward HTTPS → 8080)
 EXPOSE 8080
 
-# Start the combined server
+# Entry point: start Nginx (on 8080) and Uvicorn (on 8000)
 CMD ["/app/run.sh"]

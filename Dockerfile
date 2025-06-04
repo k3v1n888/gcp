@@ -1,65 +1,73 @@
-# ───────────────────────────────────────────────────────────────────────────────
-# Stage 1: Build React frontend
-# ───────────────────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS frontend-build
+# ────────────────────────────────────────────────────────────────────────────────
+#  Stage 1: Build React frontend
+# ────────────────────────────────────────────────────────────────────────────────
+FROM node:18‐alpine AS frontend‐build
+
+# Set working dir, copy only package.json & lockfile to leverage Docker cache
 WORKDIR /app
 
-# Copy package.json (no lockfile). We’ll run `npm install`.
-COPY frontend/package.json ./
+COPY frontend/package.json frontend/package‐lock.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci 
 
-# Copy the rest of the frontend code and build it
+# Copy rest of frontend code
 COPY frontend/ ./
+
+# Build the React app; output goes to /app/build
 RUN npm run build
 
-# ───────────────────────────────────────────────────────────────────────────────
-# Stage 2: Build (and cache) Python dependencies
-# ───────────────────────────────────────────────────────────────────────────────
-FROM python:3.11-slim AS backend-build
+# ────────────────────────────────────────────────────────────────────────────────
+#  Stage 2: Build Python/FastAPI backend
+# ────────────────────────────────────────────────────────────────────────────────
+FROM python:3.11‐slim AS backend‐build
+
 WORKDIR /app
 
-# Install system libs needed for some Python packages (e.g. asyncpg, psycopg2, etc.)
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Install system deps needed to compile Python packages
+RUN apt‐get update && apt‐get install ‐y \
+    build‐essential \
+    libpq‐dev \
+    && rm ‐rf /var/lib/apt/lists/*
 
-# Copy requirements.txt and install into this build stage 
-COPY backend/requirements.txt .
+# Copy only requirements, install them
+COPY backend/requirements.txt ./
 RUN pip install --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir -r requirements.txt
+ && pip install --no‐cache‐dir -r requirements.txt
 
-# Copy all backend source code (so that cached Python deps + code coexist)
-COPY backend/ ./backend
+# Copy the rest of the backend source
+COPY backend/ ./backend/
 
-# ───────────────────────────────────────────────────────────────────────────────
-# Stage 3: Final image (Nginx + Uvicorn)
-# ───────────────────────────────────────────────────────────────────────────────
-# … earlier stages …
-
-FROM python:3.11-slim AS final
+# ────────────────────────────────────────────────────────────────────────────────
+#  Stage 3: Final image (Nginx + React build + Uvicorn backend)
+# ────────────────────────────────────────────────────────────────────────────────
+FROM python:3.11‐slim AS final
 
 # Install Nginx
-RUN apt-get update && apt-get install -y nginx \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt‐get update && apt‐get install ‐y nginx \
+    && rm ‐rf /var/lib/apt/lists/*
 
-# Copy Nginx config
+# 1) Copy Nginx config (make sure nginx/default.conf exists in your repo)
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Copy the Uvicorn binary & site-packages from the backend build
-COPY --from=backend-build /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
-COPY --from=backend-build /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+# 2) Copy the React build artifacts from stage `frontend‐build`
+COPY --from=frontend‐build /app/build/ /usr/share/nginx/html/
 
-# Copy run.sh and force it to be executable
+# 3) Copy Uvicorn binary and backend site-packages from stage `backend‐build`
+COPY --from=backend‐build /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+COPY --from=backend‐build /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+
+# 4) Copy the backend source itself (if your FastAPI code references files at runtime)
+COPY --from=backend‐build /app/backend/ /app/backend/
+
+# 5) Copy run.sh and ensure it’s executable
 COPY run.sh /app/run.sh
 RUN chmod +x /app/run.sh
 
-# Copy React’s production build
-COPY frontend/build/ /usr/share/nginx/html/
-
 WORKDIR /app
+
+# Expose port 8080 (Cloud Run routes on 8080 by default)
 EXPOSE 8080
 
+# Start Nginx + Uvicorn
 CMD ["/app/run.sh"]

@@ -1,40 +1,48 @@
-name: Deploy to GCP 
+# .github/workflows/deploy.yml
+
+name: Build & Deploy Fullstack to Cloud Run
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1) Checkout the code
       - uses: actions/checkout@v3
 
+      # 2) Authenticate to GCP
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
+      # 3) Set up gcloud CLI
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
+      # 4) Configure Docker to push to GCR
       - name: Configure Docker
         run: gcloud auth configure-docker
 
-      - name: Build Docker image
-        run: docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/ai-cyber-platform:latest .
+      # 5) Build & push Docker image
+      - name: Build & Push Docker image
+        run: |
+          IMAGE="gcr.io/${{ secrets.GCP_PROJECT_ID }}/ai-cyber-fullstack:latest"
+          docker build -t $IMAGE .
+          docker push $IMAGE
 
-      - name: Push Docker image
-        run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/ai-cyber-platform:latest
-
+      # 6) Deploy to Cloud Run
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy ai-cyber-platform \
-            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/ai-cyber-platform:latest \
-            --region ${{ secrets.GCP_REGION }} \
+          gcloud run deploy ai-cyber-fullstack \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/ai-cyber-fullstack:latest \
+            --region us-central1 \
             --platform managed \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --port 8080

@@ -55,8 +55,12 @@ COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 # 3) Copy React’s production build from stage 1
 COPY --from=frontend-build /app/build/ /usr/share/nginx/html/
 
-# 4) Copy Uvicorn binary and site-packages from stage 2
+
+# 4) Copy Uvicorn binary and site-packages from the Python/FastAPI build
 COPY --from=backend-build /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+# Add this line to confirm it exists and is executable
+RUN ls -l /usr/local/bin/uvicorn
+
 COPY --from=backend-build /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
 
 # 5) Copy backend source itself (if your FastAPI code needs to import from files)

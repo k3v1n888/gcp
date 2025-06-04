@@ -1,56 +1,24 @@
-import React, { useContext, useState } from 'react';
-import { UserContext } from '../context/UserContext';
-import { useNavigate } from 'react-router-dom';
+// frontend/src/pages/Login.jsx
 
-const Login = () => {
-  const { setUser } = useContext(UserContext);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+import React from "react";
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    try {
-      const response = await fetch('https://quantum-ai.asia/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        throw new Error('Invalid credentials');
-      }
-      const data = await response.json();
-      setUser(data.user);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/');
-    } catch (err) {
-      setError(err.message);
-    }
+export default function Login() {
+  const handleGoogleLogin = () => {
+    // Simply redirect browser to the backend route
+    window.location.href = "/api/auth/login";
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
-        required
-      />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-        required
-      />
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-      <button type="submit">Login</button>
-    </form>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white p-6 rounded-md shadow-md w-80 text-center">
+        <h2 className="text-2xl font-semibold mb-4">Log In with Google</h2>
+        <button
+          onClick={handleGoogleLogin}
+          className="w-full bg-red-600 text-white p-2 rounded hover:bg-red-700"
+        >
+          Log in with Google
+        </button>
+      </div>
+    </div>
   );
-};
-
-export default Login;
+}

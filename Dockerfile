@@ -4,38 +4,38 @@
 FROM node:20-alpine AS frontend-build
 WORKDIR /app
 
-# Copy package.json (we assume no lockfile in repo)
+# Copy package.json (no lockfile). We’ll run `npm install`.
 COPY frontend/package.json ./
 
-# Install dependencies (npm install instead of npm ci)
+# Install dependencies
 RUN npm install
 
-# Copy the rest of the frontend source and build it
+# Copy the rest of the frontend code and build it
 COPY frontend/ ./
 RUN npm run build
 
 # ───────────────────────────────────────────────────────────────────────────────
-# Stage 2: Build FastAPI backend
+# Stage 2: Build (and cache) Python dependencies
 # ───────────────────────────────────────────────────────────────────────────────
 FROM python:3.11-slim AS backend-build
 WORKDIR /app
 
-# Install system dependencies needed for Python packages (e.g. psycopg2, etc.)
+# Install system libs needed for some Python packages (e.g. asyncpg, psycopg2, etc.)
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only requirements.txt first (for caching)
+# Copy requirements.txt and install into this build stage 
 COPY backend/requirements.txt .
 RUN pip install --upgrade pip setuptools wheel \
     && pip install --no-cache-dir -r requirements.txt
 
-# Copy backend source code
-COPY backend/ ./backend/
+# Copy all backend source code (so that cached Python deps + code coexist)
+COPY backend/ ./backend
 
 # ───────────────────────────────────────────────────────────────────────────────
-# Stage 3: Final image: Nginx + Uvicorn
+# Stage 3: Final image (Nginx + Uvicorn)
 # ───────────────────────────────────────────────────────────────────────────────
 FROM python:3.11-slim
 WORKDIR /app
@@ -44,22 +44,28 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y nginx \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python packages + backend code from backend-build
+# Copy the cached Python dependencies from backend-build
 COPY --from=backend-build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+# Copy the pip‐installed console scripts (uvicorn entrypoint, etc.)
+COPY --from=backend-build /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+COPY --from=backend-build /usr/local/bin/gunicorn /usr/local/bin/gunicorn  || true
+COPY --from=backend-build /usr/local/bin/python* /usr/local/bin/  || true
+
+# Copy the backend source code itself
 COPY --from=backend-build /app/backend /app/backend
 
-# Copy React static build from frontend-build into Nginx’s html folder
+# Copy React’s build output into Nginx’s webroot
 COPY --from=frontend-build /app/build /usr/share/nginx/html
 
-# Copy custom Nginx configuration
+# Copy our Nginx configuration (listening on port 8080)
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Copy the run.sh script (to launch Nginx + Uvicorn)
+# Copy the entry‐point script that starts Nginx + Uvicorn
 COPY run.sh /app/run.sh
 RUN chmod +x /app/run.sh
 
-# Expose port 80 (Nginx) and port 8000 (Uvicorn)
+# Expose port 8080 (Cloud Run will route HTTPS → 8080)
 EXPOSE 8080
 
-# Start Nginx and Uvicorn together
+# Start the combined server
 CMD ["/app/run.sh"]

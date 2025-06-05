@@ -4,21 +4,29 @@
 import os
 import uuid
 from typing import Optional
+
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
+
+# Google’s JWT‐verification helpers
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
+
+# We still need httpx to exchange the authorization code for tokens
+import httpx
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 # Environment variables (must be set in Cloud Run or in your local .env)
 GOOGLE_CLIENT_ID     = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")  # not actually used by id_token.verify_oauth2_token
-GOOGLE_REDIRECT_URI  = os.getenv("GOOGLE_REDIRECT_URI")   # e.g. "https://quantum-ai.asia/api/auth/callback"
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")  # only used at token exchange
+GOOGLE_REDIRECT_URI  = os.getenv("GOOGLE_REDIRECT_URI")   # e.g. "https://<your-domain>/api/auth/callback"
 SESSION_SECRET_KEY   = os.getenv("SESSION_SECRET_KEY", "change_this_to_a_real_random_secret")
 
 if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI]):
-    raise RuntimeError("Missing one of GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REDIRECT_URI")
+    raise RuntimeError(
+        "Missing one of GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REDIRECT_URI"
+    )
 
 
 @router.get("/login")
@@ -30,13 +38,13 @@ def login(request: Request):
     request.session["oauth_state"] = state
 
     oauth_params = {
-        "client_id": GOOGLE_CLIENT_ID,
-        "redirect_uri": GOOGLE_REDIRECT_URI,
+        "client_id":     GOOGLE_CLIENT_ID,
+        "redirect_uri":  GOOGLE_REDIRECT_URI,
         "response_type": "code",
-        "scope": "openid email profile",
-        "state": state,
-        "access_type": "offline",
-        "prompt": "select_account",
+        "scope":         "openid email profile",
+        "state":         state,
+        "access_type":   "offline",
+        "prompt":        "select_account",
     }
     google_auth_url = "https://accounts.google.com/o/oauth2/v2/auth"
     url = "https://accounts.google.com/o/oauth2/v2/auth?" + "&".join(
@@ -46,7 +54,11 @@ def login(request: Request):
 
 
 @router.get("/callback")
-async def oauth2_callback(request: Request, code: Optional[str] = None, state: Optional[str] = None):
+async def oauth2_callback(
+    request: Request,
+    code: Optional[str] = None,
+    state: Optional[str] = None
+):
     """
     2) Google calls back here with ?code=…&state=….
        We exchange for tokens, verify ID token, store user in session, then redirect to “/”.
@@ -57,13 +69,15 @@ async def oauth2_callback(request: Request, code: Optional[str] = None, state: O
 
     token_endpoint = "https://oauth2.googleapis.com/token"
     data = {
-        "code": code,
-        "client_id": GOOGLE_CLIENT_ID,
+        "code":          code,
+        "client_id":     GOOGLE_CLIENT_ID,
         "client_secret": GOOGLE_CLIENT_SECRET,
-        "redirect_uri": GOOGLE_REDIRECT_URI,
-        "grant_type": "authorization_code",
+        "redirect_uri":  GOOGLE_REDIRECT_URI,
+        "grant_type":    "authorization_code",
     }
 
+    # ────────────────────────────────────────────────────────────────────
+    # This is where we must import and use httpx:
     async with httpx.AsyncClient() as client:
         token_resp = await client.post(token_endpoint, data=data)
     if token_resp.status_code != 200:
@@ -74,7 +88,8 @@ async def oauth2_callback(request: Request, code: Optional[str] = None, state: O
     if not id_token_str:
         raise HTTPException(status_code=400, detail="No ID token in response from Google")
 
-    # Use google-auth to verify the ID token signature & audience:
+    # ────────────────────────────────────────────────────────────────────
+    # Verify the ID token with google-auth
     try:
         idinfo = id_token.verify_oauth2_token(
             id_token_str,
@@ -84,7 +99,7 @@ async def oauth2_callback(request: Request, code: Optional[str] = None, state: O
     except ValueError as e:
         raise HTTPException(status_code=401, detail=f"Invalid ID token: {e}")
 
-    # Extract user info from the verified token
+    # Extract fields from the verified token
     google_sub = idinfo.get("sub")
     name       = idinfo.get("name")
     email      = idinfo.get("email")
@@ -93,16 +108,15 @@ async def oauth2_callback(request: Request, code: Optional[str] = None, state: O
     if not email:
         raise HTTPException(status_code=400, detail="ID token did not contain email")
 
-    # Log in the user by saving info in session
+    # “Log in” the user by saving info to the session
     request.session.clear()
     request.session["user"] = {
-        "sub": google_sub,
-        "name": name,
-        "email": email,
+        "sub":     google_sub,
+        "name":    name,
+        "email":   email,
         "picture": picture,
     }
 
-    # Redirect back to React SPA root
     return RedirectResponse(url="/")
 
 

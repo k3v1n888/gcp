@@ -43,6 +43,12 @@ app.include_router(alert_router)
 app.include_router(analytics_router)
 app.include_router(slack_router)
 
+# backend/main.py (add near the bottom)
+
+@app.get("/_fastapi_health")
+def fastapi_health():
+    return {"status": "ok"}
+
 # 4) Local‐dev only: serve React’s static build if you want to run uvicorn directly.
 #    In production, Nginx already serves /usr/share/nginx/html.
 # Uncomment the following when testing locally (and ensure that you have built React into "frontend/build").

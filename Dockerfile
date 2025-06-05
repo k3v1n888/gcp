@@ -1,83 +1,74 @@
-# ────────────────────────────────────────────────────────────────────────────────
-# Stage 1: Build React frontend
-# ────────────────────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────────────────────
+# Stage 1: Build React Frontend
+# ───────────────────────────────────────────────────────────────────────────────
 FROM node:18-alpine AS frontend-build
 
 WORKDIR /app
 
-#  1a) Copy only package.json to leverage cache
-COPY frontend/package.json ./ 
-# If you have a package-lock.json, copy it too (optional):
-# COPY frontend/package-lock.json ./ 
+# 1) Copy only package.json so we can leverage Docker cache
+COPY frontend/package.json frontend/package-lock.json ./
 
-#  1b) Install JS deps
+# 2) Install JS dependencies
 RUN npm install
 
-#  2) Copy all React source & produce a production build
+# 3) Copy the rest of the frontend code & build
 COPY frontend/ ./
 RUN npm run build
 
 
-
-
-# ────────────────────────────────────────────────────────────────────────────────
-# Stage 2: Build Python/FastAPI backend
-# ────────────────────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────────────────────
+# Stage 2: Build Python/FastAPI Backend (and install all Python dependencies)
+# ───────────────────────────────────────────────────────────────────────────────
 FROM python:3.11-slim AS backend-build
 
 WORKDIR /app
 
-#  2a) Install system deps (for postgres, building wheels, etc.)
-RUN apt-get update \
- && apt-get install -y \
-      build-essential \
-      libpq-dev \
-      curl \
- && rm -rf /var/lib/apt/lists/*
+# 1) Install system dependencies (for psycopg2, etc.)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-#  2b) Copy only requirements.txt & install Python deps
+# 2) Copy requirements.txt and install Python packages
 COPY backend/requirements.txt ./
 RUN pip install --upgrade pip setuptools wheel \
  && pip install --no-cache-dir -r requirements.txt
 
-#  2c) Copy the backend source code
+# 3) Copy your backend source code so Uvicorn can import it
 COPY backend/ ./backend/
 
 
-
-
-
-# ────────────────────────────────────────────────────────────────────────────────
-# Stage 3: Final image (Nginx + React build + Uvicorn)
-# ────────────────────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────────────────────
+# Stage 3 (Final): Combine Nginx + React Build + Uvicorn
+# ───────────────────────────────────────────────────────────────────────────────
 FROM python:3.11-slim AS final
 
-#  3a) Install Nginx
-RUN apt-get update \
- && apt-get install -y nginx \
- && rm -rf /var/lib/apt/lists/*
+# 1) Install Nginx (the web server)
+RUN apt-get update && apt-get install -y nginx \
+    && rm -rf /var/lib/apt/lists/*
 
-#  3b) Copy our custom Nginx config (from local `nginx/default.conf`)
+# 2) Copy our Nginx config into place
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-#  3c) Copy React’s production build from stage1
+# 3) Copy React’s production build from stage 1 → Nginx’s root
 COPY --from=frontend-build /app/build/ /usr/share/nginx/html/
 
-#  3d) Copy Uvicorn binary and all site-packages from stage2
+# 4) Copy Uvicorn binary & Python site-packages from stage 2
 COPY --from=backend-build /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 COPY --from=backend-build /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
 
-#  3e) Copy the backend source code (so Uvicorn can import `backend.*`)
+# 5) Copy your entire backend source so FastAPI imports work
 COPY --from=backend-build /app/backend/ /app/backend/
 
-#  3f) Copy and mark `run.sh` executable
+# 6) Copy & mark run.sh as executable
 COPY run.sh /app/run.sh
 RUN chmod +x /app/run.sh
 
+# 7) Make /app the working directory
 WORKDIR /app
 
-#  3g) Expose port 8080 (Cloud Run expects container LISTEN on 8080)
+# 8) Expose port 8080 (Cloud Run expects the container to listen here)
 EXPOSE 8080
 
-#  3h) Start Nginx+Uvicorn in one shot
+# 9) Default command: run our run.sh (which launches nginx + uvicorn)
 CMD ["/app/run.sh"]

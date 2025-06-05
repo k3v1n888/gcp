@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-################################################################################
-# run.sh: start Nginx (listening on 8080) in the background, then exec Uvicorn 
-################################################################################
 
-set -e
-
-echo ">>> run.sh: launching Nginx..."
+# 1) Start Nginx in the background
 service nginx start
 
-echo ">>> run.sh: launching Uvicorn..."
-# Exec uvicorn so that signal handling is correct
-exec /usr/local/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8000
+# 1.a) Debug: print out where uvicorn is (just for logs)
+echo ">>> running which uvicorn: $(which uvicorn)"
+echo ">>> uvicorn --version: $(uvicorn --version 2>&1)"
+
+# 2) Start Uvicorn (FastAPI) bound to localhost:8000
+exec uvicorn backend.main:app --host 127.0.0.1 --port 8000

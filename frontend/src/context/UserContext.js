@@ -1,42 +1,34 @@
-// e.g. in src/context/UserContext.js
+// frontend/src/context/UserContext.js
 
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext, useState, useEffect } from "react";
 
-export const UserContext = createContext({ user: null, setUser: () => {} });
+export const UserContext = createContext({
+  user: null,
+  setUser: () => {}
+});
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // On mount, ask “/api/auth/me”
+    // On mount, ask backend “who am I?”
     fetch("/api/auth/me", {
       method: "GET",
-      credentials: "include", 
-      headers: {
-        "Content-Type": "application/json",
-      },
+      credentials: "include"   // ← IMPORTANT: send the session cookie
     })
-      .then(async (resp) => {
-        if (resp.status === 200) {
-          const info = await resp.json();
-          setUser(info);
-        } else {
-          setUser(null);
+      .then((res) => {
+        if (res.ok) {
+          return res.json();
         }
+        throw new Error("Not authenticated");
+      })
+      .then((data) => {
+        setUser(data);
       })
       .catch(() => {
         setUser(null);
-      })
-      .finally(() => {
-        setLoading(false);
       });
   }, []);
-
-  // While waiting for this first request, you might render a spinner:
-  if (loading) {
-    return <div>Loading…</div>;
-  }
 
   return (
     <UserContext.Provider value={{ user, setUser }}>

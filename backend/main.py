@@ -24,11 +24,12 @@ SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
-    https_only=True,  # <--- THIS IS CRUCIAL: Sets the 'Secure' flag
-    samesite="none",  # <--- THIS IS CRUCIAL: Allows cookie to be sent cross-site (requires Secure)
-    # domain=".us-central1.run.app", # You *might* need this if you explicitly control the domain,
-                                    # but start without it and check if the above two fix it.
-                                    # Or for quantum-ai.asia: domain=".quantum-ai.asia"
+    https_only=True,  # <--- Make sure this is TRUE
+    samesite="none",  # <--- Make sure this is "none" (string literal)
+    # If the issue persists, you *may* need to uncomment and adjust the domain.
+    # For a Cloud Run managed domain like *.run.app, it might work without it.
+    # If you use a custom domain like quantum-ai.asia, you might need:
+    # domain=".quantum-ai.asia",
 )
 
 # 2) CORS middleware (only needed if front and API are on different origins during dev)

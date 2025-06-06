@@ -6,7 +6,7 @@ FROM node:18-alpine AS frontend-build
 WORKDIR /app
 
 # 1) Copy only package.json so we can leverage Docker cache
-COPY frontend/package.json
+COPY frontend/package.json ./
 
 # 2) Install JS dependencies
 RUN npm install

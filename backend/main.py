@@ -24,18 +24,22 @@ SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
-    https_only=True,  # IMPORTANT: Ensure the 'Secure' flag is set for HTTPS
-    samesite="none",  # IMPORTANT: Allows cookie to be sent on cross-site requests, requires 'Secure'
-    # domain=".your-toplevel-domain.com", # Uncomment and adjust if your frontend/backend are on different subdomains
-                                       # e.g., ".quantum-ai.asia" if you use sub.quantum-ai.asia
+    https_only=True,  # <--- THIS IS CRUCIAL: Sets the 'Secure' flag
+    samesite="none",  # <--- THIS IS CRUCIAL: Allows cookie to be sent cross-site (requires Secure)
+    # domain=".us-central1.run.app", # You *might* need this if you explicitly control the domain,
+                                    # but start without it and check if the above two fix it.
+                                    # Or for quantum-ai.asia: domain=".quantum-ai.asia"
 )
 
 # 2) CORS middleware (only needed if front and API are on different origins during dev)
 app.add_middleware(
     CORSMiddleware,
     # IMPORTANT: In production, specify your exact frontend URL(s)
-    allow_origins=["https://ai-cyber-fullstack-1020401092050.us-central1.run.app", "https://quantum-ai.asia"],
-    allow_credentials=True,
+    allow_origins=[
+        "https://ai-cyber-fullstack-1020401092050.us-central1.run.app", # Your Cloud Run frontend URL
+        "https://quantum-ai.asia" # Your custom domain, if applicable
+    ],
+    allow_credentials=True, # Allow cookies to be sent
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -57,8 +61,8 @@ app.include_router(slack_router)
 def fastapi_health():
     return {"status": "ok"}
 
-# 4) Local‐dev only: serve React’s static build if you want to run uvicorn directly.
-#    In production, Nginx already serves /usr/share/nginx/html.
+# Local‐dev only: serve React’s static build if you want to run uvicorn directly.
+# In production, Nginx already serves /usr/share/nginx/html.
 # Uncomment the following when testing locally (and ensure that you have built React into "frontend/build").
 #
 # from fastapi.staticfiles import StaticFiles
@@ -72,4 +76,3 @@ def fastapi_health():
 #         return FileResponse(index_path)
 #     raise HTTPException(status_code=404, detail="Not Found")
 
-# 5) If you do NOT want local‐dev fallback, you can remove the above block entirely.

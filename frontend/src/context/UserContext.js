@@ -11,16 +11,14 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // On mount, ask backend “who am I?”
+    // On mount, ask backend “who am I?” and send cookies
     fetch("/api/auth/me", {
       method: "GET",
-      credentials: "include"   // ← IMPORTANT: send the session cookie
+      credentials: "include"      // ★ include cookies so the session is sent
     })
       .then((res) => {
-        if (res.ok) {
-          return res.json();
-        }
-        throw new Error("Not authenticated");
+        if (!res.ok) throw new Error("Not authenticated");
+        return res.json();
       })
       .then((data) => {
         setUser(data);

@@ -2,26 +2,29 @@
 
 import React, { createContext, useState, useEffect } from "react";
 
-export const UserContext = createContext({
-  user: null,
-  setUser: () => {}
-});
+export const UserContext = createContext(null);
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // On mount, ask backend “who am I?” and send cookies
+    // check “me” endpoint as soon as the app mounts
     fetch("/api/auth/me", {
       method: "GET",
-      credentials: "include"      // ★ include cookies so the session is sent
+      credentials: "include",    // ← MUST include cookies
+      headers: {
+        "Content-Type": "application/json",
+      },
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Not authenticated");
+        if (!res.ok) {
+          setUser(null);
+          return null;
+        }
         return res.json();
       })
       .then((data) => {
-        setUser(data);
+        if (data) setUser(data);
       })
       .catch(() => {
         setUser(null);

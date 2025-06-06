@@ -7,16 +7,19 @@ from typing import Optional
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 
-import httpx
+# Google's ID-token verification
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
+# We do need httpx for the token exchange
+import httpx  
+
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-# Load env vars
+# Environment variables (must be present in Cloud Run >>> “.env” or in GitHub Secrets)
 GOOGLE_CLIENT_ID     = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI  = os.getenv("GOOGLE_REDIRECT_URI")  # e.g. https://quantum-ai.asia/api/auth/callback
+GOOGLE_REDIRECT_URI  = os.getenv("GOOGLE_REDIRECT_URI")  # e.g. "https://quantum-ai.asia/api/auth/callback"
 SESSION_SECRET_KEY   = os.getenv("SESSION_SECRET_KEY", "change_this_to_a_real_random_secret")
 
 if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI]):
@@ -27,6 +30,9 @@ if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI]):
 
 @router.get("/login")
 def login(request: Request):
+    """
+    1) Redirect to Google's OAuth 2.0 consent screen.
+    """
     state = str(uuid.uuid4())
     request.session["oauth_state"] = state
 
@@ -39,17 +45,26 @@ def login(request: Request):
         "access_type":   "offline",
         "prompt":        "select_account",
     }
-    url = "https://accounts.google.com/o/oauth2/v2/auth?" + "&".join(
+    google_auth_url = "https://accounts.google.com/o/oauth2/v2/auth"
+    url = google_auth_url + "?" + "&".join(
         f"{key}={value}" for key, value in oauth_params.items()
     )
     return RedirectResponse(url)
 
 
 @router.get("/callback")
-async def oauth2_callback(request: Request, code: Optional[str] = None, state: Optional[str] = None):
+async def oauth2_callback(
+    request: Request, 
+    code: Optional[str] = None, 
+    state: Optional[str] = None
+):
+    """
+    2) Google calls back to /api/auth/callback?code=…&state=… 
+       Exchange code → tokens, verify ID token, save session, redirect “/”.
+    """
     saved_state = request.session.get("oauth_state")
     if not code or not state or state != saved_state:
-        raise HTTPException(status_code=400, detail="Invalid or missing OAuth state/token")
+        raise HTTPException(status_code=400, detail="Invalid OAuth state")
 
     token_endpoint = "https://oauth2.googleapis.com/token"
     data = {
@@ -60,23 +75,19 @@ async def oauth2_callback(request: Request, code: Optional[str] = None, state: O
         "grant_type":    "authorization_code",
     }
 
-    # Exchange code for tokens
+    # ★ we have imported httpx above
     async with httpx.AsyncClient() as client:
         token_resp = await client.post(token_endpoint, data=data)
 
     if token_resp.status_code != 200:
-        # Expose the error so that Cloud Run logs show why it failed
-        raise HTTPException(
-            status_code=400,
-            detail=f"Failed to exchange code for token: {token_resp.status_code} {token_resp.text}"
-        )
+        raise HTTPException(status_code=400, detail="Failed to exchange code for tokens")
 
     tokens = token_resp.json()
     id_token_str = tokens.get("id_token")
     if not id_token_str:
-        raise HTTPException(status_code=400, detail="No ID token in response from Google")
+        raise HTTPException(status_code=400, detail="No ID token from Google")
 
-    # Verify ID token
+    # Verify the ID token using google-auth
     try:
         idinfo = id_token.verify_oauth2_token(
             id_token_str,
@@ -92,9 +103,9 @@ async def oauth2_callback(request: Request, code: Optional[str] = None, state: O
     picture    = idinfo.get("picture")
 
     if not email:
-        raise HTTPException(status_code=400, detail="ID token did not contain email")
+        raise HTTPException(status_code=400, detail="ID token missing email")
 
-    # Save user in session
+    # Save user info to session
     request.session.clear()
     request.session["user"] = {
         "sub":     google_sub,
@@ -103,7 +114,7 @@ async def oauth2_callback(request: Request, code: Optional[str] = None, state: O
         "picture": picture,
     }
 
-    # Redirect to React SPA root
+    # Redirect back to React root
     return RedirectResponse(url="/")
 
 

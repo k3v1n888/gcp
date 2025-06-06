@@ -20,19 +20,22 @@ from backend.slack_alert import router as slack_router
 
 app = FastAPI()
 
-# 1) Session middleware (so request.session works)
+# 1) SessionMiddleware with SameSite=None, Secure=True
 SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")
-app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SESSION_SECRET,
+    session_cookie="session",     # you can leave this as default or name it "session"
+    same_site="none",             # <─ allow cross‐site sending
+    https_only=True               # <─ must be HTTPS
+)
 
-# 2) CORS middleware – allow both run.app domain and your custom domain (or “*” for testing)
+# 2) CORS: only allow your exact front‐end origin and credentials
+FRONTEND_URL = "https://ai-cyber-fullstack-1020401092050.us-central1.run.app"  # or your Cloud Run URL if you haven’t switched to custom domain yet
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://quantum-ai.asia",                          # your custom domain
-        "https://ai-cyber-fullstack-1020401092050.us-central1.run.app",
-        "http://localhost:3000",                             # if you develop locally
-    ],
-    allow_credentials=True,
+    allow_origins=[FRONTEND_URL],   # no "*" here
+    allow_credentials=True,         # must be True so browser will send session cookie
     allow_methods=["*"],
     allow_headers=["*"],
 )

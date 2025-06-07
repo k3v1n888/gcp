@@ -25,7 +25,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
     https_only=True,  # <--- Make sure this is TRUE
-    samesite="none",  # <--- Make sure this is "none" (string literal)
+    #samesite="none",  # <--- Make sure this is "none" (string literal)
     # If the issue persists, you *may* need to uncomment and adjust the domain.
     # For a Cloud Run managed domain like *.run.app, it might work without it.
     # If you use a custom domain like quantum-ai.asia, you might need:

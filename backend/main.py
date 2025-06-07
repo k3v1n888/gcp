@@ -77,3 +77,17 @@ def fastapi_health():
 #         return FileResponse(index_path)
 #     raise HTTPException(status_code=404, detail="Not Found")
 
+# backend/main.py
+
+# ... (existing code) ...
+
+@app.get("/_debug_env")
+def debug_env():
+    """
+    TEMPORARY DEBUG ENDPOINT: Dumps all environment variables.
+    REMOVE IMMEDIATELY AFTER DEBUGGING.
+    """
+    return {"environment_variables": dict(os.environ)}
+
+# ... (existing app.mount, etc.) ...
+

@@ -24,8 +24,8 @@ SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
-    https_only=False,  # <--- Make sure this is TRUE
-    #samesite="none",  # <--- Make sure this is "none" (string literal)
+    secure=True,  # <--- Make sure this is TRUE
+    samesite="none"  # <--- Make sure this is "none" (string literal)
     # If the issue persists, you *may* need to uncomment and adjust the domain.
     # For a Cloud Run managed domain like *.run.app, it might work without it.
     # If you use a custom domain like quantum-ai.asia, you might need:

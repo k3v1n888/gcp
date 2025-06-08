@@ -25,7 +25,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
     https_only=True,  # <--- Make sure this is TRUE
-    same_site="lax",  # <--- Make sure this is "none" (string literal)
+    same_site="none",  # <--- Make sure this is "none" (string literal)
     max_age=86400
     # If the issue persists, you *may* need to uncomment and adjust the domain.
     # For a Cloud Run managed domain like *.run.app, it might work without it.

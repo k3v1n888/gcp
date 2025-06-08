@@ -2,34 +2,41 @@
 
 import React, { createContext, useState, useEffect } from "react";
 
-export const UserContext = createContext(null);
+export const UserContext = createContext({
+  user: null,
+  setUser: () => {}
+});
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // check “me” endpoint as soon as the app mounts
+    console.log("UserContext: Attempting to fetch /api/auth/me"); // ADD THIS
     fetch("/api/auth/me", {
       method: "GET",
-      credentials: "include",    // ← MUST include cookies
-      headers: {
-        "Content-Type": "application/json",
-      },
+      credentials: "include"
     })
       .then((res) => {
-        if (!res.ok) {
-          setUser(null);
-          return null;
+        console.log("UserContext: Response status:", res.status, "ok:", res.ok); // ADD THIS
+        if (res.ok) {
+          return res.json();
         }
-        return res.json();
+        throw new Error("Not authenticated");
       })
       .then((data) => {
-        if (data) setUser(data);
+        console.log("UserContext: User data received:", data); // ADD THIS
+        setUser(data);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("UserContext: Error fetching user:", error); // ADD THIS
         setUser(null);
       });
   }, []);
+
+  // ADD THIS: Observe changes in 'user' state
+  useEffect(() => {
+    console.log("UserContext: 'user' state changed to:", user);
+  }, [user]);
 
   return (
     <UserContext.Provider value={{ user, setUser }}>

@@ -47,5 +47,4 @@ jobs:
             --allow-unauthenticated \
             --port 8080 \
             --add-cloudsql-instances ${{ secrets.DB_CONNECTION_NAME }} \
-            # --- THIS IS THE CORRECTED LINE ---
             --update-env-vars="DATABASE_URL=postgresql+psycopg2://user:${{ secrets.DB_PASSWORD }}@/cyberdb?host=/cloudsql/${{ secrets.DB_CONNECTION_NAME }},GOOGLE_REDIRECT_URI=https://quantum-ai.asia/api/auth/callback,FRONTEND_URL=https://quantum-ai.asia,DOMAIN=quantum-ai.asia,GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},SESSION_SECRET_KEY=${{ secrets.SESSION_SECRET_KEY }}"

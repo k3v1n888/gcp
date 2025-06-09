@@ -1,9 +1,7 @@
-# backend/analytics.py
-
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from backend.models import SessionLocal, ThreatLog, User
-from backend/auth.rbac import get_current_user
+from backend.auth.rbac import get_current_user
 
 router = APIRouter()
 

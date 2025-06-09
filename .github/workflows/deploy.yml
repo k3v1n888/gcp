@@ -50,3 +50,7 @@ jobs:
             --add-cloudsql-instances ${{ secrets.DB_CONNECTION_NAME }} \
             # --- ADD the database URL as a secret ---
             --set-env-vars="DATABASE_URL=postgresql+asyncpg://user:${{ secrets.DB_PASSWORD }}@/.s.PGSQL.5432/cyberdb"
+             # --- ADD/UPDATE these environment variables for your custom domain ---
+            --update-env-vars="GOOGLE_REDIRECT_URI=https://quantum-ai.asia/api/auth/callback" \
+            --update-env-vars="FRONTEND_URL=https://quantum-ai.asia" \
+            --update-env-vars="DOMAIN=quantum-ai.asia"

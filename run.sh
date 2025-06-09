@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 #
-# 1) Launch Nginx in the foreground, then immediately launch Uvicorn (so that
-#    both processes run under the same container, and if either quits, the container dies).
+# 1) Launch Nginx in the foreground. It will start as root and then
+#    drop privileges for its worker processes as configured.
 #
-# 2) We use "nginx -g 'daemon off;'" so Nginx does NOT daemonize itself.
-#    Then we exec uvicorn as the final PID 1-ish process.
+# 2) We then use 'gosu' to drop privileges from root to 'appuser'
+#    before executing the uvicorn process.
 
 set -eux
 
-# 1) Start Nginx in the foreground ( “daemon off” means “don’t background” )
+# 1) Start Nginx in the foreground
 nginx -g 'daemon off;' &
 
 # 2) Give Nginx a second to bind port 8080 internally:
 sleep 1
 
-# 3) Exec Uvicorn so that if it dies, the container dies too
-exec uvicorn backend.main:app --host 127.0.0.1 --port 8000
+# 3) --- MODIFIED: Exec Uvicorn as the non-privileged 'appuser' ---
+#    'gosu' is a lightweight tool to change user.
+#    This ensures your Python application code does not run as root.
+exec gosu appuser uvicorn backend.main:app --host 127.0.0.1 --port 8000

@@ -45,4 +45,8 @@ jobs:
             --region us-central1 \
             --platform managed \
             --allow-unauthenticated \
-            --port 8080
+            --port 8080 \
+            # --- ADD a secure connection to Cloud SQL ---
+            --add-cloudsql-instances ${{ secrets.DB_CONNECTION_NAME }} \
+            # --- ADD the database URL as a secret ---
+            --set-env-vars="DATABASE_URL=postgresql+asyncpg://user:${{ secrets.DB_PASSWORD }}@/.s.PGSQL.5432/cyberdb"

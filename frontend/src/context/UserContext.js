@@ -1,6 +1,6 @@
-// frontend/src/context/UserContext.js
-
 import React, { createContext, useState, useEffect } from "react";
+// --- 1. Import useLocation ---
+import { useLocation } from "react-router-dom";
 
 export const UserContext = createContext({
   user: null,
@@ -11,8 +11,14 @@ export const UserContext = createContext({
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // --- 2. Get the current location/URL ---
+  const location = useLocation();
 
   useEffect(() => {
+    // We set loading to true on each check
+    setIsLoading(true);
+
     fetch("/api/auth/me", {
       method: "GET",
       credentials: "include"
@@ -24,8 +30,6 @@ export function UserProvider({ children }) {
         throw new Error("Not authenticated");
       })
       .then((data) => {
-        // --- ADD THIS LINE ---
-        console.log("USER CONTEXT: Data received from API, setting user:", data);
         setUser(data);
       })
       .catch(() => {
@@ -34,7 +38,9 @@ export function UserProvider({ children }) {
       .finally(() => {
         setIsLoading(false);
       });
-  }, []);
+  // --- 3. Add location.pathname to the dependency array ---
+  // This tells React to re-run this code every time the URL path changes.
+  }, [location.pathname]);
 
   return (
     <UserContext.Provider value={{ user, setUser, isLoading }}>

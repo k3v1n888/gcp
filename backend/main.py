@@ -18,6 +18,7 @@ from backend.analytics import router as analytics_router
 from backend.slack_alert import router as slack_router
 # --- NEW ---
 from backend.correlation import router as correlation_router 
+from backend.models import Base, engine
 
 app = FastAPI()
 

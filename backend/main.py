@@ -21,6 +21,11 @@ from backend.correlation import router as correlation_router
 
 app = FastAPI()
 
+@app.on_event("startup")
+def on_startup():
+    # This will create the "users", "tenants", and "threat_logs" tables if they don't exist
+    Base.metadata.create_all(bind=engine)
+
 # 1) Session middleware
 SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")
 app.add_middleware(

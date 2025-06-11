@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
-// --- 1. Import useLocation ---
+// 1. Import useLocation from the router library
 import { useLocation } from "react-router-dom";
 
 export const UserContext = createContext({
@@ -12,12 +12,11 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // --- 2. Get the current location/URL ---
+  // 2. Get the current page location
   const location = useLocation();
 
   useEffect(() => {
-    // We set loading to true on each check
-    setIsLoading(true);
+    setIsLoading(true); // Set loading to true before each check
 
     fetch("/api/auth/me", {
       method: "GET",
@@ -38,7 +37,7 @@ export function UserProvider({ children }) {
       .finally(() => {
         setIsLoading(false);
       });
-  // --- 3. Add location.pathname to the dependency array ---
+  // 3. Add location.pathname to the dependency array
   // This tells React to re-run this code every time the URL path changes.
   }, [location.pathname]);
 

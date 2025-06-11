@@ -1,21 +1,28 @@
-// frontend/src/components/ProtectedRoutes.js
+import React from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
 
-import React, { useContext } from "react";
-import { Navigate, Outlet } from "react-router-dom";
-import { UserContext } from "../context/UserContext";
+const ProtectedRoutes = ({ allowedRoles }) => {
+  const { user, isLoading } = useUser();
 
-export default function ProtectedRoutes() {
-  const { user, isLoading } = useContext(UserContext);
-  
-  // --- ADD THIS LINE ---
-  console.log("PROTECTED ROUTES: Rendering with user:", user, "and isLoading:", isLoading);
-
+  // 1. Wait for the user check to complete
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-lg">Loading authentication...</div>;
+    return <div>Loading...</div>; // Or a spinner component
   }
 
+  // 2. After loading, check if there is a user and if their role is allowed
   if (!user) {
+    // If no user, redirect to login
     return <Navigate to="/login" replace />;
   }
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // If user's role is not allowed, redirect to unauthorized page
+    return <Navigate to="/unauthorized" replace />;
+  }
+  
+  // 3. If all checks pass, render the child route (e.g., Dashboard or AdminPanel)
   return <Outlet />;
-}
+};
+
+export default ProtectedRoutes;

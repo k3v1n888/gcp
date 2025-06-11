@@ -17,10 +17,13 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
 
-        {/* Protected Routes now use the single simplified component */}
-        {/* This will protect both dashboard and admin routes for any logged-in user */}
-        <Route element={<ProtectedRoutes />}>
+        {/* Protected Routes for any logged-in user */}
+        <Route element={<ProtectedRoutes allowedRoles={['user', 'admin']} />}>
           <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
+        
+        {/* Admin-Only Protected Route */}
+        <Route element={<ProtectedRoutes allowedRoles={['admin']} />}>
           <Route path="/admin" element={<AdminPanel />} />
         </Route>
       </Routes>

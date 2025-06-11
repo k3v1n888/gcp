@@ -18,7 +18,7 @@ function App() {
         <Route path="/unauthorized" element={<Unauthorized />} />
 
         {/* Protected Routes for any logged-in user */}
-        <Route element={<ProtectedRoutes allowedRoles={['user', 'admin']} />}>
+        <Route element={<ProtectedRoutes allowedRoles={['admin', 'user', 'analyst', 'viewer']} />}>
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
         

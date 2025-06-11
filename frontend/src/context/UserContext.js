@@ -1,5 +1,5 @@
-import React, { createContext, useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { useLocation } from 'react-router-dom';
 
 export const UserContext = createContext({
   user: null,
@@ -13,32 +13,38 @@ export function UserProvider({ children }) {
   const location = useLocation();
 
   useEffect(() => {
+    // On every URL change, we re-check the user's status.
     setIsLoading(true);
-    fetch("/api/auth/me", {
-      method: "GET",
-      credentials: "include"
+    
+    fetch('/api/auth/me', {
+      method: 'GET',
+      credentials: 'include',
     })
-      .then((res) => {
+      .then(res => {
         if (res.ok) {
           return res.json();
         }
-        throw new Error("Not authenticated");
+        // If not authenticated, throw an error to be caught below
+        throw new Error('Not authenticated');
       })
-      .then((data) => {
+      .then(data => {
         setUser(data);
       })
       .catch(() => {
+        // If any error occurs (including the 401 Not authenticated), set user to null
         setUser(null);
       })
       .finally(() => {
+        // This always runs, ensuring we don't get stuck in a loading state
         setIsLoading(false);
       });
-  }, [location.pathname]);
+  }, [location.pathname]); // The key: re-run this effect when the URL path changes
 
   return (
-    // --- THIS IS THE FIX: The closing tag was incorrect ---
     <UserContext.Provider value={{ user, setUser, isLoading }}>
       {children}
-    </UserContext.Provider> 
+    </UserContext.Provider>
   );
 }
+
+export const useUser = () => useContext(UserContext);

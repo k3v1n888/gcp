@@ -1,38 +1,34 @@
-// frontend/src/App.jsx
+import React from 'react';
+import { Route, Routes } from 'react-router-dom';
+import { UserProvider } from './context/UserContext';
+import ProtectedRoutes from './components/ProtectedRoutes';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import AdminPanel from './pages/AdminPanel';
+import Unauthorized from './pages/Unauthorized';
 
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import FeedControl from "./pages/FeedControl";
-import AdminPanel from "./pages/AdminPanel";
-import Unauthorized from "./pages/Unauthorized";
-// import Home if you have a public home, otherwise root can redirect:
-import Home from "./pages/Home";
-
-import ProtectedRoutes from "./components/ProtectedRoutes";
-
-export default function App() {
+function App() {
   return (
-    <Router>
+    <UserProvider>
       <Routes>
-        {/* Public routes */}
+        {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
 
-        {/* All private routes go under this wrapper */}
-        <Route element={<ProtectedRoutes />}>
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoutes allowedRoles={['user', 'admin']} />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/feed" element={<FeedControl />} />
-          <Route path="/admin" element={<AdminPanel />} />
-          {/* add other protected routes here */}
         </Route>
-
-        {/* Fallback: redirect everything else to home */}
-        <Route path="*" element={<Navigate to="/" />} />
+        
+        {/* Admin-Only Route */}
+        <Route element={<ProtectedRoutes allowedRoles={['admin']} />}>
+          <Route path="/admin" element={<AdminPanel />} />
+        </Route>
       </Routes>
-    </Router>
+    </UserProvider>
   );
 }
+
+export default App;

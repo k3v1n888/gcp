@@ -6,8 +6,9 @@ const ProtectedRoutes = ({ allowedRoles }) => {
   const { user, isLoading } = useUser();
 
   // 1. While the user's status is being checked, show a loading message.
+  // This is the most important part that prevents the redirect loop.
   if (isLoading) {
-    return <div>Loading authentication...</div>;
+    return <div>Loading...</div>;
   }
 
   // 2. After checking, if there is no user, redirect to the login page.
@@ -20,7 +21,7 @@ const ProtectedRoutes = ({ allowedRoles }) => {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // 4. If all checks pass, show the page they requested.
+  // 4. If all checks pass, show the page they requested (Dashboard, AdminPanel, etc.).
   return <Outlet />;
 };
 

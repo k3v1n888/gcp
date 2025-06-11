@@ -9,6 +9,7 @@ export function UserProvider({ children }) {
   const location = useLocation();
 
   useEffect(() => {
+    // On every URL change, we re-check the user's status.
     setIsLoading(true);
     
     fetch('/api/auth/me', { credentials: 'include' })

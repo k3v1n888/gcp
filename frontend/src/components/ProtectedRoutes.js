@@ -2,27 +2,24 @@ import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 
-const ProtectedRoutes = ({ allowedRoles }) => {
+// This is a simplified version for debugging.
+const ProtectedRoutes = () => {
   const { user, isLoading } = useUser();
 
-  // 1. Wait for the user check to complete
+  // First, we wait until the check is complete.
+  // This is the most important step to prevent the race condition.
   if (isLoading) {
-    return <div>Loading...</div>; // Or a spinner component
+    return <div>Verifying login status...</div>;
   }
 
-  // 2. After loading, check if there is a user and if their role is allowed
-  if (!user) {
-    // If no user, redirect to login
+  // AFTER loading is complete, we decide what to do.
+  if (user) {
+    // If there IS a user, show the requested page (Dashboard, etc.).
+    return <Outlet />;
+  } else {
+    // If there is NO user, redirect to the login page.
     return <Navigate to="/login" replace />;
   }
-
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // If user's role is not allowed, redirect to unauthorized page
-    return <Navigate to="/unauthorized" replace />;
-  }
-  
-  // 3. If all checks pass, render the child route (e.g., Dashboard or AdminPanel)
-  return <Outlet />;
 };
 
 export default ProtectedRoutes;

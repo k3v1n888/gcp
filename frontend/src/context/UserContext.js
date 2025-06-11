@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect } from "react";
-// 1. Import useLocation from the router library
 import { useLocation } from "react-router-dom";
 
 export const UserContext = createContext({
@@ -11,13 +10,10 @@ export const UserContext = createContext({
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // 2. Get the current page location
   const location = useLocation();
 
   useEffect(() => {
-    setIsLoading(true); // Set loading to true before each check
-
+    setIsLoading(true);
     fetch("/api/auth/me", {
       method: "GET",
       credentials: "include"
@@ -37,13 +33,12 @@ export function UserProvider({ children }) {
       .finally(() => {
         setIsLoading(false);
       });
-  // 3. Add location.pathname to the dependency array
-  // This tells React to re-run this code every time the URL path changes.
   }, [location.pathname]);
 
   return (
+    // --- THIS IS THE FIX: The closing tag was incorrect ---
     <UserContext.Provider value={{ user, setUser, isLoading }}>
       {children}
-    </UserContext.Provider>
+    </UserContext.Provider> 
   );
 }

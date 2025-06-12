@@ -1,3 +1,5 @@
+// frontend/src/components/ProtectedRoutes.js
+
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
@@ -6,7 +8,6 @@ const ProtectedRoutes = ({ allowedRoles }) => {
   const { user, isLoading } = useUser();
 
   // 1. While the user's status is being checked, show a loading message.
-  // This is the most important part that prevents the redirect loop.
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -21,7 +22,7 @@ const ProtectedRoutes = ({ allowedRoles }) => {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // 4. If all checks pass, show the page they requested (Dashboard, AdminPanel, etc.).
+  // 4. If all checks pass, show the page they requested.
   return <Outlet />;
 };
 

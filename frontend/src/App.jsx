@@ -4,12 +4,13 @@ import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import ProtectedRoutes from './components/ProtectedRoutes';
+import Layout from './components/Layout'; // <-- Import the new Layout
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
 import Unauthorized from './pages/Unauthorized';
-import AuthSuccess from './pages/AuthSuccess'; // <-- Import the new page
+import AuthSuccess from './pages/AuthSuccess';
 
 function App() {
   return (
@@ -19,14 +20,16 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
-        <Route path="/auth/success" element={<AuthSuccess />} /> {/* <-- Add the new route */}
+        <Route path="/auth/success" element={<AuthSuccess />} />
 
-        {/* Protected Routes */}
-        <Route element={<ProtectedRoutes allowedRoles={['admin', 'user', 'analyst', 'viewer']} />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Route>
-        <Route element={<ProtectedRoutes allowedRoles={['admin']} />}>
-          <Route path="/admin" element={<AdminPanel />} />
+        {/* Protected Routes now wrapped in the Layout */}
+        <Route element={<Layout />}>
+          <Route element={<ProtectedRoutes allowedRoles={['admin', 'user', 'analyst', 'viewer']} />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
+          <Route element={<ProtectedRoutes allowedRoles={['admin']} />}>
+            <Route path="/admin" element={<AdminPanel />} />
+          </Route>
         </Route>
       </Routes>
     </UserProvider>

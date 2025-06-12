@@ -25,6 +25,10 @@ class User(Base):
     role = Column(String, default="viewer")  # viewer, analyst, admin
     tenant_id = Column(Integer, ForeignKey("tenants.id"))
     tenant = relationship("Tenant", back_populates="users")
+    
+    def as_dict(self):
+       """Converts the object to a dictionary."""
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class ThreatLog(Base):
     __tablename__ = "threat_logs"

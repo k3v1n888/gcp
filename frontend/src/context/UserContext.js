@@ -1,17 +1,14 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { useLocation } from 'react-router-dom';
 
 export const UserContext = createContext(null);
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const location = useLocation();
 
   useEffect(() => {
-    // On every URL change, we re-check the user's status.
-    setIsLoading(true);
-    
+    // This effect will now only run ONCE when the component first mounts.
+    // It will not re-run on page navigation, which will break the loop.
     fetch('/api/auth/me', { credentials: 'include' })
       .then(res => {
         if (res.ok) {
@@ -23,7 +20,7 @@ export function UserProvider({ children }) {
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false));
       
-  }, [location.pathname]); // This dependency array is the key to the fix.
+  }, []); // <-- This empty array is the critical change.
 
   return (
     <UserContext.Provider value={{ user, setUser, isLoading }}>

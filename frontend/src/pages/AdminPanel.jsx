@@ -8,7 +8,8 @@ export default function AdminPanel() {
 
   useEffect(() => {
     if (user?.role !== 'admin') return;
-    fetch('/api/admin/settings')
+    // VVV MODIFY THIS LINE VVV
+    fetch('/api/admin/settings?local_kw=') // Add the required query parameter
       .then(res => res.json())
       .then(data => setSeverity(data.alert_severity))
       .catch(() => setMessage('Failed to load settings'));

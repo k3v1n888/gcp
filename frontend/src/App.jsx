@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
 import Unauthorized from './pages/Unauthorized';
+import AuthSuccess from './pages/AuthSuccess'; // <-- Import the new page
 
 function App() {
   return (
@@ -18,13 +19,12 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/auth/success" element={<AuthSuccess />} /> {/* <-- Add the new route */}
 
-        {/* Protected Routes for any logged-in user */}
+        {/* Protected Routes */}
         <Route element={<ProtectedRoutes allowedRoles={['admin', 'user', 'analyst', 'viewer']} />}>
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
-        
-        {/* Admin-Only Protected Route */}
         <Route element={<ProtectedRoutes allowedRoles={['admin']} />}>
           <Route path="/admin" element={<AdminPanel />} />
         </Route>

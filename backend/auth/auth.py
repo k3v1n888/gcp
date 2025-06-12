@@ -1,152 +1,95 @@
+# backend/auth/auth.py
+
 import os
-import uuid
-from typing import Optional
+from fastapi import APIRouter, Request, Depends
+from fastapi.responses import RedirectResponse
+from authlib.integrations.starlette_client import OAuth
+from backend.models import User, Tenant
+from backend.database import get_db
 
-from fastapi import APIRouter, Request, HTTPException, Depends
-from fastapi.responses import RedirectResponse, JSONResponse
-from sqlalchemy.orm import Session
+router = APIRouter()
+oauth = OAuth()
 
-# Google's ID-token verification
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
-import httpx
-
-# --- NEW: Import database models and session ---
-from backend.models import SessionLocal, User, Tenant
-
-router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-# --- NEW: Database dependency ---
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# Environment variables
-GOOGLE_CLIENT_ID     = os.getenv("GOOGLE_CLIENT_ID")
+# This should match your setup
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI  = os.getenv("GOOGLE_REDIRECT_URI")
-SESSION_SECRET_KEY   = os.getenv("SESSION_SECRET_KEY", "change_this_to_a_real_random_secret")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://quantum-ai.asia")
 
-if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI]):
-    raise RuntimeError(
-        "Missing one of GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REDIRECT_URI"
-    )
-
-@router.get("/login")
-def login(request: Request):
-    state = str(uuid.uuid4())
-    request.session["oauth_state"] = state
-    # ... (rest of the function is unchanged)
-    oauth_params = {
-        "client_id":     GOOGLE_CLIENT_ID,
-        "redirect_uri":  GOOGLE_REDIRECT_URI,
-        "response_type": "code",
-        "scope":         "openid email profile",
-        "state":         state,
-        "access_type":   "offline",
-        "prompt":        "select_account",
+oauth.register(
+    name='google',
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={
+        'scope': 'openid email profile'
     }
-    google_auth_url = "https://accounts.google.com/o/oauth2/v2/auth"
-    url = google_auth_url + "?" + "&".join(
-        f"{key}={value}" for key, value in oauth_params.items()
-    )
-    return RedirectResponse(url)
+)
 
+@router.get('/api/auth/login')
+async def login(request: Request):
+    redirect_uri = f"{FRONTEND_URL}/api/auth/callback"
+    return await oauth.google.authorize_redirect(request, redirect_uri)
 
-@router.get("/callback")
-async def oauth2_callback(
-    request: Request,
-    db: Session = Depends(get_db), # <-- MODIFIED: Add database dependency
-    code: Optional[str] = None,
-    state: Optional[str] = None
-):
-    # ... (existing OAuth state and token exchange logic is unchanged) ...
-    saved_state = request.session.get("oauth_state")
-    if not code or not state or state != saved_state:
-        raise HTTPException(status_code=400, detail="Invalid OAuth state")
-
-    token_endpoint = "https://oauth2.googleapis.com/token"
-    data = {
-        "code":          code,
-        "client_id":     GOOGLE_CLIENT_ID,
-        "client_secret": GOOGLE_CLIENT_SECRET,
-        "redirect_uri":  GOOGLE_REDIRECT_URI,
-        "grant_type":    "authorization_code",
-    }
-    async with httpx.AsyncClient() as client:
-        token_resp = await client.post(token_endpoint, data=data)
-
-    if token_resp.status_code != 200:
-        raise HTTPException(status_code=400, detail="Failed to exchange code for tokens")
-
-    tokens = token_resp.json()
-    id_token_str = tokens.get("id_token")
-    if not id_token_str:
-        raise HTTPException(status_code=400, detail="No ID token from Google")
-
+@router.get('/api/auth/callback')
+async def auth_callback(request: Request, db=Depends(get_db)):
     try:
-        idinfo = id_token.verify_oauth2_token(
-            id_token_str, google_requests.Request(), GOOGLE_CLIENT_ID
+        token = await oauth.google.authorize_access_token(request)
+        user_info = token.get('userinfo')
+        if not user_info:
+            raise Exception("No user info found")
+
+        email = user_info.get('email')
+        user = db.query(User).filter(User.email == email).first()
+
+        if not user:
+            # Create a default tenant for the new user
+            tenant = Tenant(name=f"{user_info.get('name')}'s Tenant")
+            db.add(tenant)
+            db.commit()
+            db.refresh(tenant)
+            
+            user = User(
+                name=user_info.get('name'),
+                email=email,
+                picture=user_info.get('picture'),
+                role='admin',  # Default role for new users
+                tenant_id=tenant.id
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        request.session['user'] = user.as_dict()
+        request.session['id_token'] = token['id_token']
+        
+        # --- THIS IS THE CHANGE ---
+        # Instead of going to /dashboard, we go to a special frontend route.
+        response = RedirectResponse(url="/auth/success") 
+        
+        response.set_cookie(
+            key="session",
+            value=token['id_token'],
+            httponly=True,
+            samesite="none",
+            secure=True,
         )
-    except ValueError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid ID token: {e}")
+        return response
+    except Exception as e:
+        print(f"Error during auth callback: {e}")
+        return RedirectResponse(url="/login?error=auth_failed")
 
-    email = idinfo.get("email")
-    name = idinfo.get("name")
-    picture = idinfo.get("picture")
-
-    if not email:
-        raise HTTPException(status_code=400, detail="ID token missing email")
-
-    # --- NEW: Find or Create User in Database ---
-    db_user = db.query(User).filter(User.email == email).first()
-
-    if not db_user:
-        # Create a new Tenant for the new user
-        new_tenant = Tenant(name=f"{name}'s Organization")
-        db.add(new_tenant)
-        db.commit()
-        db.refresh(new_tenant)
-
-        # Create the new User and make them an admin of their new tenant
-        db_user = User(
-            username=name,
-            email=email,
-            role="admin",
-            tenant_id=new_tenant.id
-        )
-        db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
-    # --- END NEW BLOCK ---
-
-    # --- MODIFIED: Save user info to session from the database record ---
-    request.session.clear()
-    request.session["user"] = {
-        "id": db_user.id,
-        "name": db_user.username,
-        "email": db_user.email,
-        "picture": picture,
-        "role": db_user.role,
-        "tenant_id": db_user.tenant_id
-    }
-
-    # Redirect back to React root
-    return RedirectResponse(url="/")
-
-
-@router.get("/me")
+@router.get("/api/auth/me")
 def get_current_user(request: Request):
-    user = request.session.get("user")
-    if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    return JSONResponse(content=user)
+    user = request.session.get('user')
+    if user:
+        return user
+    return None
 
+@router.post("/api/auth/logout")
+async def logout(request: Request):
+    request.session.pop('user', None)
+    request.session.pop('id_token', None)
+    response = RedirectResponse(url="/")
+    response.delete_cookie("session")
+    return response
 
-@router.get("/logout")
-def logout(request: Request):
-    request.session.clear()
-    return RedirectResponse(url="/")

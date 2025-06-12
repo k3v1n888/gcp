@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from backend.models import User, Tenant
-from backend.models import get_db
+from backend.database import get_db
 
 router = APIRouter()
 oauth = OAuth()

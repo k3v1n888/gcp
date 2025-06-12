@@ -26,7 +26,7 @@ export default function Dashboard() {
       });
 
     // WebSocket for live updates
-    const socket = new WebSocket(`ws://${window.location.hostname}/ws/threats`);
+    const socket = new WebSocket(`wss://${window.location.hostname}/ws/threats`);
     socket.onmessage = (event) => {
       const newLog = JSON.parse(event.data);
       setLogs((prev) => [newLog, ...prev]);

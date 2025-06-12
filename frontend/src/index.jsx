@@ -5,9 +5,10 @@ import App from './App';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  // By commenting out StrictMode, we simplify the rendering cycle for this final debug step.
+  // <React.StrictMode>
     <BrowserRouter>
       <App />
     </BrowserRouter>
-  </React.StrictMode>
+  // </React.StrictMode>
 );

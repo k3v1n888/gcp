@@ -17,7 +17,8 @@ from backend.alerting import router as alert_router
 from backend.analytics import router as analytics_router
 from backend.slack_alert import router as slack_router
 # --- NEW ---
-from backend.correlation import router as correlation_router 
+from backend.correlation import router as correlation_router
+from backend.routers.log_receiver import router as log_receiver_router
 from backend.models import Base, engine
 
 app = FastAPI()
@@ -59,7 +60,8 @@ app.include_router(ws_router)
 app.include_router(alert_router)
 app.include_router(analytics_router)
 app.include_router(slack_router)
-app.include_router(correlation_router) # <-- ADDED
+app.include_router(correlation_router)
+app.include_router(log_receiver_router)
 
 @app.get("/_fastapi_health")
 def fastapi_health():

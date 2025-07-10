@@ -6,7 +6,7 @@ from google.cloud import storage
 
 class SeverityPredictor:
     def __init__(self):
-        self.bucket_name = "quantum-ai-threat-lake-raw"
+        self.bucket_name = "quantum-ai-threat-lake-us"
         self.model_blob_name = "models/severity_model.pkl" # Path in GCS
         self.local_model_path = "/tmp/severity_model.pkl" # Temp path inside the container
         self.model = self._load_model()

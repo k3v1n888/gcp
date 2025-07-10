@@ -1,12 +1,12 @@
 # backend/routers/log_receiver.py
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request # <-- CHANGE: Import Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-import logging # <-- Import the logging library
+import logging
 
+# --- CHANGE: The import path for models, etc., has been corrected, and the direct predictor import is removed ---
 from backend import models, database, schemas
-from backend.ml.prediction import severity_predictor
 
 # --- Configure logging ---
 logger = logging.getLogger(__name__)
@@ -19,18 +19,21 @@ class ThreatCreate(BaseModel):
 
 router = APIRouter()
 
+# --- CHANGE: Add `request: Request` to the function signature ---
 @router.post("/api/log_threat", response_model=schemas.ThreatLog, status_code=201)
-def log_threat_endpoint(threat: ThreatCreate, db: Session = Depends(database.get_db)):
+def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Session = Depends(database.get_db)):
     # Create the initial log record
     db_log = models.ThreatLog(**threat.dict(), severity="unknown")
     db.add(db_log)
     db.commit()
     db.refresh(db_log)
 
-    # --- NEW: Use a try/except block for the prediction ---
     try:
+        # --- CHANGE: Get the predictor from the application state ---
+        predictor = request.app.state.predictor
+        
         # Use the ML model to predict the severity
-        predicted_severity = severity_predictor.predict(
+        predicted_severity = predictor.predict(
             threat=db_log.threat,
             source=db_log.source
         )
@@ -44,5 +47,5 @@ def log_threat_endpoint(threat: ThreatCreate, db: Session = Depends(database.get
         # If prediction fails, log the error but don't crash the request
         logger.error(f"Failed to predict severity for log ID {db_log.id}: {e}")
 
-    # Return the log record (it will have "unknown" severity if prediction failed)
+    # Return the log record
     return db_log

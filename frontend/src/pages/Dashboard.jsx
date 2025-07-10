@@ -3,6 +3,27 @@ import { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../context/UserContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
+// --- NEW: A helper component to create colored badges for severity ---
+const SeverityBadge = ({ severity }) => {
+  const severityStyles = {
+    critical: 'bg-red-600 text-white',
+    high: 'bg-orange-500 text-white',
+    medium: 'bg-yellow-400 text-black',
+    low: 'bg-blue-500 text-white',
+    unknown: 'bg-gray-400 text-white',
+  };
+
+  // Ensure severity is a string before calling toLowerCase
+  const severityKey = typeof severity === 'string' ? severity.toLowerCase() : 'unknown';
+
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${severityStyles[severityKey] || severityStyles.unknown}`}>
+      {severity}
+    </span>
+  );
+};
+
+
 export default function Dashboard() {
   const { user } = useContext(UserContext);
   const [logs, setLogs] = useState([]);
@@ -43,6 +64,7 @@ export default function Dashboard() {
 
       {(user?.role === 'admin' || user?.role === 'analyst') && (
         <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Charts section remains the same */}
           <div>
             <h2 className="text-lg font-semibold">Threats by Type</h2>
             {analytics && (
@@ -79,22 +101,28 @@ export default function Dashboard() {
 
       <h2 className="text-lg font-semibold mb-2">Recent Threat Logs</h2>
       <div className="overflow-x-auto">
-        <table className="min-w-full border text-sm">
-          <thead>
-            <tr className="bg-gray-200 text-left">
-              <th className="px-2 py-1">IP</th>
-              <th className="px-2 py-1">Threat</th>
-              <th className="px-2 py-1">Source</th>
-              <th className="px-2 py-1">Timestamp</th>
+        <table className="min-w-full border text-sm bg-white shadow-md rounded-lg">
+          <thead className="bg-gray-200">
+            <tr className="text-left">
+              <th className="px-3 py-2">IP</th>
+              <th className="px-3 py-2">Threat</th>
+              <th className="px-3 py-2">Source</th>
+              {/* --- 1. ADD THE SEVERITY HEADER --- */}
+              <th className="px-3 py-2">Severity</th>
+              <th className="px-3 py-2">Timestamp</th>
             </tr>
           </thead>
           <tbody>
             {logs.map((log, idx) => (
-              <tr key={idx} className="border-t">
-                <td className="px-2 py-1">{log.ip}</td>
-                <td className="px-2 py-1">{log.threat}</td>
-                <td className="px-2 py-1">{log.source}</td>
-                <td className="px-2 py-1">{new Date(log.timestamp).toLocaleString()}</td>
+              <tr key={idx} className="border-t hover:bg-gray-50">
+                <td className="px-3 py-2 font-mono">{log.ip}</td>
+                <td className="px-3 py-2">{log.threat}</td>
+                <td className="px-3 py-2">{log.source}</td>
+                {/* --- 2. ADD THE SEVERITY DATA CELL --- */}
+                <td className="px-3 py-2">
+                  <SeverityBadge severity={log.severity} />
+                </td>
+                <td className="px-3 py-2">{new Date(log.timestamp).toLocaleString()}</td>
               </tr>
             ))}
           </tbody>

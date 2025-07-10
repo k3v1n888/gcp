@@ -13,7 +13,6 @@ class SeverityPredictor:
         self.local_model_path = "/tmp/severity_model.pkl"
         self.model = self._load_model()
         
-        # --- NEW: Log the final status of the model after loading ---
         if self.model:
             print(f"✅ Predictor initialized. Model type: {type(self.model)}")
         else:
@@ -22,7 +21,6 @@ class SeverityPredictor:
     def _load_model(self):
         """Downloads the model from GCS and verifies it's fitted."""
         try:
-            # ... (download code is the same) ...
             storage_client = storage.Client()
             bucket = storage_client.bucket(self.bucket_name)
             blob = bucket.blob(self.model_blob_name)
@@ -31,7 +29,6 @@ class SeverityPredictor:
             model = joblib.load(self.local_model_path)
             print(f"--- Model file loaded. Object type: {type(model)} ---")
             
-            # --- NEW: More detailed verification ---
             try:
                 vectorizer = model.named_steps['tfidfvectorizer']
                 print(f"--- Vectorizer step found. Type: {type(vectorizer)} ---")
@@ -54,4 +51,5 @@ class SeverityPredictor:
         prediction = self.model.predict([text_feature])
         return prediction[0]
 
-severity_predictor = SeverityPredictor()
+# --- CHANGE: The line below has been deleted ---
+# severity_predictor = SeverityPredictor()

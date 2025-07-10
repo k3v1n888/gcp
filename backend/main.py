@@ -16,19 +16,25 @@ from backend.app.websocket.threats import router as ws_router
 from backend.alerting import router as alert_router
 from backend.analytics import router as analytics_router
 from backend.slack_alert import router as slack_router
-# --- NEW ---
 from backend.correlation import router as correlation_router
 from backend.routers.log_receiver import router as log_receiver_router
 from backend.models import Base, engine
+
+# --- CHANGE: Import the predictor class ---
+from backend.ml.prediction import SeverityPredictor
 
 app = FastAPI()
 
 @app.on_event("startup")
 def on_startup():
-    # This will create the "users", "tenants", and "threat_logs" tables if they don't exist
+    # This will create the database tables if they don't exist
     Base.metadata.create_all(bind=engine)
+    
+    # --- CHANGE: Create the predictor instance and attach it to the app state ---
+    # This ensures the model is loaded only once when the application starts.
+    app.state.predictor = SeverityPredictor()
 
-# 1) Session middleware
+# --- (Middleware configuration remains the same) ---
 SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")
 app.add_middleware(
     SessionMiddleware,
@@ -37,8 +43,6 @@ app.add_middleware(
     same_site="none",
     max_age=86400
 )
-
-# 2) CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -50,7 +54,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 3) Include all the routers
+# --- (Routers remain the same) ---
 app.include_router(auth_router)
 app.include_router(feed_router)
 app.include_router(agents_router)
@@ -66,5 +70,3 @@ app.include_router(log_receiver_router)
 @app.get("/_fastapi_health")
 def fastapi_health():
     return {"status": "ok"}
-
-# The _debug_env endpoint has been removed for security.

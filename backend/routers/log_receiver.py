@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-# Adjust these imports to match your project structure
-from .. import models, database
-from ..ml.prediction import severity_predictor # We will use this later
+# --- IMPORTS ADJUSTED TO MATCH YOUR PROJECT STRUCTURE ---
+from backend import models, database, schemas
+from backend.ml.prediction import severity_predictor
 
 class ThreatCreate(BaseModel):
     ip: str
@@ -16,11 +16,24 @@ class ThreatCreate(BaseModel):
 
 router = APIRouter()
 
-@router.post("/api/log_threat", response_model=models.ThreatLog, status_code=201)
+@router.post("/api/log_threat", response_model=schemas.ThreatLog, status_code=201)
 def log_threat_endpoint(threat: ThreatCreate, db: Session = Depends(database.get_db)):
-    # This is the logic that will eventually use the ML model
+    # Create the initial log with a default severity
     db_log = models.ThreatLog(**threat.dict(), severity="unknown")
     db.add(db_log)
     db.commit()
     db.refresh(db_log)
+
+    # Use the ML model to predict the severity
+    predicted_severity = severity_predictor.predict(
+        threat=db_log.threat, 
+        source=db_log.source
+    )
+
+    # Update the log with the model's prediction
+    db_log.severity = predicted_severity
+    db.commit()
+    db.refresh(db_log)
+    
+    # Return the final, updated log record
     return db_log

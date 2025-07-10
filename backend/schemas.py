@@ -3,7 +3,7 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
-# This is the Pydantic model for API responses
+# This is the Pydantic model for the ThreatLog API responses
 class ThreatLog(BaseModel):
     id: int
     ip: str | None = None
@@ -13,6 +13,13 @@ class ThreatLog(BaseModel):
     timestamp: datetime
     tenant_id: int
 
-    # This special configuration tells Pydantic to read the data
-    # from the SQLAlchemy object's attributes.
+    model_config = ConfigDict(from_attributes=True)
+
+
+# --- ADD THIS NEW CLASS ---
+# This is the Pydantic model for the SystemSettings API responses
+class SystemSettings(BaseModel):
+    id: int
+    alert_severity: str
+
     model_config = ConfigDict(from_attributes=True)

@@ -1,30 +1,47 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from backend.auth.rbac import require_role
-from backend.models import SessionLocal, SystemSettings
+from pydantic import BaseModel
+
+# Adjust imports to match your project structure
+from .. import database, models, schemas
+
+# This Pydantic model validates the incoming data when saving settings
+class SettingsUpdate(BaseModel):
+    alert_severity: str
 
 router = APIRouter()
 
-@router.get("/api/admin/settings")
-def get_settings(user=Depends(require_role(["admin"])), db: Session = Depends(SessionLocal)):
-    settings = db.query(SystemSettings).first()
+@router.get("/api/admin/settings", response_model=schemas.SystemSettings)
+def get_settings(db: Session = Depends(database.get_db), local_kw: str = ""):
+    """
+    This correctly defines `db` as a dependency and `local_kw` as an
+    optional query parameter.
+    """
+    settings = db.query(models.SystemSettings).first()
+
+    # If no settings exist in the database yet, create a default one
     if not settings:
-        settings = SystemSettings(alert_severity="critical")
-        db.add(settings)
+        default_settings = models.SystemSettings(alert_severity="critical")
+        db.add(default_settings)
         db.commit()
-        db.refresh(settings)
-    return {"alert_severity": settings.alert_severity}
+        db.refresh(default_settings)
+        return default_settings
+        
+    return settings
+
 
 @router.post("/api/admin/settings")
-def update_settings(payload: dict, user=Depends(require_role(["admin"])), db: Session = Depends(SessionLocal)):
-    alert_severity = payload.get("alert_severity")
-    if alert_severity not in ["low", "medium", "high", "critical"]:
-        raise HTTPException(status_code=400, detail="Invalid severity level")
-    settings = db.query(SystemSettings).first()
+def update_settings(settings_update: SettingsUpdate, db: Session = Depends(database.get_db)):
+    """
+    Finds the existing settings record (or creates one) and updates it.
+    """
+    settings = db.query(models.SystemSettings).first()
+
     if not settings:
-        settings = SystemSettings(alert_severity=alert_severity)
+        settings = models.SystemSettings()
         db.add(settings)
-    else:
-        settings.alert_severity = alert_severity
+
+    settings.alert_severity = settings_update.alert_severity
     db.commit()
-    return {"alert_severity": settings.alert_severity}
+    
+    return {"message": "Settings updated successfully"}

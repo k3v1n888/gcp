@@ -29,3 +29,4 @@ Authlib
 joblib
 google-cloud-storage
 pydantic-settings
+PyYAML>=6.0.1

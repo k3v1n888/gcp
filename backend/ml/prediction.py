@@ -12,23 +12,30 @@ class SeverityPredictor:
         self.model_blob_name = "models/severity_model.pkl"
         self.local_model_path = "/tmp/severity_model.pkl"
         self.model = self._load_model()
+        
+        # --- NEW: Log the final status of the model after loading ---
+        if self.model:
+            print(f"✅ Predictor initialized. Model type: {type(self.model)}")
+        else:
+            print("❌ Predictor initialized, but model is not available.")
 
     def _load_model(self):
         """Downloads the model from GCS and verifies it's fitted."""
         try:
+            # ... (download code is the same) ...
             storage_client = storage.Client()
             bucket = storage_client.bucket(self.bucket_name)
             blob = bucket.blob(self.model_blob_name)
-
-            print(f"Downloading model from gs://{self.bucket_name}/{self.model_blob_name}...")
             blob.download_to_filename(self.local_model_path)
             
             model = joblib.load(self.local_model_path)
-            print("Model file loaded from GCS.")
+            print(f"--- Model file loaded. Object type: {type(model)} ---")
             
-            # --- NEW: Verify the loaded model ---
+            # --- NEW: More detailed verification ---
             try:
-                check_is_fitted(model.named_steps['tfidfvectorizer'])
+                vectorizer = model.named_steps['tfidfvectorizer']
+                print(f"--- Vectorizer step found. Type: {type(vectorizer)} ---")
+                check_is_fitted(vectorizer)
                 print("✅ Model integrity check PASSED: Loaded model is fitted.")
                 return model
             except NotFittedError as e:
@@ -36,11 +43,10 @@ class SeverityPredictor:
                 return None
             
         except Exception as e:
-            print(f"❌ Warning: Failed to load model from GCS. Prediction will be disabled. Error: {e}")
+            print(f"❌ CRITICAL ERROR: An exception occurred during model loading. Error: {e}")
             return None
 
     def predict(self, threat: str, source: str) -> str:
-        """Predicts the severity of a threat log."""
         if not self.model:
             return "unknown"
         
@@ -48,5 +54,4 @@ class SeverityPredictor:
         prediction = self.model.predict([text_feature])
         return prediction[0]
 
-# Create a single instance for the app to use
 severity_predictor = SeverityPredictor()

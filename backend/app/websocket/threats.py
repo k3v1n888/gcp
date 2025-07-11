@@ -6,7 +6,7 @@ router = APIRouter()
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
+        self.active_connections: list[WebSocket] = []
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -15,13 +15,11 @@ class ConnectionManager:
     def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
 
-    async def broadcast(self, message: dict):
-        data = json.dumps(message)
+    async def broadcast_json(self, data: dict):
+        """ Encodes dict to JSON and broadcasts it to all clients. """
+        message = json.dumps(data, default=str) # Use default=str to handle datetimes
         for connection in self.active_connections:
-            try:
-                await connection.send_text(data)
-            except:
-                pass
+            await connection.send_text(message)
 
 manager = ConnectionManager()
 
@@ -30,6 +28,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
+            # Keep connection alive, waiting for client to disconnect
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)

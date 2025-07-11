@@ -9,7 +9,7 @@ from . import models
 
 def get_ip_reputation(ip: str) -> int:
     """Gets the abuse confidence score for an IP from AbuseIPDB."""
-    api_key = os.getenv("135f82fe285bc60da1bf9a0b81da71d4b4ec4ede4ec02a5d4c1411e1d603509dde7bd458661a2884")
+    api_key = os.getenv("ABUSEIPDB_API_KEY")
     if not api_key:
         return 0
 
@@ -95,7 +95,7 @@ def generate_holistic_summary(db: Session, tenant_id: int) -> str:
         prompt += f"- {log.threat} from {log.source} (IP: {log.ip})\n"
     
     # --- Actual LLM API Call ---
-    openai.api_key = os.getenv("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")
+    openai.api_key = os.getenv("OPENAI_API_KEY")
     if not openai.api_key:
         return "OpenAI API key not configured. Cannot generate summary."
 

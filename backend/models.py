@@ -46,6 +46,16 @@ class SystemSettings(Base):
     id = Column(Integer, primary_key=True)
     alert_severity = Column(String, default="critical")
 
+class CorrelatedThreat(Base):
+    __tablename__ = "correlated_threats"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    summary = Column(Text, nullable=True)
+    cve_id = Column(String, nullable=True)
+    risk_score = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    tenant_id = Column(Integer, ForeignKey("tenants.id"))
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

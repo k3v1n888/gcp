@@ -2,8 +2,9 @@
 import { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../context/UserContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import AISummary from '../components/AISummary'; // <-- 1. IMPORT THE NEW COMPONENT
 
-// --- NEW: A helper component to create colored badges for severity ---
+// --- A helper component to create colored badges for severity ---
 const SeverityBadge = ({ severity }) => {
   const severityStyles = {
     critical: 'bg-red-600 text-white',
@@ -62,6 +63,9 @@ export default function Dashboard() {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Threat Dashboard</h1>
 
+      {/* --- 2. ADD THE AI SUMMARY WIDGET HERE --- */}
+      <AISummary />
+
       {(user?.role === 'admin' || user?.role === 'analyst') && (
         <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Charts section remains the same */}
@@ -107,7 +111,6 @@ export default function Dashboard() {
               <th className="px-3 py-2">IP</th>
               <th className="px-3 py-2">Threat</th>
               <th className="px-3 py-2">Source</th>
-              {/* --- 1. ADD THE SEVERITY HEADER --- */}
               <th className="px-3 py-2">Severity</th>
               <th className="px-3 py-2">Timestamp</th>
             </tr>
@@ -118,7 +121,6 @@ export default function Dashboard() {
                 <td className="px-3 py-2 font-mono">{log.ip}</td>
                 <td className="px-3 py-2">{log.threat}</td>
                 <td className="px-3 py-2">{log.source}</td>
-                {/* --- 2. ADD THE SEVERITY DATA CELL --- */}
                 <td className="px-3 py-2">
                   <SeverityBadge severity={log.severity} />
                 </td>

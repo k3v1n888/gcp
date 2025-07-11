@@ -38,6 +38,10 @@ class SeverityPredictor:
                 vocab = json.load(f)
             vectorizer = TfidfVectorizer(vocabulary=vocab)
             
+            # --- THIS IS THE FINAL FIX ---
+            # Force the vectorizer to build its internal IDF states.
+            vectorizer.fit_transform(['dummy text to initialize'])
+
             # Load params and create classifier
             with open(params_path, 'r') as f:
                 params = json.load(f)
@@ -48,7 +52,7 @@ class SeverityPredictor:
             classifier.intercept_ = np.array(params['intercept'])
             classifier.coef_ = np.array(params['coef'])
 
-            # Return a dictionary containing the two rebuilt components
+            print("✅ Vectorizer and Classifier rebuilt successfully.")
             return {'vectorizer': vectorizer, 'classifier': classifier}
 
         except Exception as e:
@@ -65,7 +69,6 @@ class SeverityPredictor:
         text_feature = self._clean_text(f"{threat} {source}")
         
         try:
-            # Use the rebuilt components to predict
             vectorized_text = self.model['vectorizer'].transform([text_feature])
             prediction = self.model['classifier'].predict(vectorized_text)
             return prediction[0]

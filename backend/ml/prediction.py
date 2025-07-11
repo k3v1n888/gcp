@@ -24,6 +24,7 @@ class SeverityPredictor:
             storage_client = storage.Client()
             bucket = storage_client.bucket(self.bucket_name)
             blob = bucket.blob(self.model_blob_name)
+            print(f"Downloading model from gs://{self.bucket_name}/{self.model_blob_name}...")
             blob.download_to_filename(self.local_model_path)
             
             model = joblib.load(self.local_model_path)
@@ -42,14 +43,19 @@ class SeverityPredictor:
         except Exception as e:
             print(f"❌ CRITICAL ERROR: An exception occurred during model loading. Error: {e}")
             return None
+    
+    # --- NEW: A consistent cleaning function ---
+    def _clean_text(self, text: str) -> str:
+        """Converts text to lowercase and removes leading/trailing whitespace."""
+        return str(text).strip().lower()
 
     def predict(self, threat: str, source: str) -> str:
+        """Predicts the severity of a threat log."""
         if not self.model:
             return "unknown"
         
-        text_feature = f"{threat} {source}"
+        # Apply the same cleaning function before prediction
+        text_feature = self._clean_text(f"{threat} {source}")
+        
         prediction = self.model.predict([text_feature])
         return prediction[0]
-
-# --- CHANGE: The line below has been deleted ---
-# severity_predictor = SeverityPredictor()

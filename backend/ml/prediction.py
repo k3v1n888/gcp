@@ -18,41 +18,40 @@ class SeverityPredictor:
             print("❌ Predictor initialized, but model is not available.")
 
     def _download_from_gcs(self, blob_name, destination_path):
-        """Helper function to download a file from GCS."""
         storage_client = storage.Client()
         bucket = storage_client.bucket(self.bucket_name)
         blob = bucket.blob(blob_name)
         blob.download_to_filename(destination_path)
 
     def _load_and_rebuild_model(self):
-        """Downloads JSON files and rebuilds the model objects."""
         try:
-            # Download model files
             vocab_path = "/tmp/vocabulary.json"
             params_path = "/tmp/model_params.json"
             self._download_from_gcs("models/vocabulary.json", vocab_path)
             self._download_from_gcs("models/model_params.json", params_path)
 
-            # Load vocabulary and create vectorizer
             with open(vocab_path, 'r') as f:
                 vocab = json.load(f)
             vectorizer = TfidfVectorizer(vocabulary=vocab)
             
-            # --- THIS IS THE FINAL FIX ---
-            # Force the vectorizer to build its internal IDF states.
-            vectorizer.fit_transform(['dummy text to initialize'])
-
-            # Load params and create classifier
             with open(params_path, 'r') as f:
                 params = json.load(f)
             classifier = LogisticRegression()
             
-            # Manually set the learned parameters
             classifier.classes_ = np.array(params['classes'])
             classifier.intercept_ = np.array(params['intercept'])
-            classifier.coef_ = np.array(params['coef'])
+            
+            # --- THIS IS THE FINAL FIX ---
+            # Reshape the coefficients to match the vocabulary size and classes
+            n_features = len(vocab)
+            n_classes = len(params['classes'])
+            expected_shape = (n_classes, n_features) if n_classes > 2 else (1, n_features)
+            classifier.coef_ = np.array(params['coef']).reshape(expected_shape)
+            
+            # Fit the vectorizer on dummy data to finalize its state
+            vectorizer.fit(["dummy text"])
 
-            print("✅ Vectorizer and Classifier rebuilt successfully.")
+            print("✅ Vectorizer and Classifier rebuilt and synchronized successfully.")
             return {'vectorizer': vectorizer, 'classifier': classifier}
 
         except Exception as e:
@@ -73,5 +72,6 @@ class SeverityPredictor:
             prediction = self.model['classifier'].predict(vectorized_text)
             return prediction[0]
         except Exception as e:
-            print(f"Prediction failed: {e}")
+            # This will catch any remaining prediction errors
+            print(f"Prediction failed for text '{text_feature}': {e}")
             return "unknown"

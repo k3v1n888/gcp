@@ -1,8 +1,8 @@
-# backend/correlation_service.py
 import os
 import requests
 import openai
 from sqlalchemy.orm import Session
+from sqlalchemy import func  # <-- 1. Import 'func' from SQLAlchemy
 from . import models
 
 # --- External API Functions ---
@@ -38,11 +38,14 @@ def find_cve_for_threat(threat_text: str) -> str | None:
 def correlate_and_enrich_threats(db: Session, tenant_id: int):
     """Groups threats by description, enriches them, and saves them."""
     # Find recent, common threats that haven't been correlated yet
-    common_threats = db.query(models.ThreatLog.threat)\
-        .filter(models.ThreatLog.tenant_id == tenant_id)\
-        .group_by(models.ThreatLog.threat)\
-        .having(db.func.count(models.ThreatLog.threat) > 1)\
-        .limit(10).all()
+    common_threats = (
+        db.query(models.ThreatLog.threat)
+        .filter(models.ThreatLog.tenant_id == tenant_id)
+        .group_by(models.ThreatLog.threat)
+        .having(func.count(models.ThreatLog.threat) > 1) # <-- 2. Use the imported 'func' here
+        .limit(10)
+        .all()
+    )
 
     for threat_tuple in common_threats:
         threat_desc = threat_tuple[0]
@@ -54,9 +57,12 @@ def correlate_and_enrich_threats(db: Session, tenant_id: int):
 
         cve_id = find_cve_for_threat(threat_desc)
         
-        associated_ips = db.query(models.ThreatLog.ip)\
-            .filter(models.ThreatLog.threat == threat_desc, models.ThreatLog.tenant_id == tenant_id)\
-            .distinct().all()
+        associated_ips = (
+            db.query(models.ThreatLog.ip)
+            .filter(models.ThreatLog.threat == threat_desc, models.ThreatLog.tenant_id == tenant_id)
+            .distinct()
+            .all()
+        )
         
         highest_risk_score = 0
         for ip_tuple in associated_ips:

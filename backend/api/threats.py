@@ -23,7 +23,13 @@ def get_threat_logs(
     response.headers["Expires"] = "0"
 
     # Query the database for the logs
-    logs = db.query(models.ThreatLog)\
-             .filter(models.ThreatLog.tenant_id == user.tenant_id)\
-             .order_by(models.ThreatLog.timestamp.desc())\
-             .limit(1
+    logs = (
+        db.query(models.ThreatLog)
+        .filter(models.ThreatLog.tenant_id == user.tenant_id)
+        .order_by(models.ThreatLog.timestamp.desc())
+        .limit(100) # Assuming you wanted to limit to 100 logs
+        .all()      # <-- 1. This was missing to execute the query
+    )
+    
+    # --- 2. THIS WAS MISSING TO RETURN THE DATA ---
+    return logs

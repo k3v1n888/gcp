@@ -1,8 +1,10 @@
 # backend/schemas.py
 
-from pydantic import BaseModel, ConfigDict
+# --- CHANGE: Remove ConfigDict from the import ---
+from pydantic import BaseModel
 from datetime import datetime
 
+# This is the Pydantic model for the ThreatLog API responses
 class ThreatLog(BaseModel):
     id: int
     ip: str | None = None
@@ -11,14 +13,18 @@ class ThreatLog(BaseModel):
     severity: str
     timestamp: datetime
     tenant_id: int
-    
-    # --- ADD THIS NEW FIELD ---
     ip_reputation_score: int | None = None
 
-    model_config = ConfigDict(from_attributes=True)
+    # --- CHANGE: Use Pydantic V1 Config style ---
+    class Config:
+        orm_mode = True
 
+
+# This is the Pydantic model for the SystemSettings API responses
 class SystemSettings(BaseModel):
     id: int
     alert_severity: str
 
-    model_config = ConfigDict(from_attributes=True)
+    # --- CHANGE: Use Pydantic V1 Config style ---
+    class Config:
+        orm_mode = True

@@ -1,9 +1,9 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
-from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy.sql import func
-import os
+# backend/models.py
+
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, func
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import os
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@db:5432/cyberdb")
 
@@ -22,7 +22,7 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True)
     password_hash = Column(String)
-    role = Column(String, default="viewer")  # viewer, analyst, admin
+    role = Column(String, default="viewer")
     tenant_id = Column(Integer, ForeignKey("tenants.id"))
     tenant = relationship("Tenant", back_populates="users")
     
@@ -37,9 +37,12 @@ class ThreatLog(Base):
     threat = Column(Text)
     source = Column(String)
     severity = Column(String, default="unknown")
-    timestamp = Column(DateTime, default=func.now())
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
     tenant_id = Column(Integer, ForeignKey("tenants.id"))
     tenant = relationship("Tenant", back_populates="threats")
+    
+    # --- ADD THIS NEW COLUMN ---
+    ip_reputation_score = Column(Integer, nullable=True)
 
 class SystemSettings(Base):
     __tablename__ = "system_settings"

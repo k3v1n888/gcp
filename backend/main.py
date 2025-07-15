@@ -18,12 +18,12 @@ from backend.analytics import router as analytics_router
 from backend.slack_alert import router as slack_router
 from backend.routers.log_receiver import router as log_receiver_router
 from backend.routers.correlation import router as correlation_router
-from backend.routers.debug import router as debug_router
-from backend.routers.predictive import router as predictive_router # <-- ADD THIS
+from backend.routers.predictive import router as predictive_router
 
-# Import database and model components
+# --- Import database and model components ---
 from backend.models import Base, engine
 from backend.ml.prediction import SeverityPredictor
+from backend.forecasting_service import ThreatForecaster # <-- 1. IMPORT THE NEW FORECASTER
 
 app = FastAPI()
 
@@ -32,8 +32,9 @@ def on_startup():
     # This will create the database tables if they don't exist
     Base.metadata.create_all(bind=engine)
     
-    # This ensures the model is loaded only once when the application starts.
+    # Load the machine learning models into the application's state
     app.state.predictor = SeverityPredictor()
+    app.state.forecaster = ThreatForecaster() # <-- 2. INITIALIZE THE FORECASTER ON STARTUP
 
 # --- Middleware configuration ---
 SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")
@@ -67,7 +68,6 @@ app.include_router(analytics_router)
 app.include_router(slack_router)
 app.include_router(log_receiver_router)
 app.include_router(correlation_router)
-app.include_router(debug_router)
 app.include_router(predictive_router)
 
 @app.get("/_fastapi_health")

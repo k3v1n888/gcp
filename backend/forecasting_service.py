@@ -34,7 +34,7 @@ class ThreatForecaster:
             # Forecast the next 24 steps (hours)
             forecast = model_fit.forecast(steps=24)
             # We only care about threats that are predicted to occur
-            if forecast.sum() > 0.5: # Use a threshold to filter out noise
+            if forecast.sum() > 0.1: # Use a threshold to filter out noise
                 forecasts[threat_type] = round(forecast.sum(), 2)
         
         # Sort by most likely threats

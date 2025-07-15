@@ -2,25 +2,21 @@ import { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../context/UserContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import AISummary from '../components/AISummary';
+import ThreatForecast from '../components/ThreatForecast';
 
-// --- A helper component for the IP Reputation progress bar ---
+// Helper component for the IP Reputation progress bar
 const ReputationScore = ({ score }) => {
-  // Ensure score is a valid number, default to 0 if not.
   const numericScore = typeof score === 'number' ? score : 0;
-
   const getScoreColor = () => {
     if (numericScore > 75) return 'bg-red-500';
     if (numericScore > 40) return 'bg-orange-500';
     return 'bg-green-500';
   };
-
   return (
-    // --- CHANGE: Added a flex container to show the bar and the score ---
     <div className="flex items-center">
       <div className="w-full bg-gray-200 rounded-full h-2.5">
         <div
           className={`${getScoreColor()} h-2.5 rounded-full`}
-          // Make the bar slightly visible even at 0 for clarity
           style={{ width: `${numericScore === 0 ? 1 : numericScore}%` }}
           title={`AbuseIPDB Score: ${numericScore}`}
         ></div>
@@ -30,7 +26,7 @@ const ReputationScore = ({ score }) => {
   );
 };
 
-
+// Helper component for the color-coded severity badges
 const SeverityBadge = ({ severity }) => {
   const severityStyles = {
     critical: 'bg-red-600 text-white',
@@ -54,10 +50,10 @@ export default function Dashboard() {
   const [analytics, setAnalytics] = useState(null);
 
   useEffect(() => {
-    // --- CHANGE: Add a unique timestamp to the URL to bypass any caches ---
+    // Add a unique timestamp to the URL to bypass any caches
     const cacheBuster = `?_=${new Date().getTime()}`;
 
-    // Fetch initial threat logs
+    // Fetch initial threat logs with the cache-busting parameter
     fetch(`/api/threats${cacheBuster}`)
       .then(res => res.json())
       .then(data => setLogs(data));
@@ -88,11 +84,14 @@ export default function Dashboard() {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Threat Dashboard</h1>
-      <AISummary />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <AISummary />
+        <ThreatForecast />
+      </div>
 
       {(user?.role === 'admin' || user?.role === 'analyst') && (
         <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Charts section remains the same */}
           <div>
             <h2 className="text-lg font-semibold">Threats by Type</h2>
             {analytics && (

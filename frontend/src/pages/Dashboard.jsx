@@ -1,25 +1,35 @@
-// frontend/src/pages/Dashboard.jsx
 import { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../context/UserContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import AISummary from '../components/AISummary';
 
+// --- A helper component for the IP Reputation progress bar ---
 const ReputationScore = ({ score }) => {
+  // Ensure score is a valid number, default to 0 if not.
+  const numericScore = typeof score === 'number' ? score : 0;
+
   const getScoreColor = () => {
-    if (score > 75) return 'bg-red-500';
-    if (score > 40) return 'bg-orange-500';
+    if (numericScore > 75) return 'bg-red-500';
+    if (numericScore > 40) return 'bg-orange-500';
     return 'bg-green-500';
   };
+
   return (
-    <div className="w-full bg-gray-200 rounded-full h-2.5 my-1">
-      <div
-        className={`${getScoreColor()} h-2.5 rounded-full`}
-        style={{ width: `${score}%` }}
-        title={`AbuseIPDB Score: ${score}`}
-      ></div>
+    // --- CHANGE: Added a flex container to show the bar and the score ---
+    <div className="flex items-center">
+      <div className="w-full bg-gray-200 rounded-full h-2.5">
+        <div
+          className={`${getScoreColor()} h-2.5 rounded-full`}
+          // Make the bar slightly visible even at 0 for clarity
+          style={{ width: `${numericScore === 0 ? 1 : numericScore}%` }}
+          title={`AbuseIPDB Score: ${numericScore}`}
+        ></div>
+      </div>
+      <span className="text-xs font-semibold ml-2 text-gray-700">{numericScore}</span>
     </div>
   );
 };
+
 
 const SeverityBadge = ({ severity }) => {
   const severityStyles = {
@@ -37,16 +47,23 @@ const SeverityBadge = ({ severity }) => {
   );
 };
 
+
 export default function Dashboard() {
   const { user } = useContext(UserContext);
   const [logs, setLogs] = useState([]);
   const [analytics, setAnalytics] = useState(null);
 
   useEffect(() => {
-    fetch('/api/threats')
+    // --- CHANGE: Add a unique timestamp to the URL to bypass any caches ---
+    const cacheBuster = `?_=${new Date().getTime()}`;
+
+    // Fetch initial threat logs
+    fetch(`/api/threats${cacheBuster}`)
       .then(res => res.json())
       .then(data => setLogs(data));
-    fetch('/api/analytics/summary')
+
+    // Fetch analytics data
+    fetch(`/api/analytics/summary${cacheBuster}`)
       .then(res => res.json())
       .then(data => {
         const formattedData = {
@@ -55,11 +72,14 @@ export default function Dashboard() {
         };
         setAnalytics(formattedData);
       });
+
+    // WebSocket for live updates
     const socket = new WebSocket(`wss://${window.location.hostname}/ws/threats`);
     socket.onmessage = (event) => {
       const newLog = JSON.parse(event.data);
       setLogs((prev) => [newLog, ...prev]);
     };
+
     return () => socket.close();
   }, []);
 
@@ -72,7 +92,38 @@ export default function Dashboard() {
 
       {(user?.role === 'admin' || user?.role === 'analyst') && (
         <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Charts section */}
+          {/* Charts section remains the same */}
+          <div>
+            <h2 className="text-lg font-semibold">Threats by Type</h2>
+            {analytics && (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie data={analytics.by_type} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
+                    {analytics.by_type.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Threats by Source</h2>
+            {analytics && (
+               <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={analytics.by_source}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="value" fill="#82ca9d" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
         </div>
       )}
 
@@ -85,7 +136,6 @@ export default function Dashboard() {
               <th className="px-3 py-2 w-32">IP Reputation</th>
               <th className="px-3 py-2">Threat</th>
               <th className="px-3 py-2">Source</th>
-              {/* --- ADD NEW HEADER --- */}
               <th className="px-3 py-2">CVE</th>
               <th className="px-3 py-2">Severity</th>
               <th className="px-3 py-2">Timestamp</th>
@@ -100,7 +150,6 @@ export default function Dashboard() {
                 </td>
                 <td className="px-3 py-2">{log.threat}</td>
                 <td className="px-3 py-2">{log.source}</td>
-                {/* --- ADD NEW CELL TO DISPLAY THE CVE --- */}
                 <td className="px-3 py-2 font-mono">
                   {log.cve_id ? (
                     <a 

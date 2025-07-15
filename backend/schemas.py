@@ -1,6 +1,6 @@
 # backend/schemas.py
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict # <-- 1. Import ConfigDict
 from datetime import datetime
 
 class User(BaseModel):
@@ -10,8 +10,9 @@ class User(BaseModel):
     role: str
     tenant_id: int
 
-    class Config:
-        orm_mode = True
+    # --- 2. Use the new model_config syntax ---
+    model_config = ConfigDict(from_attributes=True)
+
 
 class ThreatLog(BaseModel):
     id: int
@@ -22,16 +23,15 @@ class ThreatLog(BaseModel):
     timestamp: datetime
     tenant_id: int
     ip_reputation_score: int | None = None
-    
-    # --- ADD THIS NEW FIELD ---
     cve_id: str | None = None
 
-    class Config:
-        orm_mode = True
+    # --- 2. Use the new model_config syntax ---
+    model_config = ConfigDict(from_attributes=True)
+
 
 class SystemSettings(BaseModel):
     id: int
     alert_severity: str
 
-    class Config:
-        orm_mode = True
+    # --- 2. Use the new model_config syntax ---
+    model_config = ConfigDict(from_attributes=True)

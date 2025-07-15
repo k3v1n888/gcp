@@ -1,8 +1,17 @@
 # backend/schemas.py
 
-# --- CHANGE: Remove ConfigDict from the import ---
 from pydantic import BaseModel
 from datetime import datetime
+
+# --- ADD THIS NEW USER SCHEMA ---
+class User(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
+
+    class Config:
+        orm_mode = True
 
 # This is the Pydantic model for the ThreatLog API responses
 class ThreatLog(BaseModel):
@@ -15,16 +24,13 @@ class ThreatLog(BaseModel):
     tenant_id: int
     ip_reputation_score: int | None = None
 
-    # --- CHANGE: Use Pydantic V1 Config style ---
     class Config:
         orm_mode = True
-
 
 # This is the Pydantic model for the SystemSettings API responses
 class SystemSettings(BaseModel):
     id: int
     alert_severity: str
 
-    # --- CHANGE: Use Pydantic V1 Config style ---
     class Config:
         orm_mode = True

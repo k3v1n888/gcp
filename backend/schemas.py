@@ -8,6 +8,7 @@ class User(BaseModel):
     username: str
     email: str
     role: str
+    tenant_id: int
 
     class Config:
         orm_mode = True

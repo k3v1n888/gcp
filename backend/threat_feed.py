@@ -36,16 +36,13 @@ def fetch_and_save_threat_feed(db: Session):
 
         threats = response.json()
 
-        # --- FIX: Validate the API response before processing ---
-        # If the response is not a list, it's probably an error object from the API.
         if not isinstance(threats, list):
-            error_message = threats.get("message", "API did not return a list of threats.")
-            logger.error(f"❌ Maltiverse Error: {error_message}")
-            return # Stop the function execution
+            # --- FIX: Log the full response to see the actual error structure ---
+            logger.error(f"❌ Maltiverse API did not return a list. Full response: {str(threats)}")
+            return
 
         new_logs_count = 0
 
-        # Now we can safely assume 'threats' is a list of dictionaries
         for threat in threats:
             if not isinstance(threat, dict) or threat.get("type") != "ip":
                 continue
@@ -81,10 +78,11 @@ def fetch_and_save_threat_feed(db: Session):
 
     except requests.exceptions.HTTPError as http_err:
         logger.error(f"❌ Maltiverse HTTP Error: {http_err} - Response: {http_err.response.text}")
+    except requests.exceptions.JSONDecodeError as json_err:
+        logger.error(f"❌ Failed to decode JSON from Maltiverse. Response was not valid JSON: {json_err.doc}")
     except Exception as e:
         logger.error(f"❌ An unexpected error occurred during Maltiverse feed ingestion: {e}")
 
 @router.get("/api/threat_feed/status")
 def get_feed_status():
     return {"status": "Threat feed service is running"}
-

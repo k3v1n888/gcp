@@ -3,8 +3,11 @@ import os
 from sqlalchemy.orm import Session
 from . import models
 from datetime import datetime, timezone
+from fastapi import APIRouter # <-- 1. Import APIRouter
 import logging
 
+# --- 2. Create the router instance ---
+router = APIRouter()
 logger = logging.getLogger(__name__)
 
 def fetch_and_save_threat_feed(db: Session):
@@ -18,7 +21,6 @@ def fetch_and_save_threat_feed(db: Session):
 
     logger.info("Fetching latest threat intelligence feed from Maltiverse...")
     try:
-        # --- THIS IS THE CORRECTED MALTIVERSE URL ---
         response = requests.get(
             "https://api.maltiverse.com/collection/popular/iterator?limit=20",
             headers={'Authorization': f'Bearer {api_key}'}
@@ -29,7 +31,6 @@ def fetch_and_save_threat_feed(db: Session):
         new_logs_count = 0
 
         for threat in threats:
-            # The API returns different types of indicators, we only want IPs.
             if threat.get("type") != "ip":
                 continue
 
@@ -47,7 +48,7 @@ def fetch_and_save_threat_feed(db: Session):
                 source="Maltiverse Feed",
                 severity="high",
                 tenant_id=1,
-                ip_reputation_score=100, # Maltiverse results are confirmed malicious
+                ip_reputation_score=100,
                 cve_id=None,
                 timestamp=datetime.now(timezone.utc)
             )
@@ -61,3 +62,8 @@ def fetch_and_save_threat_feed(db: Session):
         logger.error(f"❌ Maltiverse HTTP Error: {http_err} - Response: {http_err.response.text}")
     except Exception as e:
         logger.error(f"❌ An unexpected error occurred during Maltiverse feed ingestion: {e}")
+
+# --- 3. Add a simple test endpoint ---
+@router.get("/api/threat_feed/status")
+def get_feed_status():
+    return {"status": "Threat feed service is running"}

@@ -18,6 +18,7 @@ from backend.analytics import router as analytics_router
 from backend.slack_alert import router as slack_router
 from backend.routers.log_receiver import router as log_receiver_router
 from backend.routers.correlation import router as correlation_router
+from backend.routers.debug import router as debug_router
 from backend.routers.predictive import router as predictive_router # <-- ADD THIS
 
 # Import database and model components
@@ -66,7 +67,8 @@ app.include_router(analytics_router)
 app.include_router(slack_router)
 app.include_router(log_receiver_router)
 app.include_router(correlation_router)
-app.include_router(predictive_router) # <-- ADD THIS
+app.include_router(debug_router)
+app.include_router(predictive_router)
 
 @app.get("/_fastapi_health")
 def fastapi_health():

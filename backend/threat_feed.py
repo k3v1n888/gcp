@@ -1,56 +1,51 @@
-from fastapi import APIRouter
-import httpx
+import requests
 import os
-from backend.models import SessionLocal, ThreatLog
+from sqlalchemy.orm import Session
+from . import models
+from datetime import datetime, timezone
 
-router = APIRouter()
+def fetch_and_save_threat_feed(db: Session):
+    """
+    Fetches the latest malicious IPs from the Maltiverse feed and saves them.
+    """
+    api_key = os.getenv("MALTIVERSE_API_KEY")
+    if not api_key:
+        print("Maltiverse API key not configured. Skipping feed.")
+        return
 
-OTX_API_KEY = os.getenv("OTX_API_KEY")
-ABUSEIPDB_API_KEY = os.getenv("ABUSEIPDB_API_KEY")
+    print("Fetching latest threat intelligence feed from Maltiverse...")
+    try:
+        response = requests.get(
+            f"https://api.maltiverse.com/ip?sort=-modification_time&limit=20",
+            headers={'Authorization': f'Bearer {api_key}'}
+        )
+        response.raise_for_status() # Raises an error for bad status codes
+        
+        threats = response.json()
+        new_logs_count = 0
 
-@router.get("/api/feeds/otx")
-def fetch_otx():
-    if not OTX_API_KEY:
-        return {"error": "OTX API key not configured."}
-    headers = {"X-OTX-API-KEY": OTX_API_KEY}
-    url = "https://otx.alienvault.com/api/v1/indicators/IPv4/general"
-    resp = httpx.get(url, headers=headers)
-    db = SessionLocal()
-    results = []
-    if resp.status_code == 200:
-        data = resp.json()
-        for entry in data.get("pulse_info", {}).get("pulses", []):
-            ip = entry.get("indicator")
-            threat = entry.get("name", "OTX Threat")
-            if ip:
-                log = ThreatLog(ip=ip, threat=threat, source="OTX")
-                db.add(log)
-                results.append({"ip": ip, "threat": threat})
+        for threat in threats:
+            # Check if this IP already exists to avoid duplicates
+            existing = db.query(models.ThreatLog).filter_by(ip=threat.get("ip_addr")).first()
+            if existing:
+                continue
+
+            # Create a new ThreatLog record from the feed data
+            new_log = models.ThreatLog(
+                ip=threat.get("ip_addr"),
+                threat=f"Malicious IP detected: {threat.get('classification')}",
+                source="Maltiverse Feed",
+                severity="high", # Assume IPs from the feed are high severity
+                tenant_id=1, # Defaulting to tenant 1
+                ip_reputation_score=threat.get("score", 80),
+                cve_id=None,
+                timestamp=datetime.now(timezone.utc)
+            )
+            db.add(new_log)
+            new_logs_count += 1
+        
         db.commit()
-    db.close()
-    return {"fetched": len(results), "entries": results}
+        print(f"✅ Successfully ingested {new_logs_count} new threats from Maltiverse.")
 
-@router.get("/api/feeds/abuseipdb")
-def fetch_abuseipdb():
-    if not ABUSEIPDB_API_KEY:
-        return {"error": "AbuseIPDB API key not configured."}
-    headers = {
-        "Key": ABUSEIPDB_API_KEY,
-        "Accept": "application/json"
-    }
-    url = "https://api.abuseipdb.com/api/v2/blacklist?confidenceMinimum=90"
-    resp = httpx.get(url, headers=headers)
-    db = SessionLocal()
-    results = []
-    if resp.status_code == 200:
-        data = resp.json().get("data", [])
-        for entry in data:
-            ip = entry.get("ipAddress")
-            threat = f"Abuse Score: {entry.get('abuseConfidenceScore')}"
-            if ip:
-                log = ThreatLog(ip=ip, threat=threat, source="AbuseIPDB")
-                db.add(log)
-                results.append({"ip": ip, "threat": threat})
-        db.commit()
-    db.close()
-    return {"fetched": len(results), "entries": results}
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Failed to fetch data from Maltiverse: {e}")

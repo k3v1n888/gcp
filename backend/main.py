@@ -1,6 +1,5 @@
-# backend/main.py
-
 import os
+import asyncio
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -20,12 +19,28 @@ from backend.routers.log_receiver import router as log_receiver_router
 from backend.routers.correlation import router as correlation_router
 from backend.routers.predictive import router as predictive_router
 
-# --- Import database and model components ---
+# --- Import project components ---
 from backend.models import Base, engine
+from backend.database import SessionLocal
 from backend.ml.prediction import SeverityPredictor
-from backend.forecasting_service import ThreatForecaster # <-- 1. IMPORT THE NEW FORECASTER
+from backend.forecasting_service import ThreatForecaster
+from backend.threat_feed import fetch_and_save_threat_feed
 
 app = FastAPI()
+
+# --- Background task for the threat feed ---
+async def periodic_threat_feed():
+    """Runs the threat feed fetcher every hour."""
+    while True:
+        db = SessionLocal()
+        try:
+            print("Running hourly threat feed ingestion...")
+            fetch_and_save_threat_feed(db)
+            print("Threat feed ingestion complete.")
+        finally:
+            db.close()
+        # Wait for 1 hour (3600 seconds) before the next run
+        await asyncio.sleep(3600)
 
 @app.on_event("startup")
 def on_startup():
@@ -34,7 +49,10 @@ def on_startup():
     
     # Load the machine learning models into the application's state
     app.state.predictor = SeverityPredictor()
-    app.state.forecaster = ThreatForecaster() # <-- 2. INITIALIZE THE FORECASTER ON STARTUP
+    app.state.forecaster = ThreatForecaster()
+    
+    # Start the background task to fetch threat intelligence
+    asyncio.create_task(periodic_threat_feed())
 
 # --- Middleware configuration ---
 SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")

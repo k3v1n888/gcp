@@ -20,29 +20,34 @@ def fetch_and_save_threat_feed(db: Session):
 
     logger.info("Fetching latest threat intelligence feed from Maltiverse...")
 
-    # --- 1. Define the parameters for the search query ---
-    # We will search for malicious IPs and get the most recent 20.
     params = {
         "query": "classification:malicious AND type:ip",
         "limit": 20,
-        "sort": "modification_time_desc" # Sort by most recently modified
+        "sort": "modification_time_desc"
     }
 
     try:
-        # --- 2. Use the correct '/search' endpoint with the defined params ---
         response = requests.get(
             "https://api.maltiverse.com/search",
             headers={'Authorization': f'Bearer {api_key}'},
-            params=params # Pass the query parameters
+            params=params
         )
         response.raise_for_status()
 
         threats = response.json()
+
+        # --- FIX: Validate the API response before processing ---
+        # If the response is not a list, it's probably an error object from the API.
+        if not isinstance(threats, list):
+            error_message = threats.get("message", "API did not return a list of threats.")
+            logger.error(f"❌ Maltiverse Error: {error_message}")
+            return # Stop the function execution
+
         new_logs_count = 0
 
-        # The rest of your logic remains the same as it correctly processes the results
+        # Now we can safely assume 'threats' is a list of dictionaries
         for threat in threats:
-            if threat.get("type") != "ip":
+            if not isinstance(threat, dict) or threat.get("type") != "ip":
                 continue
 
             ip_address = threat.get("ip_addr")
@@ -67,7 +72,12 @@ def fetch_and_save_threat_feed(db: Session):
             new_logs_count += 1
 
         db.commit()
-        logger.info(f"✅ Successfully ingested {new_logs_count} new threats from Maltiverse.")
+
+        if new_logs_count > 0:
+            logger.info(f"✅ Successfully ingested {new_logs_count} new threats from Maltiverse.")
+        else:
+            logger.info("ℹ️ No new threats to ingest from Maltiverse.")
+
 
     except requests.exceptions.HTTPError as http_err:
         logger.error(f"❌ Maltiverse HTTP Error: {http_err} - Response: {http_err.response.text}")
@@ -77,3 +87,4 @@ def fetch_and_save_threat_feed(db: Session):
 @router.get("/api/threat_feed/status")
 def get_feed_status():
     return {"status": "Threat feed service is running"}
+

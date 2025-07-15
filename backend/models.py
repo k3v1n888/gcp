@@ -40,9 +40,10 @@ class ThreatLog(Base):
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     tenant_id = Column(Integer, ForeignKey("tenants.id"))
     tenant = relationship("Tenant", back_populates="threats")
+    ip_reputation_score = Column(Integer, nullable=True)
     
     # --- ADD THIS NEW COLUMN ---
-    ip_reputation_score = Column(Integer, nullable=True)
+    cve_id = Column(String, nullable=True)
 
 class SystemSettings(Base):
     __tablename__ = "system_settings"

@@ -3,10 +3,9 @@ import os
 from sqlalchemy.orm import Session
 from . import models
 from datetime import datetime, timezone
-from fastapi import APIRouter # <-- 1. Import APIRouter
+import logging
 
-# --- 2. Create the router instance ---
-router = APIRouter()
+logger = logging.getLogger(__name__)
 
 def fetch_and_save_threat_feed(db: Session):
     """
@@ -14,13 +13,14 @@ def fetch_and_save_threat_feed(db: Session):
     """
     api_key = os.getenv("MALTIVERSE_API_KEY")
     if not api_key:
-        print("Maltiverse API key not configured. Skipping feed.")
+        logger.error("Maltiverse Error: MALTIVERSE_API_KEY environment variable not set.")
         return
 
-    print("Fetching latest threat intelligence feed from Maltiverse...")
+    logger.info("Fetching latest threat intelligence feed from Maltiverse...")
     try:
+        # --- THIS IS THE CORRECTED MALTIVERSE URL ---
         response = requests.get(
-            f"https://api.maltiverse.com/ip?sort=-modification_time&limit=20",
+            "https://api.maltiverse.com/collection/popular/iterator?limit=20",
             headers={'Authorization': f'Bearer {api_key}'}
         )
         response.raise_for_status()
@@ -29,17 +29,25 @@ def fetch_and_save_threat_feed(db: Session):
         new_logs_count = 0
 
         for threat in threats:
-            existing = db.query(models.ThreatLog).filter_by(ip=threat.get("ip_addr")).first()
+            # The API returns different types of indicators, we only want IPs.
+            if threat.get("type") != "ip":
+                continue
+
+            ip_address = threat.get("ip_addr")
+            if not ip_address:
+                continue
+
+            existing = db.query(models.ThreatLog).filter_by(ip=ip_address).first()
             if existing:
                 continue
 
             new_log = models.ThreatLog(
-                ip=threat.get("ip_addr"),
-                threat=f"Malicious IP detected: {threat.get('classification')}",
+                ip=ip_address,
+                threat=f"Malicious IP from feed: {threat.get('blacklist_class', 'N/A')}",
                 source="Maltiverse Feed",
                 severity="high",
                 tenant_id=1,
-                ip_reputation_score=threat.get("score", 80),
+                ip_reputation_score=100, # Maltiverse results are confirmed malicious
                 cve_id=None,
                 timestamp=datetime.now(timezone.utc)
             )
@@ -47,12 +55,9 @@ def fetch_and_save_threat_feed(db: Session):
             new_logs_count += 1
         
         db.commit()
-        print(f"✅ Successfully ingested {new_logs_count} new threats from Maltiverse.")
+        logger.info(f"✅ Successfully ingested {new_logs_count} new threats from Maltiverse.")
 
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Failed to fetch data from Maltiverse: {e}")
-
-# --- 3. Add a simple test endpoint ---
-@router.get("/api/threat_feed/status")
-def get_feed_status():
-    return {"status": "Threat feed service is running"}
+    except requests.exceptions.HTTPError as http_err:
+        logger.error(f"❌ Maltiverse HTTP Error: {http_err} - Response: {http_err.response.text}")
+    except Exception as e:
+        logger.error(f"❌ An unexpected error occurred during Maltiverse feed ingestion: {e}")

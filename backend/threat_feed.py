@@ -33,18 +33,26 @@ def fetch_and_save_threat_feed(db: Session):
             params=params
         )
         response.raise_for_status()
+        response_data = response.json()
 
-        threats = response.json()
+        # --- FIX: Navigate the nested response structure from the API ---
+        # The actual list of results is inside response_data['hits']['hits']
+        threat_items = response_data.get('hits', {}).get('hits', [])
 
-        if not isinstance(threats, list):
-            # --- FIX: Log the full response to see the actual error structure ---
-            logger.error(f"❌ Maltiverse API did not return a list. Full response: {str(threats)}")
+        if not isinstance(threat_items, list):
+            logger.error(f"❌ Maltiverse response format is unexpected. Full response: {str(response_data)}")
             return
 
         new_logs_count = 0
 
-        for threat in threats:
-            if not isinstance(threat, dict) or threat.get("type") != "ip":
+        for item in threat_items:
+            # --- FIX: The threat details are inside the '_source' key ---
+            threat = item.get('_source')
+            if not isinstance(threat, dict):
+                continue
+
+            # The rest of the logic now correctly works on the extracted 'threat' dictionary
+            if threat.get("type") != "ip":
                 continue
 
             ip_address = threat.get("ip_addr")
@@ -74,7 +82,6 @@ def fetch_and_save_threat_feed(db: Session):
             logger.info(f"✅ Successfully ingested {new_logs_count} new threats from Maltiverse.")
         else:
             logger.info("ℹ️ No new threats to ingest from Maltiverse.")
-
 
     except requests.exceptions.HTTPError as http_err:
         logger.error(f"❌ Maltiverse HTTP Error: {http_err} - Response: {http_err.response.text}")

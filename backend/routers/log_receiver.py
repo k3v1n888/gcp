@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 
 from backend import models, database, schemas
 from backend.app.websocket.threats import manager
-from backend.correlation_service import get_ip_reputation, find_cve_for_threat
 
 logger = logging.getLogger(__name__)
 
@@ -20,34 +19,26 @@ router = APIRouter()
 
 @router.post("/api/log_threat", response_model=schemas.ThreatLog, status_code=201)
 async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Session = Depends(database.get_db)):
-    predictor = request.app.state.predictor
-    
-    # --- 1. GET ALL PREDICTION AND ENRICHMENT DATA FIRST ---
-    ip_score = get_ip_reputation(threat.ip)
-    cve_id = find_cve_for_threat(threat.threat)
-    predicted_severity = predictor.predict(
-        threat=threat.threat,
-        source=threat.source,
-        ip_reputation_score=ip_score,
-        cve_id=cve_id
-    )
 
-    # --- 2. CREATE THE FINAL, COMPLETE LOG RECORD ---
+    # --- TEMPORARY HARDCODED VALUES FOR DEBUGGING ---
+    predicted_severity = "DEBUG_SUCCESS"
+    ip_score = 999
+    cve_id = "CVE-TEST-OK"
+
+    print(f"--- DEBUGGING DEPLOYMENT: Saving threat with hardcoded severity: {predicted_severity} ---")
+
     db_log = models.ThreatLog(
-        **threat.dict(), 
+        **threat.dict(),
         severity=predicted_severity,
         ip_reputation_score=ip_score,
         cve_id=cve_id,
         timestamp=datetime.now(timezone.utc)
     )
-    
-    # --- 3. SAVE TO DATABASE IN A SINGLE TRANSACTION ---
     db.add(db_log)
     db.commit()
     db.refresh(db_log)
-    
-    # --- 4. BROADCAST THE FINAL, CORRECT RECORD ---
+
     pydantic_log = schemas.ThreatLog.from_orm(db_log)
     await manager.broadcast_json(pydantic_log.dict())
-    
+
     return db_log

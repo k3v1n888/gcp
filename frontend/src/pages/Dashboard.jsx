@@ -4,14 +4,12 @@ import { UserContext } from '../context/UserContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import AISummary from '../components/AISummary';
 
-// --- A helper component for the IP Reputation progress bar ---
 const ReputationScore = ({ score }) => {
   const getScoreColor = () => {
     if (score > 75) return 'bg-red-500';
     if (score > 40) return 'bg-orange-500';
     return 'bg-green-500';
   };
-
   return (
     <div className="w-full bg-gray-200 rounded-full h-2.5 my-1">
       <div
@@ -23,7 +21,6 @@ const ReputationScore = ({ score }) => {
   );
 };
 
-// --- SeverityBadge component remains the same ---
 const SeverityBadge = ({ severity }) => {
   const severityStyles = {
     critical: 'bg-red-600 text-white',
@@ -40,19 +37,15 @@ const SeverityBadge = ({ severity }) => {
   );
 };
 
-
 export default function Dashboard() {
   const { user } = useContext(UserContext);
   const [logs, setLogs] = useState([]);
   const [analytics, setAnalytics] = useState(null);
 
   useEffect(() => {
-    // Fetch initial threat logs
     fetch('/api/threats')
       .then(res => res.json())
       .then(data => setLogs(data));
-
-    // Fetch analytics data
     fetch('/api/analytics/summary')
       .then(res => res.json())
       .then(data => {
@@ -62,14 +55,11 @@ export default function Dashboard() {
         };
         setAnalytics(formattedData);
       });
-
-    // WebSocket for live updates
     const socket = new WebSocket(`wss://${window.location.hostname}/ws/threats`);
     socket.onmessage = (event) => {
       const newLog = JSON.parse(event.data);
       setLogs((prev) => [newLog, ...prev]);
     };
-
     return () => socket.close();
   }, []);
 
@@ -82,7 +72,7 @@ export default function Dashboard() {
 
       {(user?.role === 'admin' || user?.role === 'analyst') && (
         <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Charts section remains the same */}
+          {/* Charts section */}
         </div>
       )}
 
@@ -92,10 +82,11 @@ export default function Dashboard() {
           <thead className="bg-gray-200">
             <tr className="text-left">
               <th className="px-3 py-2">IP</th>
-              {/* --- ADD NEW HEADER --- */}
               <th className="px-3 py-2 w-32">IP Reputation</th>
               <th className="px-3 py-2">Threat</th>
               <th className="px-3 py-2">Source</th>
+              {/* --- ADD NEW HEADER --- */}
+              <th className="px-3 py-2">CVE</th>
               <th className="px-3 py-2">Severity</th>
               <th className="px-3 py-2">Timestamp</th>
             </tr>
@@ -104,12 +95,26 @@ export default function Dashboard() {
             {logs.map((log, idx) => (
               <tr key={idx} className="border-t hover:bg-gray-50">
                 <td className="px-3 py-2 font-mono">{log.ip}</td>
-                {/* --- ADD NEW CELL --- */}
                 <td className="px-3 py-2">
                   <ReputationScore score={log.ip_reputation_score} />
                 </td>
                 <td className="px-3 py-2">{log.threat}</td>
                 <td className="px-3 py-2">{log.source}</td>
+                {/* --- ADD NEW CELL TO DISPLAY THE CVE --- */}
+                <td className="px-3 py-2 font-mono">
+                  {log.cve_id ? (
+                    <a 
+                      href={`https://cve.mitre.org/cgi-bin/cvename.cgi?name=${log.cve_id}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {log.cve_id}
+                    </a>
+                  ) : (
+                    'N/A'
+                  )}
+                </td>
                 <td className="px-3 py-2">
                   <SeverityBadge severity={log.severity} />
                 </td>

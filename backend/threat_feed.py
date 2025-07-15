@@ -3,10 +3,9 @@ import os
 from sqlalchemy.orm import Session
 from . import models
 from datetime import datetime, timezone
-from fastapi import APIRouter # <-- 1. Import APIRouter
+from fastapi import APIRouter
 import logging
 
-# --- 2. Create the router instance ---
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -20,16 +19,28 @@ def fetch_and_save_threat_feed(db: Session):
         return
 
     logger.info("Fetching latest threat intelligence feed from Maltiverse...")
+
+    # --- 1. Define the parameters for the search query ---
+    # We will search for malicious IPs and get the most recent 20.
+    params = {
+        "query": "classification:malicious AND type:ip",
+        "limit": 20,
+        "sort": "modification_time_desc" # Sort by most recently modified
+    }
+
     try:
+        # --- 2. Use the correct '/search' endpoint with the defined params ---
         response = requests.get(
-            "https://api.maltiverse.com/collection/popular/iterator?limit=20",
-            headers={'Authorization': f'Bearer {api_key}'}
+            "https://api.maltiverse.com/search",
+            headers={'Authorization': f'Bearer {api_key}'},
+            params=params # Pass the query parameters
         )
         response.raise_for_status()
-        
+
         threats = response.json()
         new_logs_count = 0
 
+        # The rest of your logic remains the same as it correctly processes the results
         for threat in threats:
             if threat.get("type") != "ip":
                 continue
@@ -44,7 +55,7 @@ def fetch_and_save_threat_feed(db: Session):
 
             new_log = models.ThreatLog(
                 ip=ip_address,
-                threat=f"Malicious IP from feed: {threat.get('blacklist_class', 'N/A')}",
+                threat=f"Malicious IP from feed: {threat.get('classification', 'N/A')}",
                 source="Maltiverse Feed",
                 severity="high",
                 tenant_id=1,
@@ -54,7 +65,7 @@ def fetch_and_save_threat_feed(db: Session):
             )
             db.add(new_log)
             new_logs_count += 1
-        
+
         db.commit()
         logger.info(f"✅ Successfully ingested {new_logs_count} new threats from Maltiverse.")
 
@@ -63,7 +74,6 @@ def fetch_and_save_threat_feed(db: Session):
     except Exception as e:
         logger.error(f"❌ An unexpected error occurred during Maltiverse feed ingestion: {e}")
 
-# --- 3. Add a simple test endpoint ---
 @router.get("/api/threat_feed/status")
 def get_feed_status():
     return {"status": "Threat feed service is running"}

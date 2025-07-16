@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
-// --- ADDED: Helper components for consistent styling ---
 const SeverityBadge = ({ severity }) => {
   const severityStyles = {
     critical: 'bg-red-600 text-white',
@@ -39,14 +38,12 @@ const ReputationScore = ({ score }) => {
   );
 };
 
-
 const DetailCard = ({ title, children }) => (
   <div className="bg-white p-6 rounded-lg shadow-md mb-6">
     <h2 className="text-xl font-semibold text-gray-800 mb-3">{title}</h2>
     <div className="text-gray-700 leading-relaxed">{children}</div>
   </div>
 );
-
 
 export default function ThreatDetail() {
   const { id } = useParams();
@@ -70,7 +67,6 @@ export default function ThreatDetail() {
       <h1 className="text-3xl font-bold mb-2">{threat.threat}</h1>
       <p className="text-gray-500 mb-6">Detected from {threat.source} at {new Date(threat.timestamp).toLocaleString()}</p>
       
-      {/* --- NEW: Threat Event Details Card --- */}
       <DetailCard title="Threat Event Details">
         <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
           <div className="py-2">
@@ -103,15 +99,26 @@ export default function ThreatDetail() {
         </dl>
       </DetailCard>
 
+      {threat.correlation && (
+        <DetailCard title="Correlated Threat Analysis">
+          <h3 className="font-bold text-lg mb-2">{threat.correlation.title}</h3>
+          <p className="mb-2">{threat.correlation.summary}</p>
+          <div className="text-sm">
+            <span className="font-semibold">Associated CVE: </span>
+            <span className="font-mono">{threat.correlation.cve_id || 'N/A'}</span>
+          </div>
+        </DetailCard>
+      )}
+
       {threat.recommendations ? (
         <>
-          <DetailCard title="AI Analysis: What is this threat?">
+          <DetailCard title="Quantum AI Analysis: What is this threat?">
             <p>{threat.recommendations.explanation}</p>
           </DetailCard>
-          <DetailCard title="AI Analysis: Potential Impact">
+          <DetailCard title="Quantum AI Analysis: Potential Impact">
             <p>{threat.recommendations.impact}</p>
           </DetailCard>
-          <DetailCard title="AI Analysis: Recommended Mitigation Steps">
+          <DetailCard title="Quantum AI Analysis: Recommended Mitigation Steps">
             <ul className="list-disc list-inside space-y-2">
               {threat.recommendations.mitigation.map((step, index) => (
                 <li key={index}>{step}</li>
@@ -120,7 +127,7 @@ export default function ThreatDetail() {
           </DetailCard>
         </>
       ) : (
-        <DetailCard title="AI Analysis">
+        <DetailCard title="Quantum AI Analysis">
             <p>Could not generate AI recommendations for this threat.</p>
         </DetailCard>
       )}

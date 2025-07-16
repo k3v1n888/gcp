@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 const DetailCard = ({ title, children }) => (
   <div className="bg-white p-6 rounded-lg shadow-md mb-6">
     <h2 className="text-xl font-semibold text-gray-800 mb-3">{title}</h2>
-    <div className="text-gray-700">{children}</div>
+    <div className="text-gray-700 leading-relaxed">{children}</div>
   </div>
 );
 
@@ -21,8 +21,8 @@ export default function ThreatDetail() {
       .finally(() => setIsLoading(false));
   }, [id]);
 
-  if (isLoading) return <div className="p-6">Loading threat details...</div>;
-  if (!threat) return <div className="p-6">Threat not found.</div>;
+  if (isLoading) return <div className="p-6">Loading threat analysis...</div>;
+  if (!threat) return <div className="p-6 text-red-500">Threat not found or failed to load details.</div>;
 
   return (
     <div className="p-6">
@@ -30,7 +30,7 @@ export default function ThreatDetail() {
       <h1 className="text-3xl font-bold mb-2">{threat.threat}</h1>
       <p className="text-gray-500 mb-6">Detected at {new Date(threat.timestamp).toLocaleString()}</p>
 
-      {threat.recommendations && (
+      {threat.recommendations ? (
         <>
           <DetailCard title="AI Analysis: What is this threat?">
             <p>{threat.recommendations.explanation}</p>
@@ -46,6 +46,10 @@ export default function ThreatDetail() {
             </ul>
           </DetailCard>
         </>
+      ) : (
+        <DetailCard title="AI Analysis">
+            <p>Could not generate AI recommendations for this threat.</p>
+        </DetailCard>
       )}
     </div>
   );

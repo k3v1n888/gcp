@@ -3,8 +3,8 @@ import { UserContext } from '../context/UserContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import AISummary from '../components/AISummary';
 import ThreatForecast from '../components/ThreatForecast';
+import { Link } from 'react-router-dom'; // <-- Import Link
 
-// Helper component for the IP Reputation progress bar
 const ReputationScore = ({ score }) => {
   const numericScore = typeof score === 'number' ? score : 0;
   const getScoreColor = () => {
@@ -26,7 +26,6 @@ const ReputationScore = ({ score }) => {
   );
 };
 
-// Helper component for the color-coded severity badges
 const SeverityBadge = ({ severity }) => {
   const severityStyles = {
     critical: 'bg-red-600 text-white',
@@ -43,22 +42,16 @@ const SeverityBadge = ({ severity }) => {
   );
 };
 
-
 export default function Dashboard() {
   const { user } = useContext(UserContext);
   const [logs, setLogs] = useState([]);
   const [analytics, setAnalytics] = useState(null);
 
   useEffect(() => {
-    // Add a unique timestamp to the URL to bypass any caches
     const cacheBuster = `?_=${new Date().getTime()}`;
-
-    // Fetch initial threat logs with the cache-busting parameter
     fetch(`/api/threats${cacheBuster}`)
       .then(res => res.json())
       .then(data => setLogs(data));
-
-    // Fetch analytics data
     fetch(`/api/analytics/summary${cacheBuster}`)
       .then(res => res.json())
       .then(data => {
@@ -68,14 +61,11 @@ export default function Dashboard() {
         };
         setAnalytics(formattedData);
       });
-
-    // WebSocket for live updates
     const socket = new WebSocket(`wss://${window.location.hostname}/ws/threats`);
     socket.onmessage = (event) => {
       const newLog = JSON.parse(event.data);
       setLogs((prev) => [newLog, ...prev]);
     };
-
     return () => socket.close();
   }, []);
 
@@ -147,7 +137,11 @@ export default function Dashboard() {
                 <td className="px-3 py-2">
                   <ReputationScore score={log.ip_reputation_score} />
                 </td>
-                <td className="px-3 py-2">{log.threat}</td>
+                <td className="px-3 py-2">
+                  <Link to={`/threats/${log.id}`} className="text-blue-600 hover:underline">
+                    {log.threat}
+                  </Link>
+                </td>
                 <td className="px-3 py-2">{log.source}</td>
                 <td className="px-3 py-2 font-mono">
                   {log.cve_id ? (
@@ -159,9 +153,7 @@ export default function Dashboard() {
                     >
                       {log.cve_id}
                     </a>
-                  ) : (
-                    'N/A'
-                  )}
+                  ) : ( 'N/A' )}
                 </td>
                 <td className="px-3 py-2">
                   <SeverityBadge severity={log.severity} />

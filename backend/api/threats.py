@@ -26,7 +26,6 @@ def get_threat_logs(
     )
     return logs
 
-# --- NEW: Endpoint for a single threat's details ---
 @router.get("/api/threats/{threat_id}", response_model=schemas.ThreatDetailResponse)
 def get_threat_detail(
     threat_id: int,
@@ -41,11 +40,18 @@ def get_threat_detail(
     if not threat_log:
         raise HTTPException(status_code=404, detail="Threat log not found")
 
+    # Find the associated correlated threat, if one exists
+    correlated_threat = db.query(models.CorrelatedThreat).filter(
+        models.CorrelatedThreat.title == f"Attack Pattern: {threat_log.threat}",
+        models.CorrelatedThreat.tenant_id == user.tenant_id
+    ).first()
+
+    # Generate the AI recommendations for the specific threat event
     recommendations = generate_threat_remediation_plan(threat_log)
 
-    # Convert the SQLAlchemy object to a dictionary for modification
+    # Combine all data for the final response
     response_data = schemas.ThreatLog.from_orm(threat_log).dict()
-    # Add the recommendations
     response_data['recommendations'] = recommendations
+    response_data['correlation'] = correlated_threat
     
     return response_data

@@ -1,6 +1,6 @@
 # backend/models.py
 
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, func
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, func, Boolean
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy import create_engine
 import os
@@ -41,9 +41,10 @@ class ThreatLog(Base):
     tenant_id = Column(Integer, ForeignKey("tenants.id"))
     tenant = relationship("Tenant", back_populates="threats")
     ip_reputation_score = Column(Integer, nullable=True)
-    
-    # --- ADD THIS NEW COLUMN ---
     cve_id = Column(String, nullable=True)
+
+    # --- ADD THIS NEW COLUMN ---
+    is_anomaly = Column(Boolean, default=False)
 
 class SystemSettings(Base):
     __tablename__ = "system_settings"

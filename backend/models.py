@@ -23,9 +23,6 @@ class User(Base):
     role = Column(String, default="viewer")
     tenant_id = Column(Integer, ForeignKey("tenants.id"))
     tenant = relationship("Tenant", back_populates="users")
-    
-    def as_dict(self):
-       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class ThreatLog(Base):
     __tablename__ = "threat_logs"
@@ -40,7 +37,6 @@ class ThreatLog(Base):
     ip_reputation_score = Column(Integer, nullable=True)
     cve_id = Column(String, nullable=True)
     is_anomaly = Column(Boolean, default=False)
-    # Relationship to automation logs
     automation_actions = relationship("AutomationLog", back_populates="threat")
 
 class SystemSettings(Base):
@@ -49,8 +45,14 @@ class SystemSettings(Base):
     alert_severity = Column(String, default="critical")
 
 class CorrelatedThreat(Base):
-    # ... (This model is unchanged)
-    pass
+    __tablename__ = "correlated_threats"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    summary = Column(Text, nullable=True)
+    cve_id = Column(String, nullable=True)
+    risk_score = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    tenant_id = Column(Integer, ForeignKey("tenants.id"))
 
 # --- NEW: Table to log automated SOAR actions ---
 class AutomationLog(Base):
@@ -71,8 +73,6 @@ class UserActivityLog(Base):
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     details = Column(Text, nullable=True)
 
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-if __name__ == "__main__":
-    Base.metadata.create_all(bind=engine)

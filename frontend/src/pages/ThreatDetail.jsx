@@ -3,8 +3,32 @@ import { useParams, Link } from 'react-router-dom';
 import Chatbot from '../components/Chatbot';
 import SoarActionLog from '../components/SoarActionLog';
 
-const SeverityBadge = ({ severity }) => { /* ... (Code is unchanged, will adopt new styles) ... */ };
-const ReputationScore = ({ score }) => { /* ... (Code is unchanged, will adopt new styles) ... */ };
+const SeverityBadge = ({ severity }) => {
+  const severityStyles = {
+    critical: 'bg-red-600 text-white', high: 'bg-orange-500 text-white',
+    medium: 'bg-yellow-400 text-black', low: 'bg-blue-500 text-white',
+    unknown: 'bg-gray-500 text-white',
+  };
+  const severityKey = typeof severity === 'string' ? severity.toLowerCase() : 'unknown';
+  return (<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${severityStyles[severityKey] || severityStyles.unknown}`}>{severity}</span>);
+};
+
+const ReputationScore = ({ score }) => {
+  const numericScore = typeof score === 'number' ? score : 0;
+  const getScoreColor = () => {
+    if (numericScore > 75) return 'bg-red-500';
+    if (numericScore > 40) return 'bg-orange-500';
+    return 'bg-green-500';
+  };
+  return (
+    <div className="flex items-center">
+      <div className="w-full bg-gray-700 rounded-full h-2.5">
+        <div className={`${getScoreColor()} h-2.5 rounded-full`} style={{ width: `${numericScore}%` }} title={`AbuseIPDB Score: ${numericScore}`}></div>
+      </div>
+      <span className="text-xs font-semibold ml-2 text-gray-400">{numericScore}</span>
+    </div>
+  );
+};
 
 const DetailCard = ({ title, children }) => (
   <div className="widget-card p-6 mb-6">

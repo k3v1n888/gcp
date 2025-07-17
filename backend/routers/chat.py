@@ -1,29 +1,29 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import List
-from ..correlation_service import call_your_llm_api # Reuse the LLM function
+from typing import List, Dict, Any
+from ..correlation_service import generate_threat_remediation_plan
 
 router = APIRouter()
 
 class ChatMessage(BaseModel):
-    role: str # "user" or "assistant"
+    role: str
     content: str
 
 class ChatRequest(BaseModel):
-    threat_context: dict
+    threat_context: Dict[str, Any]
     history: List[ChatMessage]
 
 @router.post("/api/chat")
-def handle_chat(request: ChatRequest):
-    """Handles a chat conversation about a specific threat."""
+async def handle_chat(request: ChatRequest):
+    class TmpLog:
+        def __init__(self, d): self.__dict__ = d
     
-    # Build a prompt that includes the conversation history
-    prompt = f"You are a helpful cybersecurity assistant. A user is asking about the following threat:\n{request.threat_context}\n\nConversation History:\n"
-    for message in request.history:
-        prompt += f"{message.role}: {message.content}\n"
-    prompt += "user: " # Ready for the new question, which is the last item in history.
+    threat_log_obj = TmpLog(request.threat_context)
+    ai_response = generate_threat_remediation_plan(threat_log_obj)
 
-    # Get the AI's response
-    ai_response = call_your_llm_api(prompt)
-    
-    return {"role": "assistant", "content": ai_response}
+    if ai_response and 'mitigation' in ai_response:
+        response_content = "Based on the threat details, here are the mitigation steps: \n - " + "\n - ".join(ai_response.get('mitigation', []))
+    else:
+        response_content = "I was unable to generate specific mitigation steps for this query."
+
+    return {"role": "assistant", "content": response_content}

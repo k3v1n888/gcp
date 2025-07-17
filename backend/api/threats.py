@@ -40,18 +40,22 @@ def get_threat_detail(
     if not threat_log:
         raise HTTPException(status_code=404, detail="Threat log not found")
 
-    # Find the associated correlated threat, if one exists
     correlated_threat = db.query(models.CorrelatedThreat).filter(
         models.CorrelatedThreat.title == f"Attack Pattern: {threat_log.threat}",
         models.CorrelatedThreat.tenant_id == user.tenant_id
     ).first()
 
-    # Generate the AI recommendations for the specific threat event
     recommendations = generate_threat_remediation_plan(threat_log)
 
-    # Combine all data for the final response
     response_data = schemas.ThreatLog.from_orm(threat_log).dict()
     response_data['recommendations'] = recommendations
     response_data['correlation'] = correlated_threat
+    
+    if threat_log.is_anomaly:
+        response_data['anomaly_features'] = {
+            "text_feature": f"{threat_log.threat} {threat_log.source}",
+            "ip_reputation_score": threat_log.ip_reputation_score or 0,
+            "has_cve": 1 if threat_log.cve_id else 0
+        }
     
     return response_data

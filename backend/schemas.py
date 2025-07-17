@@ -1,4 +1,3 @@
-# backend/schemas.py
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional
@@ -40,6 +39,12 @@ class CorrelatedThreat(BaseModel):
     cve_id: Optional[str] = None
     risk_score: int
     model_config = ConfigDict(from_attributes=True)
+
+# --- NEW: Define the AnomalyFeatures schema BEFORE it is used ---
+class AnomalyFeatures(BaseModel):
+    text_feature: str
+    ip_reputation_score: int
+    has_cve: int
 
 class ThreatDetailResponse(ThreatLog):
     recommendations: Optional[Recommendation] = None

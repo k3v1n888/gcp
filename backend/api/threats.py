@@ -14,6 +14,7 @@ def get_threat_logs(
     user: models.User = Depends(get_current_user),
     db: Session = Depends(database.get_db)
 ):
+    # ... (this function is correct and remains the same) ...
     response.headers["Cache-Control"] = "no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
@@ -45,15 +46,17 @@ def get_threat_detail(
         models.CorrelatedThreat.tenant_id == user.tenant_id
     ).first()
 
-    recommendations = generate_threat_remediation_plan(threat_log)
+    recommendations_dict = generate_threat_remediation_plan(threat_log)
 
-    # Convert the SQLAlchemy object to a Pydantic model first
+    # Convert the base SQLAlchemy object to a Pydantic model
     response_data = schemas.ThreatDetailResponse.from_orm(threat_log)
-    response_data.recommendations = recommendations
     response_data.correlation = correlated_threat
     
     # --- THIS IS THE FIX ---
-    # Add the anomaly features to the response if the flag is true
+    # Create an instance of the Recommendation schema from the dictionary
+    if recommendations_dict:
+        response_data.recommendations = schemas.Recommendation(**recommendations_dict)
+    
     if threat_log.is_anomaly:
         response_data.anomaly_features = schemas.AnomalyFeatures(
             text_feature=f"{threat_log.threat} {threat_log.source}",

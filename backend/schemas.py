@@ -1,3 +1,4 @@
+# backend/schemas.py
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional
@@ -20,6 +21,7 @@ class ThreatLog(BaseModel):
     tenant_id: int
     ip_reputation_score: Optional[int] = None
     cve_id: Optional[str] = None
+    is_anomaly: bool = False
     model_config = ConfigDict(from_attributes=True)
 
 class SystemSettings(BaseModel):

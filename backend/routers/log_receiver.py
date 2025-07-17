@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from backend import models, database, schemas
 from backend.app.websocket.threats import manager
 from backend.correlation_service import get_ip_reputation, find_cve_for_threat
+from backend.soar_service import block_ip_with_cloud_armor
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +36,7 @@ async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Sessio
 
     temp_log_for_check = {**threat.dict(), "ip_reputation_score": ip_score, "cve_id": cve_id}
     is_anomaly = anomaly_detector.check_for_anomaly(temp_log_for_check)
-    print(f"--- Anomaly check result: {is_anomaly} ---")
-
+    
     db_log = models.ThreatLog(
         **threat.dict(), 
         severity=predicted_severity,
@@ -48,6 +48,9 @@ async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Sessio
     db.add(db_log)
     db.commit()
     db.refresh(db_log)
+
+    if predicted_severity == 'critical' and ip_score >= 90:
+        block_ip_with_cloud_armor(db, db_log)
     
     pydantic_log = schemas.ThreatLog.from_orm(db_log)
     await manager.broadcast_json(pydantic_log.dict())

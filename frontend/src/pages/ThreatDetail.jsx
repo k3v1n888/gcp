@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import Chatbot from '../components/Chatbot';
 
 const SeverityBadge = ({ severity }) => {
   const severityStyles = {
@@ -64,7 +65,16 @@ export default function ThreatDetail() {
   return (
     <div className="p-6">
       <Link to="/dashboard" className="text-blue-600 hover:underline mb-4 inline-block">&larr; Back to Dashboard</Link>
-      <h1 className="text-3xl font-bold mb-2">{threat.threat}</h1>
+      
+      <div className="flex items-center gap-4 mb-2">
+        <h1 className="text-3xl font-bold">{threat.threat}</h1>
+        {/* --- Anomaly Indicator --- */}
+        {threat.is_anomaly && (
+            <span className="bg-purple-200 text-purple-800 text-xs font-medium px-2.5 py-1 rounded-full animate-pulse">
+                Anomaly Detected
+            </span>
+        )}
+      </div>
       <p className="text-gray-500 mb-6">Detected from {threat.source} at {new Date(threat.timestamp).toLocaleString()}</p>
       
       <DetailCard title="Threat Event Details">
@@ -100,7 +110,7 @@ export default function ThreatDetail() {
       </DetailCard>
 
       {threat.correlation && (
-        <DetailCard title="Correlated Threat Analysis">
+        <DetailCard title="Quantum AI Correlated Threat Analysis">
           <h3 className="font-bold text-lg mb-2">{threat.correlation.title}</h3>
           <p className="mb-2">{threat.correlation.summary}</p>
           <div className="text-sm">
@@ -131,6 +141,11 @@ export default function ThreatDetail() {
             <p>Could not generate AI recommendations for this threat.</p>
         </DetailCard>
       )}
+
+      {/* --- Chatbot Widget --- */}
+      <DetailCard title="Quantum AI Interactive Investigation">
+        <Chatbot threatContext={threat} />
+      </DetailCard>
     </div>
   );
 }

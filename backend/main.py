@@ -19,6 +19,8 @@ from backend.routers.log_receiver import router as log_receiver_router
 from backend.routers.correlation import router as correlation_router
 from backend.routers.predictive import router as predictive_router
 from backend.routers.forecasting import router as forecasting_router
+from backend.routers.chat import router as chat_router
+
 
 # --- Import project components ---
 from backend.models import Base, engine
@@ -26,6 +28,7 @@ from backend.database import SessionLocal
 from backend.ml.prediction import SeverityPredictor
 from backend.forecasting_service import ThreatForecaster
 from backend.threat_feed import fetch_and_save_threat_feed
+from backend.anomaly_service import AnomalyDetector
 
 app = FastAPI()
 
@@ -51,7 +54,7 @@ def on_startup():
     # Load the machine learning models into the application's state
     app.state.predictor = SeverityPredictor()
     app.state.forecaster = ThreatForecaster()
-    
+    app.state.anomaly_detector = AnomalyDetector()
     # Start the background task to fetch threat intelligence
     asyncio.create_task(periodic_threat_feed())
 
@@ -89,6 +92,7 @@ app.include_router(log_receiver_router)
 app.include_router(correlation_router)
 app.include_router(predictive_router)
 app.include_router(forecasting_router)
+app.include_router(chat_router)
 
 @app.get("/_fastapi_health")
 def fastapi_health():

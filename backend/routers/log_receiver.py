@@ -20,50 +20,36 @@ router = APIRouter()
 
 @router.post("/api/log_threat", response_model=schemas.ThreatLog, status_code=201)
 async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Session = Depends(database.get_db)):
-
-    logger.info(f"--- LOG_THREAT ENDPOINT ENTERED for IP: {threat.ip} ---")
-
     predictor = request.app.state.predictor
+    anomaly_detector = request.app.state.anomaly_detector
 
-    # Initialize variables
-    ip_score = 0
-    cve_id = None
-    predicted_severity = "unknown"
+    ip_score = get_ip_reputation(threat.ip)
+    cve_id = find_cve_for_threat(threat.threat)
+    
+    predicted_severity = predictor.predict(
+        threat=threat.threat,
+        source=threat.source,
+        ip_reputation_score=ip_score,
+        cve_id=cve_id
+    )
 
-    try:
-        # Get enrichment data
-        ip_score = get_ip_reputation(threat.ip)
-        cve_id = find_cve_for_threat(threat.threat)
+    temp_log_for_check = {**threat.dict(), "ip_reputation_score": ip_score, "cve_id": cve_id}
+    is_anomaly = anomaly_detector.check_for_anomaly(temp_log_for_check)
+    print(f"--- Anomaly check result: {is_anomaly} ---")
 
-        # Get ML prediction
-        if predictor:
-            predicted_severity = predictor.predict(
-                threat=threat.threat,
-                source=threat.source,
-                ip_reputation_score=ip_score,
-                cve_id=cve_id
-            )
-        else:
-            logger.error("Predictor not available in app state.")
-
-    except Exception as e:
-        logger.error(f"Error during enrichment/prediction for log: {threat.dict()}. Error: {e}")
-
-
-    # Create the final database record
     db_log = models.ThreatLog(
         **threat.dict(), 
         severity=predicted_severity,
         ip_reputation_score=ip_score,
         cve_id=cve_id,
+        is_anomaly=is_anomaly,
         timestamp=datetime.now(timezone.utc)
     )
     db.add(db_log)
     db.commit()
     db.refresh(db_log)
-
-    # Broadcast the final record
+    
     pydantic_log = schemas.ThreatLog.from_orm(db_log)
     await manager.broadcast_json(pydantic_log.dict())
-
+    
     return db_log

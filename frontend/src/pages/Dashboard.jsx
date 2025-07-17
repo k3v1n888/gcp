@@ -67,15 +67,15 @@ export default function Dashboard() {
         return () => socket.close();
     }, []);
 
-    const COLORS = ['#00E5FF', '#00C49F', '#FFBB28', '#FF8042', '#AF1B3F'];
+    const COLORS = ['#2dd4bf', '#60a5fa', '#facc15', '#fb923c', '#f87171'];
 
     return (
         <div className="p-4 md:p-6">
             <h1 className="text-3xl font-bold mb-6 glow-text">Cyber Operations Dashboard</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="widget-card p-4"><AISummary /></div>
-                <div className="widget-card p-4"><ThreatForecast /></div>
+                <div className="widget-card p-4"><Quantum AISummary /></div>
+                <div className="widget-card p-4"><Quantum AIThreatForecast /></div>
             </div>
 
             {(user?.role === 'admin' || user?.role === 'analyst') && (
@@ -84,10 +84,10 @@ export default function Dashboard() {
                         <h2 className="text-lg font-semibold mb-2 glow-text">Threats by Type</h2>
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
-                                <Pie data={analytics?.by_type} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5}>
+                                <Pie data={analytics?.by_type} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                                     {analytics?.by_type.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                                 </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: '#0d1117', border: '1px solid #00E5FF' }} itemStyle={{ color: '#c9d1d9' }}/>
+                                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} itemStyle={{ color: '#d1d5db' }}/>
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
@@ -95,11 +95,11 @@ export default function Dashboard() {
                         <h2 className="text-lg font-semibold mb-2 glow-text">Threats by Source</h2>
                         <ResponsiveContainer width="100%" height={300}>
                             <BarChart data={analytics?.by_source}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                                <XAxis dataKey="name" stroke="#8892b0" tick={{ fontSize: 12 }} />
-                                <YAxis stroke="#8892b0" />
-                                <Tooltip contentStyle={{ backgroundColor: '#0d1117', border: '1px solid #00E5FF' }} itemStyle={{ color: '#c9d1d9' }}/>
-                                <Bar dataKey="value" fill="#00E5FF" fillOpacity={0.6} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                <XAxis dataKey="name" stroke="#9ca3af" tick={{ fontSize: 12 }} />
+                                <YAxis stroke="#9ca3af" />
+                                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} itemStyle={{ color: '#d1d5db' }}/>
+                                <Bar dataKey="value" fill="#2dd4bf" fillOpacity={0.6} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -124,28 +124,10 @@ export default function Dashboard() {
                         </thead>
                         <tbody>
                             {logs.map((log) => (
-                                <tr key={log.id} className="hover:bg-cyan-500/10 transition-colors duration-200">
-                                    <td className="font-mono">{log.ip}</td>
+                                <tr key={log.id} className="hover:bg-slate-800 transition-colors duration-200">
+                                    <td className="font-mono text-slate-400">{log.ip}</td>
                                     <td><ReputationScore score={log.ip_reputation_score} /></td>
                                     <td>
-                                        <Link to={`/threats/${log.id}`} className="text-cyan-400 hover:underline">
+                                        <Link to={`/threats/${log.id}`} className="text-teal-400 hover:underline">
                                             {log.threat}
-                                        </Link>
-                                    </td>
-                                    <td>{log.source}</td>
-                                    <td className="font-mono">{log.cve_id || 'N/A'}</td>
-                                    <td><SeverityBadge severity={log.severity} /></td>
-                                    <td>
-                                        {log.is_anomaly && (<span className="text-purple-400 animate-pulse mr-2">Anomaly</span>)}
-                                        {log.source === 'UEBA Engine' && (<span className="text-yellow-400 animate-pulse">Insider</span>)}
-                                    </td>
-                                    <td>{new Date(log.timestamp).toLocaleString()}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    );
-}
+                                        </

@@ -4,30 +4,30 @@ import Chatbot from '../components/Chatbot';
 import SoarActionLog from '../components/SoarActionLog';
 
 const SeverityBadge = ({ severity }) => {
-  const severityStyles = {
-    critical: 'bg-red-600 text-white', high: 'bg-orange-500 text-white',
-    medium: 'bg-yellow-400 text-black', low: 'bg-blue-500 text-white',
-    unknown: 'bg-gray-500 text-white',
-  };
-  const severityKey = typeof severity === 'string' ? severity.toLowerCase() : 'unknown';
-  return (<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${severityStyles[severityKey] || severityStyles.unknown}`}>{severity}</span>);
+    const severityStyles = {
+        critical: 'bg-red-600 text-white', high: 'bg-orange-500 text-white',
+        medium: 'bg-yellow-400 text-black', low: 'bg-sky-500 text-white',
+        unknown: 'bg-slate-500 text-white',
+    };
+    const severityKey = typeof severity === 'string' ? severity.toLowerCase() : 'unknown';
+    return (<span className={`px-2.5 py-1 rounded-full text-xs font-bold ${severityStyles[severityKey] || severityStyles.unknown}`}>{severity.toUpperCase()}</span>);
 };
 
 const ReputationScore = ({ score }) => {
-  const numericScore = typeof score === 'number' ? score : 0;
-  const getScoreColor = () => {
-    if (numericScore > 75) return 'bg-red-500';
-    if (numericScore > 40) return 'bg-orange-500';
-    return 'bg-green-500';
-  };
-  return (
-    <div className="flex items-center">
-      <div className="w-full bg-gray-700 rounded-full h-2.5">
-        <div className={`${getScoreColor()} h-2.5 rounded-full`} style={{ width: `${numericScore}%` }} title={`AbuseIPDB Score: ${numericScore}`}></div>
-      </div>
-      <span className="text-xs font-semibold ml-2 text-gray-400">{numericScore}</span>
-    </div>
-  );
+    const numericScore = typeof score === 'number' ? score : 0;
+    const getScoreColor = () => {
+        if (numericScore > 75) return 'bg-red-600';
+        if (numericScore > 40) return 'bg-orange-500';
+        return 'bg-green-600';
+    };
+    return (
+        <div className="flex items-center">
+            <div className="w-full bg-slate-700 rounded-full h-2.5">
+                <div className={`${getScoreColor()} h-2.5 rounded-full`} style={{ width: `${numericScore}%` }} title={`AbuseIPDB Score: ${numericScore}`}></div>
+            </div>
+            <span className="text-xs font-semibold ml-3 text-slate-300">{numericScore}</span>
+        </div>
+    );
 };
 
 const DetailCard = ({ title, children }) => (
@@ -70,7 +70,7 @@ export default function ThreatDetail() {
       </DetailCard>
 
       {threat.correlation && (
-        <DetailCard title="Correlated Threat Analysis">
+        <DetailCard title="Quantum Correlated Threat Analysis">
           <h3 className="font-bold text-lg mb-2">{threat.correlation.title}</h3>
           <p className="mb-2">{threat.correlation.summary}</p>
           <div className="text-sm"><span className="font-semibold">Associated CVE: </span><span className="font-mono">{threat.correlation.cve_id || 'N/A'}</span></div>
@@ -83,9 +83,9 @@ export default function ThreatDetail() {
           <DetailCard title="Quantum AI Analysis: Potential Impact"><p>{threat.recommendations.impact}</p></DetailCard>
           <DetailCard title="Quantum AI Analysis: Mitigation Protocols"><ul className="list-disc list-inside space-y-2">{threat.recommendations.mitigation.map((step, index) => (<li key={index}>{step}</li>))}</ul></DetailCard>
         </>
-      ) : ( <DetailCard title="AI Analysis"><p>Could not generate AI recommendations for this threat.</p></DetailCard> )}
+      ) : ( <DetailCard title="Quantum AI Analysis"><p>Could not generate AI recommendations for this threat.</p></DetailCard> )}
 
-      <DetailCard title="Quantum AI Response">
+      <DetailCard title="Quantum AI Reponse">
         <SoarActionLog actions={threat.soar_actions} />
       </DetailCard>
       

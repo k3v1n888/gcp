@@ -1,4 +1,36 @@
 /* frontend/src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  background-color: #0d1117;
+  color: #c9d1d9;
+  font-family: 'Orbitron', sans-serif;
+}
+
+/* Custom futuristic widget style */
+.widget-card {
+  @apply bg-gray-900 border border-cyan-500/30 rounded-lg shadow-lg shadow-cyan-500/10;
+}
+
+/* Glow effect for text and icons */
+.glow-text {
+  @apply text-cyan-400;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+}
+
+/* Custom table style */
+.cyber-table {
+  @apply min-w-full text-sm bg-gray-900/50 backdrop-blur-sm border border-cyan-500/30;
+}
+
+.cyber-table th {
+  @apply px-3 py-2 text-left text-cyan-400 border-b-2 border-cyan-500/30;
+}
+
+.cyber-table td {
+  @apply px-3 py-2 border-t border-cyan-500/30;
+}

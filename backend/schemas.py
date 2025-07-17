@@ -44,3 +44,4 @@ class CorrelatedThreat(BaseModel):
 class ThreatDetailResponse(ThreatLog):
     recommendations: Optional[Recommendation] = None
     correlation: Optional[CorrelatedThreat] = None
+    anomaly_features: Optional[AnomalyFeatures] = None

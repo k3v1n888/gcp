@@ -87,7 +87,7 @@ export default function Dashboard() {
                                 <Pie data={analytics?.by_type} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5}>
                                     {analytics?.by_type.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                                 </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} itemStyle={{ color: '#d1d5db' }}/>
+                                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} itemStyle={{ color: '#e2e8f0' }}/>
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
@@ -98,7 +98,7 @@ export default function Dashboard() {
                                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                                 <XAxis dataKey="name" stroke="#9ca3af" tick={{ fontSize: 12 }} />
                                 <YAxis stroke="#9ca3af" />
-                                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} itemStyle={{ color: '#d1d5db' }}/>
+                                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} itemStyle={{ color: '#e2e8f0' }}/>
                                 <Bar dataKey="value" fill="#2dd4bf" fillOpacity={0.6} />
                             </BarChart>
                         </ResponsiveContainer>
@@ -125,7 +125,7 @@ export default function Dashboard() {
                         <tbody>
                             {logs.map((log) => (
                                 <tr key={log.id} className="hover:bg-slate-800 transition-colors duration-200">
-                                    <td className="font-mono text-slate-400">{log.ip}</td>
+                                    <td className="font-mono text-slate-300">{log.ip}</td>
                                     <td><ReputationScore score={log.ip_reputation_score} /></td>
                                     <td>
                                         <Link to={`/threats/${log.id}`} className="text-teal-400 hover:underline">

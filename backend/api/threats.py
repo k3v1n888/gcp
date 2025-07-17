@@ -47,15 +47,18 @@ def get_threat_detail(
 
     recommendations = generate_threat_remediation_plan(threat_log)
 
-    response_data = schemas.ThreatLog.from_orm(threat_log).dict()
-    response_data['recommendations'] = recommendations
-    response_data['correlation'] = correlated_threat
+    # Convert the SQLAlchemy object to a Pydantic model first
+    response_data = schemas.ThreatDetailResponse.from_orm(threat_log)
+    response_data.recommendations = recommendations
+    response_data.correlation = correlated_threat
     
+    # --- THIS IS THE FIX ---
+    # Add the anomaly features to the response if the flag is true
     if threat_log.is_anomaly:
-        response_data['anomaly_features'] = {
-            "text_feature": f"{threat_log.threat} {threat_log.source}",
-            "ip_reputation_score": threat_log.ip_reputation_score or 0,
-            "has_cve": 1 if threat_log.cve_id else 0
-        }
+        response_data.anomaly_features = schemas.AnomalyFeatures(
+            text_feature=f"{threat_log.threat} {threat_log.source}",
+            ip_reputation_score=threat_log.ip_reputation_score or 0,
+            has_cve=1 if threat_log.cve_id else 0
+        )
     
     return response_data

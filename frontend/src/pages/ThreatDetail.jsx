@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import Chatbot from '../components/Chatbot';
+import Chatbot from '../components/Chatbot'; // You must create this file
 
 const SeverityBadge = ({ severity }) => {
   const severityStyles = {
@@ -68,7 +68,6 @@ export default function ThreatDetail() {
       
       <div className="flex items-center gap-4 mb-2">
         <h1 className="text-3xl font-bold">{threat.threat}</h1>
-        {/* --- Anomaly Indicator --- */}
         {threat.is_anomaly && (
             <span className="bg-purple-200 text-purple-800 text-xs font-medium px-2.5 py-1 rounded-full animate-pulse">
                 Anomaly Detected
@@ -122,13 +121,13 @@ export default function ThreatDetail() {
 
       {threat.recommendations ? (
         <>
-          <DetailCard title="Quantum AI Analysis: What is this threat?">
+          <DetailCard title="Quntum AI Analysis: What is this threat?">
             <p>{threat.recommendations.explanation}</p>
           </DetailCard>
           <DetailCard title="Quantum AI Analysis: Potential Impact">
             <p>{threat.recommendations.impact}</p>
           </DetailCard>
-          <DetailCard title="Quantum AI Analysis: Recommended Mitigation Steps">
+          <DetailCard title="Quntum AI Analysis: Recommended Mitigation Steps">
             <ul className="list-disc list-inside space-y-2">
               {threat.recommendations.mitigation.map((step, index) => (
                 <li key={index}>{step}</li>
@@ -141,9 +140,8 @@ export default function ThreatDetail() {
             <p>Could not generate AI recommendations for this threat.</p>
         </DetailCard>
       )}
-
-      {/* --- Chatbot Widget --- */}
-      <DetailCard title="Quantum AI Interactive Investigation">
+      
+      <DetailCard title="Quantum AI Bot">
         <Chatbot threatContext={threat} />
       </DetailCard>
     </div>

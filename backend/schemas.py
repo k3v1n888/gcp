@@ -1,4 +1,3 @@
-# backend/schemas.py
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional
@@ -29,6 +28,11 @@ class SystemSettings(BaseModel):
     alert_severity: str
     model_config = ConfigDict(from_attributes=True)
 
+# --- NEW: Schema for the user invitation request ---
+class UserInviteRequest(BaseModel):
+    email: str
+    role: str
+
 class Recommendation(BaseModel):
     explanation: str
     impact: str
@@ -46,7 +50,6 @@ class AnomalyFeatures(BaseModel):
     ip_reputation_score: int
     has_cve: int
 
-# --- NEW: Schema for SOAR action logs ---
 class AutomationLog(BaseModel):
     action_type: str
     timestamp: datetime

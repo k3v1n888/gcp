@@ -1,36 +1,35 @@
-/* frontend/src/index.css */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  background-color: #0d1117;
-  color: #c9d1d9;
-  font-family: 'Orbitron', sans-serif;
+  /* Softer dark background and text colors */
+  background-color: #111827; /* A dark slate blue */
+  color: #d1d5db; /* A light gray */
+  font-family: 'Exo 2', sans-serif;
 }
 
-/* Custom futuristic widget style */
+/* Updated futuristic widget style with less contrast */
 .widget-card {
-  @apply bg-gray-900 border border-cyan-500/30 rounded-lg shadow-lg shadow-cyan-500/10;
+  @apply bg-gray-900/50 border border-slate-700 rounded-lg shadow-lg;
 }
 
-/* Glow effect for text and icons */
+/* A more subtle glow effect for text */
 .glow-text {
-  @apply text-cyan-400;
-  text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+  @apply text-teal-300;
 }
 
-/* Custom table style */
+/* Updated table style */
 .cyber-table {
-  @apply min-w-full text-sm bg-gray-900/50 backdrop-blur-sm border border-cyan-500/30;
+  @apply min-w-full text-sm bg-transparent;
 }
 
 .cyber-table th {
-  @apply px-3 py-2 text-left text-cyan-400 border-b-2 border-cyan-500/30;
+  @apply px-3 py-2 text-left text-sm font-semibold text-slate-400 border-b-2 border-slate-700;
 }
 
 .cyber-table td {
-  @apply px-3 py-2 border-t border-cyan-500/30;
+  @apply px-3 py-2 border-t border-slate-800;
 }

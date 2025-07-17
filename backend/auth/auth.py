@@ -4,8 +4,6 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from authlib.integrations.starlette_client import OAuth
 
-# --- 1. Adjust imports for new structure ---
-# Import all necessary components from your project files
 from .. import models, database, schemas
 from ..models import User, Tenant
 from ..database import get_db
@@ -14,11 +12,9 @@ from ..ueba_service import check_user_activity_anomaly
 router = APIRouter()
 oauth = OAuth()
 
-# --- Configuration ---
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-# This URL must exactly match what is in your Google Cloud OAuth Client ID settings
-FRONTEND_URL = "https://quantum-ai.asia" 
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://quantum-ai.asia")
 
 oauth.register(
     name='google',
@@ -30,7 +26,6 @@ oauth.register(
 
 @router.get('/api/auth/login')
 async def login(request: Request):
-    # --- FIX: Ensure the redirect_uri always uses https ---
     redirect_uri = f"{FRONTEND_URL}/api/auth/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
@@ -40,39 +35,42 @@ async def auth_callback(request: Request, db: Session = Depends(get_db)):
         token = await oauth.google.authorize_access_token(request)
         user_info = token.get('userinfo')
         if not user_info:
-            raise Exception("No user info found in token")
+            raise Exception("No user info found")
 
         email = user_info.get('email')
         db_user = db.query(User).filter(User.email == email).first()
 
-        if not db_user:
-            # Create a default tenant and a new user
+        if db_user:
+            # --- HANDLE INVITED USERS ---
+            if db_user.status == 'pending':
+                db_user.username = user_info.get('name')
+                db_user.status = 'active'
+                db.commit()
+                db.refresh(db_user)
+        else:
+            # --- HANDLE BRAND NEW USERS (Not previously invited) ---
             tenant = Tenant(name=f"{user_info.get('name')}'s Tenant")
             db.add(tenant)
             db.commit()
             db.refresh(tenant)
             
             db_user = User(
-                username=user_info.get('name'), # Changed from 'name' to 'username' to match model
+                username=user_info.get('name'),
                 email=email,
                 role='admin',
-                tenant_id=tenant.id
+                tenant_id=tenant.id,
+                status='active'
             )
             db.add(db_user)
             db.commit()
             db.refresh(db_user)
 
-        # --- FIX: Use Pydantic schema for serialization, not the old .as_dict() ---
-        pydantic_user = schemas.User.from_orm(db_user)
-        request.session['user'] = pydantic_user.dict()
+        # Use the existing as_dict() method from your User model
+        request.session['user'] = db_user.as_dict()
+        request.session['id_token'] = token['id_token']
         
-        # --- UEBA INTEGRATION ---
-        # This logic is now correctly placed
-        new_activity = models.UserActivityLog(
-            user_id=db_user.id, 
-            action="user_login", 
-            details=f"Login from IP: {request.client.host}"
-        )
+        # UEBA Integration
+        new_activity = models.UserActivityLog(user_id=db_user.id, action="user_login", details=f"Login from IP: {request.client.host}")
         db.add(new_activity)
         db.commit()
 
@@ -88,14 +86,21 @@ async def auth_callback(request: Request, db: Session = Depends(get_db)):
             db.add(anomaly_threat)
             db.commit()
         
-        return RedirectResponse(url="/auth/success")
-
+        response = RedirectResponse(url="/auth/success")
+        response.set_cookie(
+            key="session",
+            value=token['id_token'],
+            httponly=True,
+            samesite="none",
+            secure=True,
+        )
+        return response
     except Exception as e:
         print(f"Error during auth callback: {e}")
         return RedirectResponse(url="/login?error=auth_failed")
 
 @router.get("/api/auth/me")
-def get_current_user(request: Request):
+def get_current_user_from_session(request: Request):
     user = request.session.get('user')
     if user:
         return user
@@ -104,4 +109,7 @@ def get_current_user(request: Request):
 @router.post("/api/auth/logout")
 async def logout(request: Request):
     request.session.pop('user', None)
-    return RedirectResponse(url="/")
+    request.session.pop('id_token', None)
+    response = RedirectResponse(url="/")
+    response.delete_cookie("session")
+    return response

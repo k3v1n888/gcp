@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 import AISummary from '../components/AISummary';
 import ThreatForecast from '../components/ThreatForecast';
 
-// Helper components remain the same, but their styles will be updated by index.css
 const ReputationScore = ({ score }) => {
     const numericScore = typeof score === 'number' ? score : 0;
     const getScoreColor = () => {

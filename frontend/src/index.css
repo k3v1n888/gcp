@@ -5,13 +5,13 @@
 @tailwind utilities;
 
 body {
-  /* Softer dark background and text colors */
-  background-color: #111827; /* A dark slate blue */
-  color: #d1d5db; /* A light gray */
+  background-color: #111827;
+  /* --- CHANGE: Use a brighter, more readable text color --- */
+  color: #e2e8f0; /* slate-200 */
   font-family: 'Exo 2', sans-serif;
 }
 
-/* Updated futuristic widget style with less contrast */
+/* Custom futuristic widget style */
 .widget-card {
   @apply bg-gray-900/50 border border-slate-700 rounded-lg shadow-lg;
 }

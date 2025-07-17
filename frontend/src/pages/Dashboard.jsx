@@ -5,44 +5,36 @@ import { Link } from 'react-router-dom';
 import AISummary from '../components/AISummary';
 import ThreatForecast from '../components/ThreatForecast';
 
-// Helper component for the IP Reputation progress bar
+// Helper components remain the same, but their styles will be updated by index.css
 const ReputationScore = ({ score }) => {
-  const numericScore = typeof score === 'number' ? score : 0;
-  const getScoreColor = () => {
-    if (numericScore > 75) return 'bg-red-500';
-    if (numericScore > 40) return 'bg-orange-500';
-    return 'bg-green-500';
-  };
-  return (
-    <div className="flex items-center">
-      <div className="w-full bg-gray-700 rounded-full h-2.5">
-        <div
-          className={`${getScoreColor()} h-2.5 rounded-full`}
-          style={{ width: `${numericScore}%` }}
-          title={`AbuseIPDB Score: ${numericScore}`}
-        ></div>
-      </div>
-      <span className="text-xs font-semibold ml-2 text-gray-400">{numericScore}</span>
-    </div>
-  );
+    const numericScore = typeof score === 'number' ? score : 0;
+    const getScoreColor = () => {
+        if (numericScore > 75) return 'bg-red-600';
+        if (numericScore > 40) return 'bg-orange-500';
+        return 'bg-green-600';
+    };
+    return (
+        <div className="flex items-center">
+            <div className="w-full bg-slate-700 rounded-full h-2.5">
+                <div className={`${getScoreColor()} h-2.5 rounded-full`} style={{ width: `${numericScore}%` }} title={`AbuseIPDB Score: ${numericScore}`}></div>
+            </div>
+            <span className="text-xs font-semibold ml-3 text-slate-300">{numericScore}</span>
+        </div>
+    );
 };
 
-// Helper component for the color-coded severity badges
 const SeverityBadge = ({ severity }) => {
-  const severityStyles = {
-    critical: 'bg-red-600 text-white',
-    high: 'bg-orange-500 text-white',
-    medium: 'bg-yellow-400 text-black',
-    low: 'bg-blue-500 text-white',
-    unknown: 'bg-gray-500 text-white',
-  };
-  const severityKey = typeof severity === 'string' ? severity.toLowerCase() : 'unknown';
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${severityStyles[severityKey] || severityStyles.unknown}`}>
-      {severity}
-    </span>
-  );
+    const severityStyles = {
+        critical: 'bg-red-600 text-white',
+        high: 'bg-orange-500 text-white',
+        medium: 'bg-yellow-400 text-black',
+        low: 'bg-sky-500 text-white',
+        unknown: 'bg-slate-500 text-white',
+    };
+    const severityKey = typeof severity === 'string' ? severity.toLowerCase() : 'unknown';
+    return (<span className={`px-2.5 py-1 rounded-full text-xs font-bold ${severityStyles[severityKey] || severityStyles.unknown}`}>{severity.toUpperCase()}</span>);
 };
+
 
 export default function Dashboard() {
     const { user } = useContext(UserContext);
@@ -67,53 +59,54 @@ export default function Dashboard() {
         return () => socket.close();
     }, []);
 
-    const COLORS = ['#2dd4bf', '#60a5fa', '#facc15', '#fb923c', '#f87171'];
+    const COLORS = ['#38bdf8', '#4ade80', '#facc15', '#fb923c', '#f87171'];
 
     return (
         <div className="p-4 md:p-6">
-            <h1 className="text-3xl font-bold mb-6 glow-text">Cyber Operations Dashboard</h1>
+            <h1 className="text-3xl font-bold mb-6 text-slate-100">Cyber Operations Dashboard</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="widget-card p-4"><AISummary /></div>
-                <div className="widget-card p-4"><ThreatForecast /></div>
+                <div className="widget-card p-6"><AISummary /></div>
+                <div className="widget-card p-6"><ThreatForecast /></div>
             </div>
 
             {(user?.role === 'admin' || user?.role === 'analyst') && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
-                    <div className="widget-card p-4">
-                        <h2 className="text-lg font-semibold mb-2 glow-text">Threats by Type</h2>
+                    <div className="widget-card p-6">
+                        <h2 className="text-xl font-semibold mb-4 glow-text">Threats by Type</h2>
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
-                                <Pie data={analytics?.by_type} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5}>
+                                <Pie data={analytics?.by_type} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={90} fill="#8884d8" paddingAngle={5} labelLine={false}>
                                     {analytics?.by_type.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                                 </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} itemStyle={{ color: '#e2e8f0' }}/>
+                                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} itemStyle={{ color: '#e2e8f0' }}/>
+                                <Legend />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
-                    <div className="widget-card p-4">
-                        <h2 className="text-lg font-semibold mb-2 glow-text">Threats by Source</h2>
+                    <div className="widget-card p-6">
+                        <h2 className="text-xl font-semibold mb-4 glow-text">Threats by Source</h2>
                         <ResponsiveContainer width="100%" height={300}>
                             <BarChart data={analytics?.by_source}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                <XAxis dataKey="name" stroke="#9ca3af" tick={{ fontSize: 12 }} />
-                                <YAxis stroke="#9ca3af" />
-                                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} itemStyle={{ color: '#e2e8f0' }}/>
-                                <Bar dataKey="value" fill="#2dd4bf" fillOpacity={0.6} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                <XAxis dataKey="name" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                                <YAxis stroke="#94a3b8" />
+                                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} itemStyle={{ color: '#e2e8f0' }}/>
+                                <Bar dataKey="value" fill="#38bdf8" fillOpacity={0.8} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
             )}
 
-            <div className="col-span-12 widget-card p-4">
-                <h2 className="text-lg font-semibold mb-2 glow-text">Live Threat Intel Feed</h2>
+            <div className="col-span-12 widget-card p-6">
+                <h2 className="text-xl font-semibold mb-4 glow-text">Live Threat Intel Feed</h2>
                 <div className="overflow-x-auto">
                     <table className="cyber-table">
                         <thead>
                             <tr>
                                 <th>IP</th>
-                                <th className="w-32">IP Reputation</th>
+                                <th className="w-40">IP Reputation</th>
                                 <th>Threat</th>
                                 <th>Source</th>
                                 <th>CVE</th>
@@ -125,19 +118,15 @@ export default function Dashboard() {
                         <tbody>
                             {logs.map((log) => (
                                 <tr key={log.id} className="hover:bg-slate-800 transition-colors duration-200">
-                                    <td className="font-mono text-slate-300">{log.ip}</td>
+                                    <td className="font-mono text-slate-400">{log.ip}</td>
                                     <td><ReputationScore score={log.ip_reputation_score} /></td>
-                                    <td>
-                                        <Link to={`/threats/${log.id}`} className="text-teal-400 hover:underline">
-                                            {log.threat}
-                                        </Link>
-                                    </td>
+                                    <td><Link to={`/threats/${log.id}`} className="text-sky-400 hover:underline">{log.threat}</Link></td>
                                     <td>{log.source}</td>
                                     <td className="font-mono">{log.cve_id || 'N/A'}</td>
                                     <td><SeverityBadge severity={log.severity} /></td>
                                     <td>
-                                        {log.is_anomaly && (<span className="text-purple-400 animate-pulse mr-2">Anomaly</span>)}
-                                        {log.source === 'UEBA Engine' && (<span className="text-yellow-400 animate-pulse">Insider</span>)}
+                                        {log.is_anomaly && (<span className="text-fuchsia-400 font-semibold mr-2">Anomaly</span>)}
+                                        {log.source === 'UEBA Engine' && (<span className="text-amber-400 font-semibold">Insider</span>)}
                                     </td>
                                     <td>{new Date(log.timestamp).toLocaleString()}</td>
                                 </tr>

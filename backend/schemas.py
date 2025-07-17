@@ -1,3 +1,4 @@
+# backend/schemas.py
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional
@@ -39,14 +40,21 @@ class CorrelatedThreat(BaseModel):
     cve_id: Optional[str] = None
     risk_score: int
     model_config = ConfigDict(from_attributes=True)
-
-# --- NEW: Define the AnomalyFeatures schema BEFORE it is used ---
+    
 class AnomalyFeatures(BaseModel):
     text_feature: str
     ip_reputation_score: int
     has_cve: int
 
+# --- NEW: Schema for SOAR action logs ---
+class AutomationLog(BaseModel):
+    action_type: str
+    timestamp: datetime
+    details: str
+    model_config = ConfigDict(from_attributes=True)
+
 class ThreatDetailResponse(ThreatLog):
     recommendations: Optional[Recommendation] = None
     correlation: Optional[CorrelatedThreat] = None
     anomaly_features: Optional[AnomalyFeatures] = None
+    soar_actions: List[AutomationLog] = []

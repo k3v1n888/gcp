@@ -74,8 +74,8 @@ export default function Dashboard() {
             <h1 className="text-3xl font-bold mb-6 glow-text">Cyber Operations Dashboard</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="widget-card p-4"><Quantum AISummary /></div>
-                <div className="widget-card p-4"><Quantum AIThreatForecast /></div>
+                <div className="widget-card p-4"><AISummary /></div>
+                <div className="widget-card p-4"><ThreatForecast /></div>
             </div>
 
             {(user?.role === 'admin' || user?.role === 'analyst') && (
@@ -84,7 +84,7 @@ export default function Dashboard() {
                         <h2 className="text-lg font-semibold mb-2 glow-text">Threats by Type</h2>
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
-                                <Pie data={analytics?.by_type} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                                <Pie data={analytics?.by_type} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5}>
                                     {analytics?.by_type.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                                 </Pie>
                                 <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} itemStyle={{ color: '#d1d5db' }}/>
@@ -130,4 +130,22 @@ export default function Dashboard() {
                                     <td>
                                         <Link to={`/threats/${log.id}`} className="text-teal-400 hover:underline">
                                             {log.threat}
-                                        </
+                                        </Link>
+                                    </td>
+                                    <td>{log.source}</td>
+                                    <td className="font-mono">{log.cve_id || 'N/A'}</td>
+                                    <td><SeverityBadge severity={log.severity} /></td>
+                                    <td>
+                                        {log.is_anomaly && (<span className="text-purple-400 animate-pulse mr-2">Anomaly</span>)}
+                                        {log.source === 'UEBA Engine' && (<span className="text-yellow-400 animate-pulse">Insider</span>)}
+                                    </td>
+                                    <td>{new Date(log.timestamp).toLocaleString()}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+}

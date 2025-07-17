@@ -1,35 +1,34 @@
-@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  background-color: #111827;
-  /* --- CHANGE: Use a brighter, more readable text color --- */
-  color: #e2e8f0; /* slate-200 */
-  font-family: 'Exo 2', sans-serif;
+  /* Use a professional dark grey and a highly readable off-white for text */
+  background-color: #111827; /* A very dark slate blue */
+  color: #f1f5f9; /* A bright, clean off-white (slate-100) */
+  /* Use the system's default sans-serif font for maximum readability */
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
-/* Custom futuristic widget style */
+/* A clean, professional card style */
 .widget-card {
-  @apply bg-gray-900/50 border border-slate-700 rounded-lg shadow-lg;
+  @apply bg-slate-900 border border-slate-700 rounded-lg shadow-lg;
 }
 
-/* A more subtle glow effect for text */
+/* A clean, bright accent color for headings */
 .glow-text {
-  @apply text-teal-300;
+  @apply text-sky-400 font-semibold;
 }
 
-/* Updated table style */
+/* Updated table style for clarity */
 .cyber-table {
   @apply min-w-full text-sm bg-transparent;
 }
 
 .cyber-table th {
-  @apply px-3 py-2 text-left text-sm font-semibold text-slate-400 border-b-2 border-slate-700;
+  @apply px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider border-b-2 border-slate-700;
 }
 
 .cyber-table td {
-  @apply px-3 py-2 border-t border-slate-800;
+  @apply px-4 py-3 border-t border-slate-800;
 }

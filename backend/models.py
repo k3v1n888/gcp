@@ -1,12 +1,10 @@
 # backend/models.py
-
 from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, func, Boolean
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy import create_engine
 import os
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@db:5432/cyberdb")
-
 Base = declarative_base()
 
 class Tenant(Base):
@@ -27,7 +25,6 @@ class User(Base):
     tenant = relationship("Tenant", back_populates="users")
     
     def as_dict(self):
-       """Converts the object to a dictionary."""
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class ThreatLog(Base):
@@ -42,9 +39,9 @@ class ThreatLog(Base):
     tenant = relationship("Tenant", back_populates="threats")
     ip_reputation_score = Column(Integer, nullable=True)
     cve_id = Column(String, nullable=True)
-
-    # --- ADD THIS NEW COLUMN ---
     is_anomaly = Column(Boolean, default=False)
+    # Relationship to automation logs
+    automation_actions = relationship("AutomationLog", back_populates="threat")
 
 class SystemSettings(Base):
     __tablename__ = "system_settings"
@@ -52,14 +49,27 @@ class SystemSettings(Base):
     alert_severity = Column(String, default="critical")
 
 class CorrelatedThreat(Base):
-    __tablename__ = "correlated_threats"
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    summary = Column(Text, nullable=True)
-    cve_id = Column(String, nullable=True)
-    risk_score = Column(Integer, default=0)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    tenant_id = Column(Integer, ForeignKey("tenants.id"))
+    # ... (This model is unchanged)
+    pass
+
+# --- NEW: Table to log automated SOAR actions ---
+class AutomationLog(Base):
+    __tablename__ = "automation_logs"
+    id = Column(Integer, primary_key=True)
+    threat_id = Column(Integer, ForeignKey("threat_logs.id"))
+    action_type = Column(String) # e.g., "IP_BLOCK_SUCCESS"
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    details = Column(Text)
+    threat = relationship("ThreatLog", back_populates="automation_actions")
+
+# --- NEW: Table to log user activities for UEBA ---
+class UserActivityLog(Base):
+    __tablename__ = "user_activity_logs"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    action = Column(String) # e.g., "user_login", "view_threat_details"
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    details = Column(Text, nullable=True)
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

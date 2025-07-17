@@ -3,8 +3,9 @@ import { UserContext } from '../context/UserContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import AISummary from '../components/AISummary';
 import ThreatForecast from '../components/ThreatForecast';
-import { Link } from 'react-router-dom'; // <-- Import Link
+import { Link } from 'react-router-dom';
 
+// Helper component for the IP Reputation progress bar
 const ReputationScore = ({ score }) => {
   const numericScore = typeof score === 'number' ? score : 0;
   const getScoreColor = () => {
@@ -26,6 +27,7 @@ const ReputationScore = ({ score }) => {
   );
 };
 
+// Helper component for the color-coded severity badges
 const SeverityBadge = ({ severity }) => {
   const severityStyles = {
     critical: 'bg-red-600 text-white',
@@ -42,16 +44,22 @@ const SeverityBadge = ({ severity }) => {
   );
 };
 
+
 export default function Dashboard() {
   const { user } = useContext(UserContext);
   const [logs, setLogs] = useState([]);
   const [analytics, setAnalytics] = useState(null);
 
   useEffect(() => {
+    // Add a unique timestamp to the URL to bypass any caches
     const cacheBuster = `?_=${new Date().getTime()}`;
+
+    // Fetch initial threat logs with the cache-busting parameter
     fetch(`/api/threats${cacheBuster}`)
       .then(res => res.json())
       .then(data => setLogs(data));
+
+    // Fetch analytics data
     fetch(`/api/analytics/summary${cacheBuster}`)
       .then(res => res.json())
       .then(data => {
@@ -61,11 +69,14 @@ export default function Dashboard() {
         };
         setAnalytics(formattedData);
       });
+
+    // WebSocket for live updates
     const socket = new WebSocket(`wss://${window.location.hostname}/ws/threats`);
     socket.onmessage = (event) => {
       const newLog = JSON.parse(event.data);
       setLogs((prev) => [newLog, ...prev]);
     };
+
     return () => socket.close();
   }, []);
 
@@ -127,6 +138,7 @@ export default function Dashboard() {
               <th className="px-3 py-2">Source</th>
               <th className="px-3 py-2">CVE</th>
               <th className="px-3 py-2">Severity</th>
+              <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Timestamp</th>
             </tr>
           </thead>
@@ -157,6 +169,13 @@ export default function Dashboard() {
                 </td>
                 <td className="px-3 py-2">
                   <SeverityBadge severity={log.severity} />
+                </td>
+                <td className="px-3 py-2">
+                  {log.is_anomaly && (
+                    <span className="bg-purple-200 text-purple-800 text-xs font-medium px-2.5 py-1 rounded-full animate-pulse">
+                      Anomaly
+                    </span>
+                  )}
                 </td>
                 <td className="px-3 py-2">{new Date(log.timestamp).toLocaleString()}</td>
               </tr>

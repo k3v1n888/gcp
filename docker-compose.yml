@@ -5,8 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - DOMAIN=quantum-ai.asia
-      - FRONTEND_URL=https://quantum-ai.asia
+      - DOMAIN=qai.quantum-ai.asia
+      - FRONTEND_URL=https://qai.quantum-ai.asia
       - DATABASE_URL=postgresql://user:password@db:5432/cyberdb
       # Add other env vars like JWT_SECRET, OAUTH keys, Slack tokens here
     ports:

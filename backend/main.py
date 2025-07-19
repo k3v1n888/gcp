@@ -71,7 +71,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://ai-cyber-fullstack-1020401092050.us-central1.run.app",
-        "https://quantum-ai.asia"
+        "https://qai.quantum-ai.asia"
     ],
     allow_credentials=True,
     allow_methods=["*"],

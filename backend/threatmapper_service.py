@@ -16,9 +16,10 @@ def get_threatmapper_token():
         return None
     try:
         response = requests.get(
-            f"{THREATMAPPER_URL}/api/token",
+            f"{THREATMAPPER_URL}/deepfence/api/token",
             headers={'Content-Type': 'application/json'},
-            json={"api_key": THREATMAPPER_API_KEY}
+            json={"api_key": THREATMAPPER_API_KEY},
+            verify=False
         )
         response.raise_for_status()
         return response.json().get("data", {}).get("access_token")

@@ -19,6 +19,7 @@ from backend.routers.correlation import router as correlation_router
 from backend.routers.predictive import router as predictive_router
 from backend.routers.forecasting import router as forecasting_router
 from backend.routers.chat import router as chat_router
+from backend.routers import ingestion as ingestion_router
 
 # --- Import project components ---
 from backend.models import Base, engine
@@ -97,6 +98,7 @@ app.include_router(correlation_router)
 app.include_router(predictive_router)
 app.include_router(forecasting_router)
 app.include_router(chat_router)
+app.include_router(ingestion_router)
 
 @app.get("/_fastapi_health")
 def fastapi_health():

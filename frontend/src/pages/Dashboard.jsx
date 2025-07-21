@@ -39,7 +39,9 @@ export default function Dashboard() {
     const { user } = useContext(UserContext);
     const [logs, setLogs] = useState([]);
     const [analytics, setAnalytics] = useState(null);
-
+	const [isSyncing, setIsSyncing] = useState(false);
+ 	const [syncMessage, setSyncMessage] = useState('');
+ 	
     useEffect(() => {
         const cacheBuster = `?_=${new Date().getTime()}`;
         fetch(`/api/threats${cacheBuster}`).then(res => res.json()).then(data => setLogs(data));
@@ -57,6 +59,48 @@ export default function Dashboard() {
         };
         return () => socket.close();
     }, []);
+    
+      // --- NEW: Function to handle the sync button click ---
+  	const handleSync = async () => {
+    setIsSyncing(true);
+    setSyncMessage('Syncing with intel sources...');
+    
+    try {
+        const response = await fetch('/api/ingest/run', { method: 'POST' });
+        const data = await response.json();
+        if (response.ok) {
+            setSyncMessage(data.message);
+        } else {
+            throw new Error('Failed to start sync.');
+        }
+    } catch (error) {
+        setSyncMessage('Error starting sync.');
+    } finally {
+        // Set a timeout to clear the message and re-enable the button
+        setTimeout(() => {
+            setIsSyncing(false);
+            setSyncMessage('');
+        }, 5000);
+    }
+  };
+
+  return (
+    <div className="p-4 md:p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-slate-100">Cyber Operations Dashboard</h1>
+        {/* --- NEW: Sync Button --- */}
+        <div>
+          <button 
+            onClick={handleSync} 
+            disabled={isSyncing}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-sky-600 hover:bg-sky-700 disabled:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
+          >
+            {isSyncing ? 'Syncing...' : 'Sync Intel Feeds'}
+          </button>
+        </div>
+      </div>
+      {syncMessage && <p className="text-sm text-slate-300 mb-4">{syncMessage}</p>}
+
 
     const COLORS = ['#38bdf8', '#4ade80', '#facc15', '#fb923c', '#f87171'];
 

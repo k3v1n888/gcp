@@ -1,9 +1,8 @@
 import os
 import asyncio
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 # --- Import all application routers ---
 from backend.auth.auth import router as auth_router
@@ -21,26 +20,29 @@ from backend.routers.predictive import router as predictive_router
 from backend.routers.forecasting import router as forecasting_router
 from backend.routers.chat import router as chat_router
 
-
 # --- Import project components ---
 from backend.models import Base, engine
 from backend.database import SessionLocal
 from backend.ml.prediction import SeverityPredictor
 from backend.forecasting_service import ThreatForecaster
-from backend.threat_feed import fetch_and_save_threat_feed
 from backend.anomaly_service import AnomalyDetector
+from backend.threat_feed import fetch_and_save_threat_feed
+from backend.wazuh_service import fetch_and_save_wazuh_alerts
+from backend.threatmapper_service import fetch_and_save_threatmapper_vulns
 
 app = FastAPI()
 
-# --- Background task for the threat feed ---
-async def periodic_threat_feed():
-    """Runs the threat feed fetcher every hour."""
+# --- Combined background task for all data ingestion ---
+async def periodic_data_ingestion():
+    """Runs all data ingestion services on a schedule."""
     while True:
         db = SessionLocal()
         try:
-            print("Running hourly threat feed ingestion...")
-            fetch_and_save_threat_feed(db)
-            print("Threat feed ingestion complete.")
+            print("Running periodic data ingestion...")
+            fetch_and_save_threat_feed(db)      # Maltiverse
+            fetch_and_save_wazuh_alerts(db)     # Wazuh
+            fetch_and_save_threatmapper_vulns(db) # ThreatMapper
+            print("Data ingestion complete.")
         finally:
             db.close()
         # Wait for 1 hour (3600 seconds) before the next run
@@ -55,8 +57,9 @@ def on_startup():
     app.state.predictor = SeverityPredictor()
     app.state.forecaster = ThreatForecaster()
     app.state.anomaly_detector = AnomalyDetector()
+    
     # Start the background task to fetch threat intelligence
-    asyncio.create_task(periodic_threat_feed())
+    asyncio.create_task(periodic_data_ingestion())
 
 # --- Middleware configuration ---
 SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")
@@ -87,7 +90,7 @@ app.include_router(threats_router)
 app.include_router(ws_router)
 app.include_router(alert_router)
 app.include_router(analytics_router)
-app.include_router(slack_router)
+app.include_router(slack_alert)
 app.include_router(log_receiver_router)
 app.include_router(correlation_router)
 app.include_router(predictive_router)

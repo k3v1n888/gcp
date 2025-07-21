@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from backend import models, database, schemas
 from backend.app.websocket.threats import manager
-from backend.correlation_service import get_ip_reputation, find_cve_for_threat
+from backend.correlation_service import get_intel_from_misp, find_cve_for_threat
 from backend.soar_service import block_ip_with_cloud_armor
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,9 @@ async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Sessio
     predictor = request.app.state.predictor
     anomaly_detector = request.app.state.anomaly_detector
 
-    ip_score = get_ip_reputation(threat.ip)
+    # --- Use get_intel_from_misp for enrichment ---
+    intel = get_intel_from_misp(threat.ip)
+    ip_score = intel.get("ip_reputation_score", 0)
     cve_id = find_cve_for_threat(threat.threat)
     
     predicted_severity = predictor.predict(

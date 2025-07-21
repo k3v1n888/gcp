@@ -9,19 +9,44 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def get_ip_reputation(ip: str) -> int:
-    """Gets the abuse confidence score for an IP from AbuseIPDB."""
-    api_key = os.getenv("ABUSEIPDB_API_KEY")
-    if not api_key:
-        return 0
-    response = requests.get(
-        "https://api.abuseipdb.com/api/v2/check",
-        params={'ipAddress': ip, 'maxAgeInDays': '90'},
-        headers={'Key': api_key, 'Accept': 'application/json'}
-    )
-    if response.status_code == 200:
-        return response.json()['data'].get('abuseConfidenceScore', 0)
-    return 0
+# --- NEW: Configuration for your private MISP instance ---
+MISP_URL = os.getenv("MISP_URL", "https://intel.quantum-ai.asia")
+MISP_API_KEY = os.getenv("MISP_API_KEY")
+
+def get_intel_from_misp(indicator: str) -> dict:
+    """
+    Gets intelligence for an indicator (IP, domain, etc.) from your private MISP instance.
+    Returns a dictionary with the score.
+    """
+    if not MISP_URL or not MISP_API_KEY:
+        logger.warning("MISP_URL or MISP_API_KEY not configured. Skipping MISP enrichment.")
+        return {"ip_reputation_score": 0}
+
+    try:
+        response = requests.post(
+            f"{MISP_URL}/attributes/restSearch",
+            headers={
+                'Authorization': MISP_API_KEY,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            json={"value": indicator},
+            verify=False  # Use False if your MISP instance has a self-signed certificate
+        )
+        response.raise_for_status()
+        data = response.json().get("response", {}).get("Attribute", [])
+        
+        # A simple logic: if the indicator is found in MISP, give it a high score.
+        # A more advanced implementation could parse MISP tags for a more granular score.
+        if data:
+            logger.info(f"MISP Intel Found for indicator: {indicator}")
+            return {"ip_reputation_score": 95}
+        
+        return {"ip_reputation_score": 0}
+
+    except Exception as e:
+        logger.error(f"MISP Error for indicator {indicator}: {e}")
+        return {"ip_reputation_score": 0}
 
 def find_cve_for_threat(threat_text: str) -> str | None:
     """A simple keyword-to-CVE mapping."""
@@ -56,7 +81,9 @@ def correlate_and_enrich_threats(db: Session, tenant_id: int):
         )
         highest_risk_score = 0
         for ip_tuple in associated_ips:
-            score = get_ip_reputation(ip_tuple[0])
+            # Use the new MISP function for enrichment
+            intel = get_intel_from_misp(ip_tuple[0])
+            score = intel.get("ip_reputation_score", 0)
             if score > highest_risk_score:
                 highest_risk_score = score
         new_correlated_threat = models.CorrelatedThreat(
@@ -95,14 +122,12 @@ def generate_holistic_summary(db: Session, tenant_id: int) -> str:
     except Exception as e:
         return f"Failed to generate AI summary: {e}"
 
-# --- NEW: Function to generate a detailed threat analysis ---
 def generate_threat_remediation_plan(threat_log: models.ThreatLog) -> dict | None:
     """Generates an analysis and mitigation plan for a specific threat."""
     openai.api_key = os.getenv("OPENAI_API_KEY")
     if not openai.api_key:
         logger.error("OpenAI API key not configured for remediation plan.")
         return None
-
     prompt = f"""
     You are a cybersecurity analyst providing a detailed report on a specific threat event.
     The event details are:
@@ -110,7 +135,7 @@ def generate_threat_remediation_plan(threat_log: models.ThreatLog) -> dict | Non
     - Source: "{threat_log.source}"
     - Severity: "{threat_log.severity}"
     - Attacker IP: "{threat_log.ip}"
-    - IP Reputation Score (AbuseIPDB): "{threat_log.ip_reputation_score}"
+    - IP Reputation Score (from private MISP): "{threat_log.ip_reputation_score}"
     - Associated CVE: "{threat_log.cve_id or 'N/A'}"
 
     Based on these details, provide a structured JSON response with three keys: "explanation", "impact", and "mitigation".

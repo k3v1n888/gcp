@@ -16,7 +16,6 @@ def get_threatmapper_token():
     if not THREATMAPPER_URL or not THREATMAPPER_API_KEY:
         return None
     try:
-        # --- THIS IS THE FIX: Use the correct URL path and 'api_token' field ---
         response = requests.post(
             f"{THREATMAPPER_URL}/deepfence/auth/token",
             headers={'Content-Type': 'application/json'},
@@ -45,7 +44,8 @@ def fetch_and_save_threatmapper_vulns(db: Session):
         )
         response.raise_for_status()
         
-        vulnerabilities = response.json().get("data", [])
+        # --- THIS IS THE FIX: The response is a list, not a dictionary ---
+        vulnerabilities = response.json()
         new_logs_count = 0
 
         for vuln in vulnerabilities:

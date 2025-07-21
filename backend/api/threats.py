@@ -1,10 +1,11 @@
+# backend/api/threats.py
 from fastapi import APIRouter, Depends, Response, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
 from .. import models, database, schemas
 from ..auth.rbac import get_current_user
-from ..correlation_service import generate_threat_remediation_plan
+from ..correlation_service import generate_threat_remediation_plan, get_and_summarize_misp_intel
 
 router = APIRouter()
 
@@ -14,7 +15,6 @@ def get_threat_logs(
     user: models.User = Depends(get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    # ... (this function is correct and remains the same) ...
     response.headers["Cache-Control"] = "no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
@@ -47,13 +47,15 @@ def get_threat_detail(
     ).first()
 
     recommendations_dict = generate_threat_remediation_plan(threat_log)
+    
+    # --- Get the AI-powered MISP summary ---
+    misp_summary = get_and_summarize_misp_intel(threat_log.ip)
 
     # Convert the base SQLAlchemy object to a Pydantic model
     response_data = schemas.ThreatDetailResponse.from_orm(threat_log)
     response_data.correlation = correlated_threat
+    response_data.misp_summary = misp_summary
     
-    # --- THIS IS THE FIX ---
-    # Create an instance of the Recommendation schema from the dictionary
     if recommendations_dict:
         response_data.recommendations = schemas.Recommendation(**recommendations_dict)
     

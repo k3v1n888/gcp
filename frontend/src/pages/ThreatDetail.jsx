@@ -1,3 +1,4 @@
+// frontend/src/pages/ThreatDetail.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Chatbot from '../components/Chatbot';
@@ -23,7 +24,7 @@ const ReputationScore = ({ score }) => {
     return (
         <div className="flex items-center">
             <div className="w-full bg-slate-700 rounded-full h-2.5">
-                <div className={`${getScoreColor()} h-2.5 rounded-full`} style={{ width: `${numericScore}%` }} title={`AbuseIPDB Score: ${numericScore}`}></div>
+                <div className={`${getScoreColor()} h-2.5 rounded-full`} style={{ width: `${numericScore}%` }} title={`MISP Score: ${numericScore}`}></div>
             </div>
             <span className="text-xs font-semibold ml-3 text-slate-300">{numericScore}</span>
         </div>
@@ -63,14 +64,21 @@ export default function ThreatDetail() {
       <DetailCard title="Event Telemetry">
         <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <div className="py-2"><dt className="font-semibold text-slate-400">Attacker IP</dt><dd className="font-mono text-slate-200">{threat.ip}</dd></div>
-          <div className="py-2"><dt className="font-semibold text-slate-400">IP Reputation Score</dt><dd className="mt-1 w-40"><ReputationScore score={threat.ip_reputation_score} /></dd></div>
+          <div className="py-2"><dt className="font-semibold text-slate-400">IP Reputation Score (from MISP)</dt><dd className="mt-1 w-40"><ReputationScore score={threat.ip_reputation_score} /></dd></div>
           <div className="py-2"><dt className="font-semibold text-slate-400">AI-Assigned Severity</dt><dd className="mt-1"><SeverityBadge severity={threat.severity} /></dd></div>
           <div className="py-2"><dt className="font-semibold text-slate-400">Associated CVE</dt><dd className="font-mono text-slate-200">{threat.cve_id ? (<a href={`https://cve.mitre.org/cgi-bin/cvename.cgi?name=${threat.cve_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">{threat.cve_id}</a>) : ('N/A')}</dd></div>
         </dl>
       </DetailCard>
+      
+      {/* --- ADD THIS NEW CARD --- */}
+      {threat.misp_summary && (
+        <DetailCard title="Quantum Intel (MISP) Summary">
+            <p className="italic text-slate-200">{threat.misp_summary}</p>
+        </DetailCard>
+      )}
 
       {threat.correlation && (
-        <DetailCard title="Quantum Correlated Threat Analysis">
+        <DetailCard title="Correlated Threat Analysis">
           <h3 className="font-bold text-lg mb-2">{threat.correlation.title}</h3>
           <p className="mb-2">{threat.correlation.summary}</p>
           <div className="text-sm"><span className="font-semibold">Associated CVE: </span><span className="font-mono">{threat.correlation.cve_id || 'N/A'}</span></div>
@@ -83,9 +91,9 @@ export default function ThreatDetail() {
           <DetailCard title="Quantum AI Analysis: Potential Impact"><p>{threat.recommendations.impact}</p></DetailCard>
           <DetailCard title="Quantum AI Analysis: Mitigation Protocols"><ul className="list-disc list-inside space-y-2">{threat.recommendations.mitigation.map((step, index) => (<li key={index}>{step}</li>))}</ul></DetailCard>
         </>
-      ) : ( <DetailCard title="Quantum AI Analysis"><p>Could not generate AI recommendations for this threat.</p></DetailCard> )}
-
-      <DetailCard title="Quantum AI Reponse">
+      ) : ( <DetailCard title="AI Analysis"><p>Could not generate AI recommendations for this threat.</p></DetailCard> )}
+      
+      <DetailCard title="Automated Response Log">
         <SoarActionLog actions={threat.soar_actions} />
       </DetailCard>
       

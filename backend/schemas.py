@@ -1,3 +1,4 @@
+# backend/schemas.py
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional
@@ -28,7 +29,6 @@ class SystemSettings(BaseModel):
     alert_severity: str
     model_config = ConfigDict(from_attributes=True)
 
-# --- NEW: Schema for the user invitation request ---
 class UserInviteRequest(BaseModel):
     email: str
     role: str
@@ -61,3 +61,6 @@ class ThreatDetailResponse(ThreatLog):
     correlation: Optional[CorrelatedThreat] = None
     anomaly_features: Optional[AnomalyFeatures] = None
     soar_actions: List[AutomationLog] = []
+    
+    # --- ADD THIS NEW FIELD ---
+    misp_summary: Optional[str] = None

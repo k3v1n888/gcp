@@ -15,7 +15,7 @@ def get_threatmapper_token():
     if not THREATMAPPER_URL or not THREATMAPPER_API_KEY:
         return None
     try:
-        response = requests.post(
+        response = requests.get(
             f"{THREATMAPPER_URL}/api/token",
             json={"api_key": THREATMAPPER_API_KEY}
         )

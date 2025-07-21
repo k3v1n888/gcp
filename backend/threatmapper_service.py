@@ -17,6 +17,7 @@ def get_threatmapper_token():
     try:
         response = requests.get(
             f"{THREATMAPPER_URL}/api/token",
+            headers={'Content-Type': 'application/json'},
             json={"api_key": THREATMAPPER_API_KEY}
         )
         response.raise_for_status()

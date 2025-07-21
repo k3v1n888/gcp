@@ -13,7 +13,7 @@ from backend.api.threats import router as threats_router
 from backend.app.websocket.threats import router as ws_router
 from backend.alerting import router as alert_router
 from backend.analytics import router as analytics_router
-from backend.slack_alert import router as slack_router
+from backend.slack_alert import router as slack_router # Correctly imported as slack_router
 from backend.routers.log_receiver import router as log_receiver_router
 from backend.routers.correlation import router as correlation_router
 from backend.routers.predictive import router as predictive_router
@@ -90,7 +90,8 @@ app.include_router(threats_router)
 app.include_router(ws_router)
 app.include_router(alert_router)
 app.include_router(analytics_router)
-app.include_router(slack_alert)
+# --- THIS IS THE FIX ---
+app.include_router(slack_router) # Use the correct variable name 'slack_router'
 app.include_router(log_receiver_router)
 app.include_router(correlation_router)
 app.include_router(predictive_router)

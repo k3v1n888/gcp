@@ -1,32 +1,30 @@
+# backend/wazuh_service.py
 import requests
 import os
 from sqlalchemy.orm import Session
 from . import models
 from datetime import datetime, timezone, timedelta
 import logging
-import time # Import the time library for retries
+import time
 
 logger = logging.getLogger(__name__)
 
 WAZUH_URL = os.getenv("WAZUH_API_URL", "https://xdr.quantum-ai.asia")
-WAZUH_USER = os.getenv("WAZUH_API_USER", "admin")
+# --- THIS IS THE FIX: Hardcode the correct username to override any defaults ---
+WAZUH_USER = "wazuh-wui" 
 WAZUH_PASSWORD = os.getenv("WAZUH_API_PASSWORD")
 
 def get_wazuh_jwt():
-    """Authenticates with the Wazuh API to get a JWT token, with retries."""
-
-    # --- THIS IS THE FIX: Add detailed logging for debugging ---
-    print("--- WAZUH AUTHENTICATION ATTEMPT ---")
-    print(f"Attempting to connect to URL: {WAZUH_URL}")
-    print(f"Using Username: {WAZUH_USER}")
-    # This is a safe way to check if the password is being loaded from secrets
-    print(f"Password has been loaded: {bool(WAZUH_PASSWORD)}")
+    """Authenticates with the Wazuh API, with retries."""
+    print("--- WAZUH AUTH ATTEMPT ---")
+    print(f"URL: {WAZUH_URL}")
+    print(f"USER: {WAZUH_USER}")
+    print(f"PASSWORD IS SET: {bool(WAZUH_PASSWORD)}")
 
     if not WAZUH_PASSWORD or not WAZUH_USER or not WAZUH_URL:
-        print("--- WAZUH AUTH FAILED: One or more environment variables are missing. ---")
+        print("--- WAZUH AUTH FAILED: Missing credentials or URL ---")
         return None
-
-    # Retry a few times to handle cases where the Wazuh API might still be starting up
+    
     auth_attempts = 3
     for attempt in range(auth_attempts):
         try:
@@ -41,10 +39,8 @@ def get_wazuh_jwt():
         except Exception as e:
             logger.error(f"Wazuh Auth Attempt {attempt + 1}/{auth_attempts} failed: {e}")
             if attempt < auth_attempts - 1:
-                print(f"Waiting 10 seconds before retry...")
                 time.sleep(10)
     
-    logger.error("--- WAZUH AUTH FAILED: All authentication attempts failed. ---")
     return None
 
 def fetch_and_save_wazuh_alerts(db: Session):

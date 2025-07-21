@@ -12,22 +12,25 @@ THREATMAPPER_URL = os.getenv("THREATMAPPER_URL", "https://synapse.quantum-ai.asi
 THREATMAPPER_API_KEY = os.getenv("THREATMAPPER_API_KEY")
 
 def get_threatmapper_token():
+    """Authenticates with the ThreatMapper API to get a JWT token."""
     if not THREATMAPPER_URL or not THREATMAPPER_API_KEY:
         return None
     try:
-        response = requests.get(
-            f"{THREATMAPPER_URL}/deepfence/api/token",
+        # --- THIS IS THE FIX: Use the correct URL path and 'api_token' field ---
+        response = requests.post(
+            f"{THREATMAPPER_URL}/deepfence/auth/token",
             headers={'Content-Type': 'application/json'},
-            json={"api_token": THREATMAPPER_API_KEY},
+            json={"api_token": THREATMAPPER_API_KEY}, 
             verify=False
         )
         response.raise_for_status()
-        return response.json().get("data", {}).get("access_token")
+        return response.json().get("access_token")
     except Exception as e:
         logger.error(f"ThreatMapper Auth Error: {e}")
         return None
 
 def fetch_and_save_threatmapper_vulns(db: Session):
+    """Fetches new, critical vulnerabilities from the ThreatMapper API."""
     token = get_threatmapper_token()
     if not token:
         logger.error("Could not get ThreatMapper token, skipping vulnerability fetch.")

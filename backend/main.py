@@ -19,7 +19,7 @@ from backend.routers.correlation import router as correlation_router
 from backend.routers.predictive import router as predictive_router
 from backend.routers.forecasting import router as forecasting_router
 from backend.routers.chat import router as chat_router
-from backend.routers import ingestion as ingestion_router
+from backend.routers.ingestion import router as ingestion_router
 
 # --- Import project components ---
 from backend.models import Base, engine

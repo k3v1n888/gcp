@@ -39,7 +39,7 @@ def fetch_and_save_threatmapper_vulns(db: Session):
     logger.info("Fetching new vulnerabilities from ThreatMapper API...")
     try:
         response = requests.post(
-            f"{THREATMAPPER_URL}/deepfence/v2/vulnerabilities",
+            f"{THREATMAPPER_URL}/deepfence/search/vulnerabilities",
             headers={'Authorization': f'Bearer {token}'},
             json={"cve_severity": ["critical", "high"], "size": 20}
         )

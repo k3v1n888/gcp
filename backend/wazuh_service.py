@@ -35,6 +35,7 @@ def get_wazuh_jwt():
             response = requests.post(
                 f"{WAZUH_URL}/security/user/authenticate",
                 auth=(WAZUH_USER, WAZUH_PASSWORD),
+                headers={'Content-Type': 'application/json'},
                 verify=False
             )
             response.raise_for_status()

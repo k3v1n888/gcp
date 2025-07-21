@@ -5,28 +5,32 @@ from . import models
 from datetime import datetime, timezone, timedelta
 import logging
 import time
+import base64 # <-- 1. Import the base64 library
 
 logger = logging.getLogger(__name__)
 
 WAZUH_URL = os.getenv("WAZUH_API_URL", "https://xdr.quantum-ai.asia")
-WAZUH_USER = "wazuh-wui"
+WAZUH_USER = "wazuh-wui" 
 WAZUH_PASSWORD = os.getenv("WAZUH_API_PASSWORD")
 
 def get_wazuh_jwt():
-    """Authenticates with the Wazuh API, with retries."""
+    """Authenticates with the Wazuh API by manually building the Basic Auth header."""
     if not WAZUH_PASSWORD or not WAZUH_USER or not WAZUH_URL:
         logger.error("Wazuh credentials or URL not configured.")
         return None
 
+    # --- THIS IS THE FIX: Manually create the Base64 encoded credential ---
+    auth_string = f"{WAZUH_USER}:{WAZUH_PASSWORD}"
+    encoded_auth = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
+    auth_header = f"Basic {encoded_auth}"
+
     auth_attempts = 3
     for attempt in range(auth_attempts):
         try:
-            # --- THIS IS THE FINAL FIX: Manually set headers ---
-            # This is the most explicit and reliable way to handle authentication.
+            # --- Use the manually created header instead of the 'auth' parameter ---
             response = requests.post(
                 f"{WAZUH_URL}/security/user/authenticate",
-                auth=(WAZUH_USER, WAZUH_PASSWORD),
-                headers={'Content-Type': 'application/json'},
+                headers={'Authorization': auth_header},
                 verify=False
             )
             response.raise_for_status()

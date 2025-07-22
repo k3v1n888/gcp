@@ -14,33 +14,35 @@ WAZUH_USER = "wazuh-wui"
 WAZUH_PASSWORD = os.getenv("WAZUH_API_PASSWORD")
 
 def get_wazuh_jwt():
-    """Authenticates with the Wazuh API by manually building the Basic Auth header."""
+    """Authenticates with the Wazuh API using Basic Auth and retrieves a JWT token."""
     if not WAZUH_PASSWORD or not WAZUH_USER or not WAZUH_URL:
         logger.error("Wazuh credentials or URL not configured.")
         return None
 
-    # --- THIS IS THE FIX: Manually create the Base64 encoded credential ---
     auth_string = f"{WAZUH_USER}:{WAZUH_PASSWORD}"
     encoded_auth = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
     auth_header = f"Basic {encoded_auth}"
 
-    auth_attempts = 3
-    for attempt in range(auth_attempts):
+    headers = {
+        'Content-Type': 'application/json',  # required
+        'Authorization': auth_header
+    }
+
+    login_url = f"{WAZUH_URL}/security/user/authenticate"
+
+    for attempt in range(3):
         try:
-            # --- Use the manually created header instead of the 'auth' parameter ---
-            response = requests.post(
-                f"{WAZUH_URL}/security/user/authenticate",
-                headers={'Authorization': auth_header},
-                verify=False
-            )
+            response = requests.post(login_url, headers=headers, verify=False)
+            logger.debug(f"Wazuh auth response: {response.status_code} - {response.text}")
             response.raise_for_status()
+            token = response.json().get('data', {}).get('token')
             logger.info("✅ Successfully authenticated with Wazuh API.")
-            return response.json()['data']['token']
-        except Exception as e:
-            logger.error(f"Wazuh Auth Attempt {attempt + 1}/{auth_attempts} failed: {e}")
-            if attempt < auth_attempts - 1:
-                time.sleep(10)
-    
+            return token
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Wazuh Auth Attempt {attempt + 1}/3 failed: {e}")
+            if attempt < 2:
+                time.sleep(5)
+
     return None
 
 def fetch_and_save_wazuh_alerts(db: Session):

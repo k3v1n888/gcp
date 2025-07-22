@@ -19,7 +19,6 @@ from backend.routers.correlation import router as correlation_router
 from backend.routers.predictive import router as predictive_router
 from backend.routers.forecasting import router as forecasting_router
 from backend.routers.chat import router as chat_router
-# --- THIS IS THE FIX: Import the 'router' object specifically ---
 from backend.routers.webhooks import router as webhook_router
 
 # --- Import project components ---
@@ -29,32 +28,37 @@ from backend.ml.prediction import SeverityPredictor
 from backend.forecasting_service import ThreatForecaster
 from backend.anomaly_service import AnomalyDetector
 from backend.threat_feed import fetch_and_save_threat_feed
-from backend.wazuh_service import fetch_and_save_wazuh_alerts
+# --- REMOVED: No longer need the old Wazuh service import ---
 from backend.threatmapper_service import fetch_and_save_threatmapper_vulns
 
 app = FastAPI()
 
-# --- Combined background task for all data ingestion ---
+# --- Updated background task (Wazuh call removed) ---
 async def periodic_data_ingestion():
-    """Runs all data ingestion services on a schedule."""
+    """Runs data ingestion services on a schedule."""
     while True:
         db = SessionLocal()
         try:
             print("Running periodic data ingestion...")
-            fetch_and_save_threat_feed(db)
-            fetch_and_save_wazuh_alerts(db)
-            fetch_and_save_threatmapper_vulns(db)
+            fetch_and_save_threat_feed(db)      # Maltiverse
+            fetch_and_save_threatmapper_vulns(db) # ThreatMapper
             print("Data ingestion complete.")
         finally:
             db.close()
+        # Wait for 1 hour (3600 seconds) before the next run
         await asyncio.sleep(3600)
 
 @app.on_event("startup")
 def on_startup():
+    # This will create the database tables if they don't exist
     Base.metadata.create_all(bind=engine)
+    
+    # Load the machine learning models into the application's state
     app.state.predictor = SeverityPredictor()
     app.state.forecaster = ThreatForecaster()
     app.state.anomaly_detector = AnomalyDetector()
+    
+    # Start the background task to fetch threat intelligence
     asyncio.create_task(periodic_data_ingestion())
 
 # --- Middleware configuration ---
@@ -92,7 +96,7 @@ app.include_router(correlation_router)
 app.include_router(predictive_router)
 app.include_router(forecasting_router)
 app.include_router(chat_router)
-app.include_router(webhook_router) # This line now works correctly
+app.include_router(webhook_router)
 
 @app.get("/_fastapi_health")
 def fastapi_health():

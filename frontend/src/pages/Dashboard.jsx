@@ -97,6 +97,29 @@ export default function Dashboard() {
     }
   };
 
+  const MAX_BARS = 10;
+  let barChartData = [];
+
+  if (analytics?.by_source?.length) {
+    const grouped = analytics.by_source.reduce(
+      (acc, item) => {
+        if (item.value < 5) {
+          acc.other += item.value;
+        } else {
+          acc.items.push(item);
+        }
+        return acc;
+      },
+      { items: [], other: 0 }
+    );
+    barChartData = [
+      ...grouped.items
+        .sort((a, b) => b.value - a.value)
+        .slice(0, MAX_BARS),
+      ...(grouped.other > 0 ? [{ name: 'Other', value: grouped.other }] : [])
+    ];
+  }
+
   return (
     <div className="p-4 md:p-6">
       <div className="flex justify-between items-center mb-6">
@@ -123,30 +146,48 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
           <div className="widget-card p-6">
             <h2 className="text-xl font-semibold mb-4 glow-text">Threats by Type</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie data={analytics.by_type} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={90} paddingAngle={5} labelLine={false}>
-                  {analytics.by_type.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} itemStyle={{ color: '#e2e8f0' }} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            {analytics.by_type?.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={analytics.by_type}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={90}
+                    paddingAngle={5}
+                    labelLine={false}
+                  >
+                    {analytics.by_type.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} itemStyle={{ color: '#e2e8f0' }} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-slate-400">No data available</p>
+            )}
           </div>
 
           <div className="widget-card p-6">
             <h2 className="text-xl font-semibold mb-4 glow-text">Threats by Source</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analytics.by_source}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="name" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#94a3b8" />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} itemStyle={{ color: '#e2e8f0' }} />
-                <Bar dataKey="value" fill="#38bdf8" fillOpacity={0.8} />
-              </BarChart>
-            </ResponsiveContainer>
+            {barChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={barChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <XAxis dataKey="name" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                  <YAxis stroke="#94a3b8" />
+                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} itemStyle={{ color: '#e2e8f0' }} />
+                  <Bar dataKey="value" fill="#38bdf8" fillOpacity={0.8} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-slate-400">No data available</p>
+            )}
           </div>
         </div>
       )}
@@ -180,7 +221,7 @@ export default function Dashboard() {
                     {log.is_anomaly && <span className="text-fuchsia-400 font-semibold mr-2">Anomaly</span>}
                     {log.source === 'UEBA Engine' && <span className="text-amber-400 font-semibold">Insider</span>}
                   </td>
-                  <td>{new Date(log.timestamp).toLocaleString()}</td>
+                  <td>{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</td>
                 </tr>
               ))}
             </tbody>

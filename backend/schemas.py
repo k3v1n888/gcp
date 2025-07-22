@@ -17,7 +17,7 @@ class ThreatLog(BaseModel):
     threat: Optional[str] = None
     source: Optional[str] = None
     severity: str
-    timestamp: datetime
+    timestamp: Optional[datetime] = None
     tenant_id: int
     ip_reputation_score: Optional[int] = None
     cve_id: Optional[str] = None

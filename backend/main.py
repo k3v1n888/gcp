@@ -20,6 +20,7 @@ from backend.routers.predictive import router as predictive_router
 from backend.routers.forecasting import router as forecasting_router
 from backend.routers.chat import router as chat_router
 from backend.routers.ingestion import router as ingestion_router
+from backend.routers import webhooks as webhook_router 
 
 # --- Import project components ---
 from backend.models import Base, engine
@@ -28,7 +29,6 @@ from backend.ml.prediction import SeverityPredictor
 from backend.forecasting_service import ThreatForecaster
 from backend.anomaly_service import AnomalyDetector
 from backend.threat_feed import fetch_and_save_threat_feed
-from backend.wazuh_service import fetch_and_save_wazuh_alerts
 from backend.threatmapper_service import fetch_and_save_threatmapper_vulns
 
 app = FastAPI()
@@ -41,7 +41,6 @@ async def periodic_data_ingestion():
         try:
             print("Running periodic data ingestion...")
             fetch_and_save_threat_feed(db)      # Maltiverse
-            fetch_and_save_wazuh_alerts(db)     # Wazuh
             fetch_and_save_threatmapper_vulns(db) # ThreatMapper
             print("Data ingestion complete.")
         finally:
@@ -99,6 +98,7 @@ app.include_router(predictive_router)
 app.include_router(forecasting_router)
 app.include_router(chat_router)
 app.include_router(ingestion_router)
+app.include_router(webhook_router)
 
 @app.get("/_fastapi_health")
 def fastapi_health():

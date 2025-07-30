@@ -10,6 +10,7 @@ from backend.threat_feed import router as feed_router
 from backend.agents import router as agents_router
 from backend.api.admin import router as admin_router
 from backend.api.threats import router as threats_router
+from backend.api.incidents import router as incidents_router
 from backend.app.websocket.threats import router as ws_router
 from backend.alerting import router as alert_router
 from backend.analytics import router as analytics_router
@@ -28,21 +29,24 @@ from backend.ml.prediction import SeverityPredictor
 from backend.forecasting_service import ThreatForecaster
 from backend.anomaly_service import AnomalyDetector
 from backend.threat_feed import fetch_and_save_threat_feed
-# --- REMOVED: No longer need the old Wazuh service import ---
+from backend.wazuh_service import fetch_and_save_wazuh_alerts
 from backend.threatmapper_service import fetch_and_save_threatmapper_vulns
+from backend.incident_service import correlate_logs_into_incidents
 
 app = FastAPI()
 
-# --- Updated background task (Wazuh call removed) ---
+# --- Combined background task for all data services ---
 async def periodic_data_ingestion():
-    """Runs data ingestion services on a schedule."""
+    """Runs all data ingestion and correlation services on a schedule."""
     while True:
         db = SessionLocal()
         try:
-            print("Running periodic data ingestion...")
+            print("Running periodic data ingestion and correlation...")
             fetch_and_save_threat_feed(db)      # Maltiverse
+            fetch_and_save_wazuh_alerts(db)     # Wazuh
             fetch_and_save_threatmapper_vulns(db) # ThreatMapper
-            print("Data ingestion complete.")
+            correlate_logs_into_incidents(db) # Correlate logs into incidents
+            print("Data ingestion and correlation complete.")
         finally:
             db.close()
         # Wait for 1 hour (3600 seconds) before the next run
@@ -58,7 +62,7 @@ def on_startup():
     app.state.forecaster = ThreatForecaster()
     app.state.anomaly_detector = AnomalyDetector()
     
-    # Start the background task to fetch threat intelligence
+    # Start the background task
     asyncio.create_task(periodic_data_ingestion())
 
 # --- Middleware configuration ---
@@ -87,6 +91,7 @@ app.include_router(feed_router)
 app.include_router(agents_router)
 app.include_router(admin_router)
 app.include_router(threats_router)
+app.include_router(incidents_router)
 app.include_router(ws_router)
 app.include_router(alert_router)
 app.include_router(analytics_router)

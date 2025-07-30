@@ -61,6 +61,7 @@ class ThreatDetailResponse(ThreatLog):
     correlation: Optional[CorrelatedThreat] = None
     anomaly_features: Optional[AnomalyFeatures] = None
     soar_actions: List[AutomationLog] = []
+    misp_summary: Optional[str] = None
     
     # --- ADD THIS NEW FIELD ---
-    misp_summary: Optional[str] = None
+    timeline_threats: List[ThreatLog] = []

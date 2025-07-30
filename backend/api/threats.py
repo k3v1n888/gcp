@@ -41,20 +41,26 @@ def get_threat_detail(
     if not threat_log:
         raise HTTPException(status_code=404, detail="Threat log not found")
 
+    # --- NEW: Find the parent incident and all associated threat logs ---
+    timeline_threats = []
+    if threat_log.incidents:
+        parent_incident = threat_log.incidents[0]
+        timeline_threats = sorted(parent_incident.threat_logs, key=lambda log: log.timestamp)
+
     correlated_threat = db.query(models.CorrelatedThreat).filter(
         models.CorrelatedThreat.title == f"Attack Pattern: {threat_log.threat}",
         models.CorrelatedThreat.tenant_id == user.tenant_id
     ).first()
 
     recommendations_dict = generate_threat_remediation_plan(threat_log)
-    
-    # --- Get the AI-powered MISP summary ---
     misp_summary = get_and_summarize_misp_intel(threat_log.ip)
+    soar_actions = db.query(models.AutomationLog).filter(models.AutomationLog.threat_id == threat_id).order_by(models.AutomationLog.timestamp.desc()).all()
 
-    # Convert the base SQLAlchemy object to a Pydantic model
     response_data = schemas.ThreatDetailResponse.from_orm(threat_log)
     response_data.correlation = correlated_threat
     response_data.misp_summary = misp_summary
+    response_data.soar_actions = soar_actions
+    response_data.timeline_threats = timeline_threats
     
     if recommendations_dict:
         response_data.recommendations = schemas.Recommendation(**recommendations_dict)

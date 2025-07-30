@@ -1,4 +1,3 @@
-// frontend/src/pages/ThreatDetail.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Chatbot from '../components/Chatbot';
@@ -33,10 +32,29 @@ const ReputationScore = ({ score }) => {
 
 const DetailCard = ({ title, children }) => (
   <div className="widget-card p-6 mb-6">
-    <h2 className="text-xl font-semibold mb-4 glow-text">{title}</h2>
+    <h2 className="text-xl font-semibold mb-4 text-sky-400">{title}</h2>
     <div className="text-slate-300 leading-relaxed prose prose-invert max-w-none">{children}</div>
   </div>
 );
+
+const TimelineItem = ({ log, isLast }) => {
+  const borderColor = isLast ? 'border-transparent' : 'border-slate-600';
+  return (
+    <div className="relative flex items-start pl-8">
+      <div className="absolute left-0 flex flex-col items-center h-full">
+        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center ring-4 ring-slate-800 z-10">
+          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <div className={`w-px flex-grow ${borderColor}`}></div>
+      </div>
+      <div className="pb-8 ml-4">
+        <p className="text-sm text-slate-400">{new Date(log.timestamp).toLocaleString()}</p>
+        <h3 className="font-semibold text-slate-200">{log.threat}</h3>
+        <p className="text-sm text-slate-500">Source: {log.source} | IP: {log.ip}</p>
+      </div>
+    </div>
+  );
+};
 
 export default function ThreatDetail() {
   const { id } = useParams();
@@ -70,7 +88,16 @@ export default function ThreatDetail() {
         </dl>
       </DetailCard>
       
-      {/* --- ADD THIS NEW CARD --- */}
+      {threat.timeline_threats && threat.timeline_threats.length > 1 && (
+        <DetailCard title="Attack Timeline">
+          <div>
+            {threat.timeline_threats.map((log, index, array) => (
+              <TimelineItem key={log.id} log={log} isLast={index === array.length - 1} />
+            ))}
+          </div>
+        </DetailCard>
+      )}
+
       {threat.misp_summary && (
         <DetailCard title="Quantum Intel (MISP) Summary">
             <p className="italic text-slate-200">{threat.misp_summary}</p>

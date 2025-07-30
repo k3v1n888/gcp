@@ -56,12 +56,22 @@ class AutomationLog(BaseModel):
     details: str
     model_config = ConfigDict(from_attributes=True)
 
+# --- NEW: Schema for a Security Incident ---
+class SecurityIncident(BaseModel):
+    id: int
+    title: str
+    status: str
+    severity: str
+    start_time: datetime
+    end_time: datetime
+    threat_logs: List[ThreatLog] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
 class ThreatDetailResponse(ThreatLog):
     recommendations: Optional[Recommendation] = None
     correlation: Optional[CorrelatedThreat] = None
     anomaly_features: Optional[AnomalyFeatures] = None
     soar_actions: List[AutomationLog] = []
     misp_summary: Optional[str] = None
-    
-    # --- ADD THIS NEW FIELD ---
     timeline_threats: List[ThreatLog] = []

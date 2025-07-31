@@ -21,8 +21,8 @@ from backend.routers.predictive import router as predictive_router
 from backend.routers.forecasting import router as forecasting_router
 from backend.routers.chat import router as chat_router
 from backend.routers.webhooks import router as webhook_router
-from backend.api import graph as graph_router
-from backend.api import hunting as hunting_router
+from backend.api.graph import router as graph_router
+from backend.api.hunting import router as hunting_router
 
 from backend.models import Base, engine
 from backend.database import SessionLocal

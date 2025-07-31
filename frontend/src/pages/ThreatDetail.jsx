@@ -37,32 +37,48 @@ const DetailCard = ({ title, children }) => (
   </div>
 );
 
-const TimelineItem = ({ log, isLast }) => {
-  const borderColor = isLast ? 'border-transparent' : 'border-slate-600';
-  return (
-    <div className="relative flex items-start pl-8">
-      <div className="absolute left-0 flex flex-col items-center h-full">
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center ring-4 ring-slate-800 z-10">
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+const StorylineItem = ({ event, isLast }) => {
+    const borderColor = isLast ? 'border-transparent' : 'border-slate-600';
+    return (
+        <div className="relative flex items-start pl-8">
+            <div className="absolute left-0 flex flex-col items-center h-full">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center ring-4 ring-slate-800 z-10">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div className={`w-px flex-grow ${borderColor}`}></div>
+            </div>
+            <div className="pb-8 ml-4">
+                <p className="text-sm text-slate-400">{new Date(event.timestamp).toLocaleString()}</p>
+                <h3 className="font-semibold text-slate-200">{event.threat}</h3>
+            </div>
         </div>
-        <div className={`w-px flex-grow ${borderColor}`}></div>
-      </div>
-      <div className="pb-8 ml-4">
-        <p className="text-sm text-slate-400">{new Date(log.timestamp).toLocaleString()}</p>
-        <h3 className="font-semibold text-slate-200">{log.threat}</h3>
-        <p className="text-sm text-slate-500">Source: {log.source} | IP: {log.ip}</p>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default function ThreatDetail() {
   const { id } = useParams();
   const [threat, setThreat] = useState(null);
+  const [storyline, setStoryline] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/threats/${id}`).then(res => res.ok ? res.json() : Promise.reject('Failed to load threat details')).then(data => setThreat(data)).catch(console.error).finally(() => setIsLoading(false));
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const threatRes = await fetch(`/api/threats/${id}`);
+            const threatData = await threatRes.json();
+            setThreat(threatData);
+
+            const storylineRes = await fetch(`/api/graph/storyline/${id}`);
+            const storylineData = await storylineRes.json();
+            setStoryline(storylineData.storyline || []);
+        } catch (error) {
+            console.error("Failed to fetch threat details:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchData();
   }, [id]);
 
   if (isLoading) return <div className="p-6 text-sky-400">Loading Analysis...</div>;
@@ -88,13 +104,13 @@ export default function ThreatDetail() {
         </dl>
       </DetailCard>
       
-      {threat.timeline_threats && threat.timeline_threats.length > 1 && (
-        <DetailCard title="Attack Timeline">
-          <div>
-            {threat.timeline_threats.map((log, index, array) => (
-              <TimelineItem key={log.id} log={log} isLast={index === array.length - 1} />
-            ))}
-          </div>
+      {storyline.length > 1 && (
+        <DetailCard title="Attack Storyline">
+            <div>
+                {storyline.map((event, index) => (
+                    <StorylineItem key={event.id} event={event} isLast={index === storyline.length - 1} />
+                ))}
+            </div>
         </DetailCard>
       )}
 

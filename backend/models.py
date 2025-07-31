@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, func, Boolean, Table
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, func, Boolean, Table, JSON
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy import create_engine
 import os
@@ -7,7 +7,6 @@ import os
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@db:5432/cyberdb")
 Base = declarative_base()
 
-# --- NEW: Association table for the many-to-many relationship ---
 incident_threat_association = Table('incident_threat_association', Base.metadata,
     Column('incident_id', Integer, ForeignKey('security_incidents.id'), primary_key=True),
     Column('threat_log_id', Integer, ForeignKey('threat_logs.id'), primary_key=True)
@@ -30,9 +29,8 @@ class User(Base):
     status = Column(String, default="active")
     tenant_id = Column(Integer, ForeignKey("tenants.id"))
     tenant = relationship("Tenant", back_populates="users")
-    
+
     def as_dict(self):
-       """Converts the object to a dictionary."""
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class ThreatLog(Base):
@@ -49,8 +47,6 @@ class ThreatLog(Base):
     cve_id = Column(String, nullable=True)
     is_anomaly = Column(Boolean, default=False)
     automation_actions = relationship("AutomationLog", back_populates="threat")
-    
-    # --- ADD THIS RELATIONSHIP ---
     incidents = relationship("SecurityIncident", secondary=incident_threat_association, back_populates="threat_logs")
 
 class SystemSettings(Base):
@@ -85,18 +81,27 @@ class UserActivityLog(Base):
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     details = Column(Text, nullable=True)
 
-# --- NEW: Model for a Security Incident ---
 class SecurityIncident(Base):
     __tablename__ = "security_incidents"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String)
-    status = Column(String, default="open") # e.g., open, under_investigation, closed
+    status = Column(String, default="open")
     severity = Column(String)
     start_time = Column(DateTime(timezone=True))
     end_time = Column(DateTime(timezone=True))
     tenant_id = Column(Integer, ForeignKey("tenants.id"))
-    
     threat_logs = relationship("ThreatLog", secondary=incident_threat_association, back_populates="incidents")
+
+# --- NEW: Table to log threat hunting results ---
+class ThreatHunt(Base):
+    __tablename__ = "threat_hunts"
+    id = Column(Integer, primary_key=True, index=True)
+    status = Column(String)
+    query = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    results = Column(JSON, nullable=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"))
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

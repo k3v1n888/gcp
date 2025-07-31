@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
+from json import JSONDecodeError
 
 from backend import models, database, schemas
 from backend.app.websocket.threats import manager
@@ -13,7 +14,13 @@ async def handle_wazuh_webhook(request: Request, db: Session = Depends(database.
     Receives real-time alerts from the Wazuh integrator via a webhook,
     processes them, and saves them to the database.
     """
-    alert_json = await request.json()
+    try:
+        alert_json = await request.json()
+    except JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload received from Wazuh webhook.")
+
+    if not alert_json:
+        raise HTTPException(status_code=400, detail="Empty JSON payload received from Wazuh webhook.")
     
     rule = alert_json.get("rule", {})
     agent = alert_json.get("agent", {})

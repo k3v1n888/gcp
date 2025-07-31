@@ -1,10 +1,10 @@
-# backend/main.py
 import os
 import asyncio
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
+# --- Import all application routers ---
 from backend.auth.auth import router as auth_router
 from backend.threat_feed import router as feed_router
 from backend.agents import router as agents_router
@@ -21,9 +21,11 @@ from backend.routers.predictive import router as predictive_router
 from backend.routers.forecasting import router as forecasting_router
 from backend.routers.chat import router as chat_router
 from backend.routers.webhooks import router as webhook_router
+# --- THIS IS THE FIX: Correctly import the 'router' object from the modules ---
 from backend.api.graph import router as graph_router
 from backend.api.hunting import router as hunting_router
 
+# --- Import project components ---
 from backend.models import Base, engine
 from backend.database import SessionLocal
 from backend.ml.prediction import SeverityPredictor
@@ -38,6 +40,7 @@ from backend.incident_service import correlate_logs_into_incidents
 app = FastAPI()
 
 async def periodic_data_ingestion():
+    """Runs all data ingestion and correlation services on a schedule."""
     while True:
         db = SessionLocal()
         try:

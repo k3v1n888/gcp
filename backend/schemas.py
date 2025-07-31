@@ -1,4 +1,3 @@
-# backend/schemas.py
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional
@@ -17,7 +16,7 @@ class ThreatLog(BaseModel):
     threat: Optional[str] = None
     source: Optional[str] = None
     severity: str
-    timestamp: Optional[datetime] = None
+    timestamp: datetime
     tenant_id: int
     ip_reputation_score: Optional[int] = None
     cve_id: Optional[str] = None
@@ -74,4 +73,6 @@ class ThreatDetailResponse(ThreatLog):
     anomaly_features: Optional[AnomalyFeatures] = None
     soar_actions: List[AutomationLog] = []
     misp_summary: Optional[str] = None
+    
+    # --- NEW: Field for the attack timeline ---
     timeline_threats: List[ThreatLog] = []

@@ -55,16 +55,14 @@ def get_threat_detail(
     misp_summary = get_and_summarize_misp_intel(threat_log.ip)
     soar_actions = db.query(models.AutomationLog).filter(models.AutomationLog.threat_id == threat_id).order_by(models.AutomationLog.timestamp.desc()).all()
 
-    # --- THIS IS THE FIX for the datetime error ---
-    # First, convert the log to a dictionary
+    # --- FIX 1: Convert the log to a dictionary and then format the timestamp ---
     threat_log_dict = schemas.ThreatLog.from_orm(threat_log).dict()
-    # Then, convert the datetime object to a JSON-compatible string
     threat_log_dict['timestamp'] = threat_log_dict['timestamp'].isoformat()
     
     predictor = request.app.state.predictor
     xai_explanation = predictor.explain_prediction(threat_log_dict)
 
-    # Build the final response
+    # --- FIX 2: Build the final response and correctly instantiate the Recommendation schema ---
     response_data = schemas.ThreatDetailResponse.from_orm(threat_log)
     response_data.correlation = correlated_threat
     response_data.misp_summary = misp_summary

@@ -1,3 +1,4 @@
+// frontend/src/pages/ThreatDetail.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Chatbot from '../components/Chatbot';
@@ -37,20 +38,60 @@ const DetailCard = ({ title, children }) => (
   </div>
 );
 
-const StorylineItem = ({ event, isLast }) => {
-    const borderColor = isLast ? 'border-transparent' : 'border-slate-600';
+const TimelineItem = ({ log, isLast }) => {
+  const borderColor = isLast ? 'border-transparent' : 'border-slate-600';
+  return (
+    <div className="relative flex items-start pl-8">
+      <div className="absolute left-0 flex flex-col items-center h-full">
+        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center ring-4 ring-slate-800 z-10">
+          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <div className={`w-px flex-grow ${borderColor}`}></div>
+      </div>
+      <div className="pb-8 ml-4">
+        <p className="text-sm text-slate-400">{new Date(log.timestamp).toLocaleString()}</p>
+        <h3 className="font-semibold text-slate-200">{log.threat}</h3>
+        <p className="text-sm text-slate-500">Source: {log.source} | IP: {log.ip}</p>
+      </div>
+    </div>
+  );
+};
+
+// --- NEW: Component to visualize the AI's reasoning ---
+const ModelExplanation = ({ explanation }) => {
+    if (!explanation || !explanation.shap_values || !explanation.features) {
+        return <p className="text-slate-400">Explanation data not available for this prediction.</p>;
+    }
+
+    const FeatureImpact = ({ feature, value, impact }) => {
+        const isPushingHigher = impact > 0;
+        const color = isPushingHigher ? 'text-red-400' : 'text-green-400';
+        const arrow = isPushingHigher ? '↑' : '↓';
+
+        return (
+            <div className="flex justify-between items-center text-sm p-2 bg-slate-800 rounded">
+                <span>{feature}: <span className="font-semibold">{String(value)}</span></span>
+                <span className={`${color} font-bold`}>{arrow} {Math.abs(impact).toFixed(4)}</span>
+            </div>
+        );
+    };
+
+    // Pair features with their SHAP values for display
+    const featureImpacts = Object.keys(explanation.features).map((key, index) => ({
+        feature: key,
+        value: explanation.features[key],
+        impact: explanation.shap_values[0][index]
+    })).sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
+
     return (
-        <div className="relative flex items-start pl-8">
-            <div className="absolute left-0 flex flex-col items-center h-full">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center ring-4 ring-slate-800 z-10">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <div className={`w-px flex-grow ${borderColor}`}></div>
-            </div>
-            <div className="pb-8 ml-4">
-                <p className="text-sm text-slate-400">{new Date(event.timestamp).toLocaleString()}</p>
-                <h3 className="font-semibold text-slate-200">{event.threat}</h3>
-            </div>
+        <div className="space-y-2">
+            <p className="text-slate-400 text-sm mb-4">
+                The model's base prediction value was {explanation.base_value.toFixed(4)}.
+                The following features had the largest impact on this prediction, either pushing the risk score higher (red arrow) or lower (green arrow).
+            </p>
+            {featureImpacts.slice(0, 5).map(fi => (
+                <FeatureImpact key={fi.feature} {...fi} />
+            ))}
         </div>
     );
 };
@@ -58,27 +99,10 @@ const StorylineItem = ({ event, isLast }) => {
 export default function ThreatDetail() {
   const { id } = useParams();
   const [threat, setThreat] = useState(null);
-  const [storyline, setStoryline] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
-        setIsLoading(true);
-        try {
-            const threatRes = await fetch(`/api/threats/${id}`);
-            const threatData = await threatRes.json();
-            setThreat(threatData);
-
-            const storylineRes = await fetch(`/api/graph/storyline/${id}`);
-            const storylineData = await storylineRes.json();
-            setStoryline(storylineData.storyline || []);
-        } catch (error) {
-            console.error("Failed to fetch threat details:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }
-    fetchData();
+    fetch(`/api/threats/${id}`).then(res => res.ok ? res.json() : Promise.reject('Failed to load threat details')).then(data => setThreat(data)).catch(console.error).finally(() => setIsLoading(false));
   }, [id]);
 
   if (isLoading) return <div className="p-6 text-sky-400">Loading Analysis...</div>;
@@ -104,13 +128,13 @@ export default function ThreatDetail() {
         </dl>
       </DetailCard>
       
-      {storyline.length > 1 && (
-        <DetailCard title="Attack Storyline">
-            <div>
-                {storyline.map((event, index) => (
-                    <StorylineItem key={event.id} event={event} isLast={index === storyline.length - 1} />
-                ))}
-            </div>
+      {threat.timeline_threats && threat.timeline_threads.length > 1 && (
+        <DetailCard title="Attack Timeline">
+          <div>
+            {threat.timeline_threats.map((log, index, array) => (
+              <TimelineItem key={log.id} log={log} isLast={index === array.length - 1} />
+            ))}
+          </div>
         </DetailCard>
       )}
 
@@ -135,6 +159,11 @@ export default function ThreatDetail() {
           <DetailCard title="Quantum AI Analysis: Mitigation Protocols"><ul className="list-disc list-inside space-y-2">{threat.recommendations.mitigation.map((step, index) => (<li key={index}>{step}</li>))}</ul></DetailCard>
         </>
       ) : ( <DetailCard title="AI Analysis"><p>Could not generate AI recommendations for this threat.</p></DetailCard> )}
+      
+      {/* --- ADD THIS NEW CARD --- */}
+      <DetailCard title="Explainable AI (XAI) Analysis">
+        <ModelExplanation explanation={threat.xai_explanation} />
+      </DetailCard>
       
       <DetailCard title="Automated Response Log">
         <SoarActionLog actions={threat.soar_actions} />

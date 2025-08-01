@@ -1,6 +1,7 @@
+# backend/schemas.py
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 class User(BaseModel):
     id: int
@@ -55,7 +56,6 @@ class AutomationLog(BaseModel):
     details: str
     model_config = ConfigDict(from_attributes=True)
 
-# --- NEW: Schema for a Security Incident ---
 class SecurityIncident(BaseModel):
     id: int
     title: str
@@ -64,8 +64,13 @@ class SecurityIncident(BaseModel):
     start_time: datetime
     end_time: datetime
     threat_logs: List[ThreatLog] = []
-
     model_config = ConfigDict(from_attributes=True)
+
+# --- NEW: Schema for the Explainable AI (XAI) response from your custom model ---
+class XAIExplanation(BaseModel):
+    base_value: float
+    shap_values: List[List[float]]
+    features: Dict[str, Any]
 
 class ThreatDetailResponse(ThreatLog):
     recommendations: Optional[Recommendation] = None
@@ -73,6 +78,7 @@ class ThreatDetailResponse(ThreatLog):
     anomaly_features: Optional[AnomalyFeatures] = None
     soar_actions: List[AutomationLog] = []
     misp_summary: Optional[str] = None
-    
-    # --- NEW: Field for the attack timeline ---
     timeline_threats: List[ThreatLog] = []
+
+    # --- ADD THIS NEW FIELD ---
+    xai_explanation: Optional[XAIExplanation] = None

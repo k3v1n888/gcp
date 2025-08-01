@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-# --- Adjust imports to match your project structure ---
 from . import database, models, schemas
 from .auth.rbac import get_current_user
 
@@ -10,32 +9,32 @@ router = APIRouter()
 
 @router.get("/api/analytics/summary")
 def get_analytics_summary(
-    # --- CHANGE: Use the Pydantic schema for the user dependency ---
     current_user: schemas.User = Depends(get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    
-    # The 'current_user' object now reliably has an 'id' and 'tenant_id'
-    # because it's validated by the schemas.User Pydantic model.
-    # We no longer need a second database query to get the user.
+    tenant_id = current_user.tenant_id
 
-    # Query for threats by type
+    # --- CHANGE: Query for only the TOP 5 threats by type ---
     by_type = (
-        db.query(models.ThreatLog.threat, func.count(models.ThreatLog.threat))
-        .filter(models.ThreatLog.tenant_id == current_user.tenant_id)
+        db.query(models.ThreatLog.threat, func.count(models.ThreatLog.threat).label('count'))
+        .filter(models.ThreatLog.tenant_id == tenant_id)
         .group_by(models.ThreatLog.threat)
+        .order_by(func.count(models.ThreatLog.threat).desc())
+        .limit(5)
         .all()
     )
 
-    # Query for threats by source
+    # --- CHANGE: Query for only the TOP 7 threats by source ---
     by_source = (
-        db.query(models.ThreatLog.source, func.count(models.ThreatLog.source))
-        .filter(models.ThreatLog.tenant_id == current_user.tenant_id)
+        db.query(models.ThreatLog.source, func.count(models.ThreatLog.source).label('count'))
+        .filter(models.ThreatLog.tenant_id == tenant_id)
         .group_by(models.ThreatLog.source)
+        .order_by(func.count(models.ThreatLog.source).desc())
+        .limit(7)
         .all()
     )
 
-    total = db.query(models.ThreatLog).filter(models.ThreatLog.tenant_id == current_user.tenant_id).count()
+    total = db.query(models.ThreatLog).filter(models.ThreatLog.tenant_id == tenant_id).count()
 
     return {
         "total": total,

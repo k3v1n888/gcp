@@ -1,5 +1,4 @@
-# backend/api/threats.py
-from fastapi import APIRouter, Depends, Response, HTTPException
+from fastapi import APIRouter, Depends, Response, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -29,6 +28,7 @@ def get_threat_logs(
 
 @router.get("/api/threats/{threat_id}", response_model=schemas.ThreatDetailResponse)
 def get_threat_detail(
+    request: Request, # Add request to access app state
     threat_id: int,
     user: models.User = Depends(get_current_user),
     db: Session = Depends(database.get_db)
@@ -41,7 +41,6 @@ def get_threat_detail(
     if not threat_log:
         raise HTTPException(status_code=404, detail="Threat log not found")
 
-    # --- NEW: Find the parent incident and all associated threat logs ---
     timeline_threats = []
     if threat_log.incidents:
         parent_incident = threat_log.incidents[0]
@@ -52,18 +51,21 @@ def get_threat_detail(
         models.CorrelatedThreat.tenant_id == user.tenant_id
     ).first()
 
-    recommendations_dict = generate_threat_remediation_plan(threat_log)
+    recommendations = generate_threat_remediation_plan(threat_log)
     misp_summary = get_and_summarize_misp_intel(threat_log.ip)
     soar_actions = db.query(models.AutomationLog).filter(models.AutomationLog.threat_id == threat_id).order_by(models.AutomationLog.timestamp.desc()).all()
+
+    # --- NEW: Get the AI explanation from the remote service ---
+    predictor = request.app.state.predictor
+    xai_explanation = predictor.explain_prediction(schemas.ThreatLog.from_orm(threat_log).dict())
 
     response_data = schemas.ThreatDetailResponse.from_orm(threat_log)
     response_data.correlation = correlated_threat
     response_data.misp_summary = misp_summary
     response_data.soar_actions = soar_actions
     response_data.timeline_threats = timeline_threats
-    
-    if recommendations_dict:
-        response_data.recommendations = schemas.Recommendation(**recommendations_dict)
+    response_data.recommendations = recommendations
+    response_data.xai_explanation = xai_explanation
     
     if threat_log.is_anomaly:
         response_data.anomaly_features = schemas.AnomalyFeatures(

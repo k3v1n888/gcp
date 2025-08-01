@@ -1,52 +1,65 @@
-# backend/ml/prediction.py
-
-import joblib
 import os
+import requests
 import pandas as pd
-from google.cloud import storage
-from sklearn.utils.validation import check_is_fitted
+import google.auth
+import google.auth.transport.requests
+
+# The URL of your new, deployed AI model service
+AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "https://quantum-predictor-api-1020401092050.asia-southeast1.run.app")
 
 class SeverityPredictor:
     def __init__(self):
-        self.bucket_name = "quantum-ai-threat-lake-us"
-        self.model_blob_name = "models/severity_model_v2.pkl"
-        self.local_model_path = "/tmp/severity_model_v2.pkl"
-        self.model = self._load_model()
+        self.auth_req = google.auth.transport.requests.Request()
+        self.target_audience = AI_SERVICE_URL
+        print("✅ Predictor initialized to call remote AI service.")
 
-    def _load_model(self):
+    def _get_auth_token(self):
+        """Generates a Google-signed ID token for service-to-service auth."""
         try:
-            storage_client = storage.Client()
-            bucket = storage_client.bucket(self.bucket_name)
-            blob = bucket.blob(self.model_blob_name)
-            blob.download_to_filename(self.local_model_path)
-            
-            model = joblib.load(self.local_model_path)
-            check_is_fitted(model) # Check the entire pipeline
-            print("✅ Model loaded and verified successfully.")
-            return model
+            creds, project = google.auth.default()
+            creds.refresh(self.auth_req)
+            return creds.token
         except Exception as e:
-            print(f"❌ CRITICAL ERROR: Failed to load or verify model. Error: {e}")
+            print(f"❌ Could not generate auth token for AI service: {e}")
             return None
-    
-    def _clean_text(self, text: str) -> str:
-        return str(text).strip().lower()
 
     def predict(self, threat: str, source: str, ip_reputation_score: int, cve_id: str | None) -> str:
-        if not self.model:
+        """Calls the remote AI service to get a severity prediction."""
+        token = self._get_auth_token()
+        if not token:
             return "unknown"
+
+        headers = {'Authorization': f'Bearer {token}'}
+        payload = {
+            "threat": threat,
+            "source": source,
+            "ip_reputation_score": ip_reputation_score,
+            "cve_id": cve_id
+        }
+
+        try:
+            # Assuming your AI service has a '/predict' endpoint
+            response = requests.post(f"{AI_SERVICE_URL}/predict", json=payload, headers=headers)
+            response.raise_for_status()
+            # The "correctness" of the severity comes from your custom model's logic
+            return response.json().get('severity', 'unknown')
+        except Exception as e:
+            print(f"Prediction API call to remote AI service failed: {e}")
+            return "unknown"
+            
+    def explain_prediction(self, threat_log: dict) -> dict | None:
+        """Calls the remote AI service to get a SHAP-based explanation."""
+        token = self._get_auth_token()
+        if not token:
+            return None
+
+        headers = {'Authorization': f'Bearer {token}'}
         
         try:
-            text_feature = self._clean_text(f"{threat} {source}")
-            has_cve = 1 if cve_id else 0
-            
-            input_data = pd.DataFrame([{
-                'text_feature': text_feature,
-                'ip_reputation_score': ip_reputation_score,
-                'has_cve': has_cve
-            }])
-            
-            prediction = self.model.predict(input_data)
-            return prediction[0]
+            # Assuming your AI service has an '/explain' endpoint
+            response = requests.post(f"{AI_SERVICE_URL}/explain", json=threat_log, headers=headers)
+            response.raise_for_status()
+            return response.json()
         except Exception as e:
-            print(f"Prediction failed: {e}")
-            return "unknown"
+            print(f"Explanation API call to remote AI service failed: {e}")
+            return None

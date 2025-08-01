@@ -28,7 +28,7 @@ def get_threat_logs(
 
 @router.get("/api/threats/{threat_id}", response_model=schemas.ThreatDetailResponse)
 def get_threat_detail(
-    request: Request, # Add request to access app state
+    request: Request,
     threat_id: int,
     user: models.User = Depends(get_current_user),
     db: Session = Depends(database.get_db)
@@ -51,21 +51,29 @@ def get_threat_detail(
         models.CorrelatedThreat.tenant_id == user.tenant_id
     ).first()
 
-    recommendations = generate_threat_remediation_plan(threat_log)
+    recommendations_dict = generate_threat_remediation_plan(threat_log)
     misp_summary = get_and_summarize_misp_intel(threat_log.ip)
     soar_actions = db.query(models.AutomationLog).filter(models.AutomationLog.threat_id == threat_id).order_by(models.AutomationLog.timestamp.desc()).all()
 
-    # --- NEW: Get the AI explanation from the remote service ---
+    # --- THIS IS THE FIX for the datetime error ---
+    # First, convert the log to a dictionary
+    threat_log_dict = schemas.ThreatLog.from_orm(threat_log).dict()
+    # Then, convert the datetime object to a JSON-compatible string
+    threat_log_dict['timestamp'] = threat_log_dict['timestamp'].isoformat()
+    
     predictor = request.app.state.predictor
-    xai_explanation = predictor.explain_prediction(schemas.ThreatLog.from_orm(threat_log).dict())
+    xai_explanation = predictor.explain_prediction(threat_log_dict)
 
+    # Build the final response
     response_data = schemas.ThreatDetailResponse.from_orm(threat_log)
     response_data.correlation = correlated_threat
     response_data.misp_summary = misp_summary
     response_data.soar_actions = soar_actions
     response_data.timeline_threats = timeline_threats
-    response_data.recommendations = recommendations
     response_data.xai_explanation = xai_explanation
+    
+    if recommendations_dict:
+        response_data.recommendations = schemas.Recommendation(**recommendations_dict)
     
     if threat_log.is_anomaly:
         response_data.anomaly_features = schemas.AnomalyFeatures(

@@ -5,7 +5,7 @@ import { UserProvider } from './context/UserContext';
 import ProtectedRoutes from './components/ProtectedRoutes';
 import Layout from './components/Layout';
 import Home from './pages/Home';
-import Login from './pages-Login';
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
 import Unauthorized from './pages/Unauthorized';

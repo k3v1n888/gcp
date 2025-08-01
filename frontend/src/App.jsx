@@ -3,7 +3,7 @@ import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import ProtectedRoutes from './components/ProtectedRoutes';
-import Layout from './components-Layout';
+import Layout from './components/Layout';
 import Home from './pages/Home';
 import Login from './pages-Login';
 import Dashboard from './pages/Dashboard';

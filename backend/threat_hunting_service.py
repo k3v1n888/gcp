@@ -13,11 +13,11 @@ def run_ai_threat_hunt(db: Session, predictor_model, tenant_id: int):
         return {"error": "Severity prediction model not loaded."}
 
     try:
-        # --- 1. Extract Top Indicators from the AI Model ---
-        # Get the actual logistic regression classifier from the pipeline
-        classifier = predictor_model.named_steps['logisticregression']
-        # Get the TfidfVectorizer to understand the feature names
-        vectorizer = predictor_model.named_steps['columntransformer'].named_transformers_['text']
+        # --- THIS IS THE FIX: Access the model components directly ---
+        # The predictor object holds the full pipeline in its 'model' attribute
+        pipeline = predictor.model
+        classifier = pipeline.named_steps['logisticregression']
+        vectorizer = pipeline.named_steps['columntransformer'].named_transformers_['text']
         
         # Find the "critical" class index
         critical_class_index = list(classifier.classes_).index('critical')

@@ -43,15 +43,19 @@ class ThreatLog(Base):
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     tenant_id = Column(Integer, ForeignKey("tenants.id"))
     tenant = relationship("Tenant", back_populates="threats")
+    
+    # AI-Driven fields
     ip_reputation_score = Column(Integer, nullable=True)
     cve_id = Column(String, nullable=True)
     is_anomaly = Column(Boolean, default=False)
-	cvss_score = Column(Float, nullable=True, default=0.0)
+    cvss_score = Column(Float, nullable=True, default=0.0)
     criticality_score = Column(Float, nullable=True, default=0.0)
     ioc_risk_score = Column(Float, nullable=True, default=0.0)
+    
+    # Relationships
     automation_actions = relationship("AutomationLog", back_populates="threat")
     incidents = relationship("SecurityIncident", secondary=incident_threat_association, back_populates="threat_logs")
-
+    
 class SystemSettings(Base):
     __tablename__ = "system_settings"
     id = Column(Integer, primary_key=True)

@@ -25,25 +25,16 @@ def get_cvss_score(cve_id: str) -> float:
     if not cve_id:
         return 0.0
 
-    api_key = os.getenv("NVD_API_KEY", "ae71c19b-aa0b-45dc-ab1f-a725509e255b")
-    headers = {"apiKey": api_key}
-
+    url = f"https://www.cve.org/api/cve/{cve_id}"
     try:
-        url = f"https://services.nvd.nist.gov/rest/json/cve/1.0/{cve_id}"
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, timeout=5)
         response.raise_for_status()
         data = response.json()
-
-        metrics = data.get("result", {}).get("CVE_Items", [])[0].get("impact", {})
-
-        if "baseMetricV3" in metrics:
-            return metrics["baseMetricV3"]["cvssV3"]["baseScore"]
-        elif "baseMetricV2" in metrics:
-            return metrics["baseMetricV2"]["cvssV2"]["baseScore"]
+        score = data.get("cvssMetrics", [{}])[0].get("cvssData", {}).get("baseScore", 0.0)
+        return float(score or 0.0)
     except Exception as e:
-        logger.warning(f"⚠️ Could not fetch CVSS score for {cve_id}: {e}")
-
-    return 0.0
+        print(f"⚠️ Could not fetch CVSS score for {cve_id}: {e}")
+        return 0.0
 
 @router.post("/api/log_threat", response_model=schemas.ThreatLog, status_code=201)
 async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Session = Depends(database.get_db)):

@@ -1,9 +1,12 @@
+# backend/ml/prediction.py
 import os
 import requests
 import pandas as pd
 import google.auth
 import google.auth.transport.requests
+from datetime import datetime, timezone # <-- 1. Import datetime and timezone
 
+# The URL of your new, deployed AI model service
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "https://quantum-predictor-api-1020401092050.asia-southeast1.run.app")
 
 class SeverityPredictor:
@@ -27,29 +30,42 @@ class SeverityPredictor:
         Creates a JSON payload with the exact features your new model expects,
         based on your Postman collection.
         """
-        # This is a simplified mapping. You can make this more sophisticated.
         technique_map = {
             "sql injection": "T1055", "log4j": "T1190",
             "xss": "T1059", "brute force": "T1110",
         }
-        technique_id = "T1595" # Default for general scanning/recon
+        technique_id = "T1595"
         for key, val in technique_map.items():
             if key in threat_log.get('threat', '').lower():
                 technique_id = val
                 break
         
+        # --- THIS IS THE FIX ---
+        # Get the timestamp. It could be a string or a datetime object.
+        timestamp_input = threat_log.get('timestamp')
+        
+        # If the timestamp is a string (from an API call), parse it.
+        # Otherwise, assume it's a datetime object (from a direct call).
+        if isinstance(timestamp_input, str):
+            # The 'Z' at the end means UTC, so we can parse it directly.
+            dt_object = datetime.fromisoformat(timestamp_input.replace('Z', '+00:00'))
+        else:
+            dt_object = timestamp_input
+
+        login_hour = dt_object.hour if dt_object else datetime.now(timezone.utc).hour
+
         return {
             "technique_id": technique_id,
             "asset_type": "server",
-            "login_hour": threat_log.get('timestamp').hour,
+            "login_hour": login_hour,
             "is_admin": 1,
             "is_remote_session": 1 if threat_log.get('source') == "VPN" else 0,
             "num_failed_logins": 1 if "failed" in threat_log.get('threat', '').lower() else 0,
-            "bytes_sent": 10000, # Placeholder
-            "bytes_received": 50000, # Placeholder
+            "bytes_sent": 10000,
+            "bytes_received": 50000,
             "location_mismatch": 1 if "new country" in threat_log.get('threat', '').lower() else 0,
-            "previous_alerts": 0, # Placeholder
-            "criticality_score": 0.7, # Placeholder
+            "previous_alerts": 0,
+            "criticality_score": 0.7,
             "cvss_score": 7.5 if threat_log.get('cve_id') else 0,
             "ioc_risk_score": (threat_log.get('ip_reputation_score', 0) or 0) / 100.0
         }
@@ -61,7 +77,6 @@ class SeverityPredictor:
             return "unknown"
 
         headers = {'Authorization': f'Bearer {token}'}
-        # Create a temporary dict to pass to the payload preparer
         temp_log = {
             "threat": threat, "source": source,
             "ip_reputation_score": ip_reputation_score, "cve_id": cve_id,

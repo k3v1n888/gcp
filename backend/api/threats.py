@@ -41,11 +41,9 @@ def get_threat_detail(
     if not threat_log:
         raise HTTPException(status_code=404, detail="Threat log not found")
 
-    # --- Fetch all related data for the response ---
     timeline_threats = []
     if threat_log.incidents:
         parent_incident = threat_log.incidents[0]
-        # Ensure timestamp is not None before sorting
         timeline_threats = sorted(
             [t for t in parent_incident.threat_logs if t.timestamp], 
             key=lambda log: log.timestamp
@@ -60,27 +58,27 @@ def get_threat_detail(
     misp_summary = get_and_summarize_misp_intel(threat_log.ip)
     soar_actions = db.query(models.AutomationLog).filter(models.AutomationLog.threat_id == threat_id).order_by(models.AutomationLog.timestamp.desc()).all()
 
-    # --- Prepare data for the external AI model call ---
-    # Convert the log to a dictionary for JSON serialization
     threat_log_dict = schemas.ThreatLog.from_orm(threat_log).dict()
-    # Convert the datetime object to a JSON-compatible string
-    if threat_log_dict['timestamp']:
+    if threat_log_dict.get('timestamp'):
         threat_log_dict['timestamp'] = threat_log_dict['timestamp'].isoformat()
     
     predictor = request.app.state.predictor
-    xai_explanation = predictor.explain_prediction(threat_log_dict)
+    xai_explanation_dict = predictor.explain_prediction(threat_log_dict)
 
-    # --- Build the final, validated response ---
+    # Build the final, validated response
     response_data = schemas.ThreatDetailResponse.from_orm(threat_log)
     response_data.correlation = correlated_threat
     response_data.misp_summary = misp_summary
     response_data.soar_actions = soar_actions
     response_data.timeline_threats = timeline_threats
-    response_data.xai_explanation = xai_explanation
     
-    # Correctly instantiate the Recommendation schema to avoid warnings
     if recommendations_dict:
         response_data.recommendations = schemas.Recommendation(**recommendations_dict)
+    
+    # --- THIS IS THE FIX ---
+    # Create an instance of the XAIExplanation schema from the dictionary
+    if xai_explanation_dict:
+        response_data.xai_explanation = schemas.XAIExplanation(**xai_explanation_dict)
     
     if threat_log.is_anomaly:
         response_data.anomaly_features = schemas.AnomalyFeatures(

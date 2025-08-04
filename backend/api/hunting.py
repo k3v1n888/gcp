@@ -12,8 +12,6 @@ def run_new_hunt(
     user: models.User = Depends(get_current_user), 
     db: Session = Depends(database.get_db)
 ):
-    # --- THIS IS THE FIX: Get the predictor model from the application state ---
-    predictor = request.app.state.predictor
-    
-    hunt_results = run_ai_threat_hunt(db, predictor, user.tenant_id)
+    # The predictor is no longer needed here, as the hunting service calls the AI service directly
+    hunt_results = run_ai_threat_hunt(db, user.tenant_id)
     return hunt_results

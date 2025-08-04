@@ -1,56 +1,54 @@
-import pandas as pd
+import requests
 from sqlalchemy.orm import Session
 from . import models
 from .wazuh_service import get_wazuh_jwt, WAZUH_URL
-import requests
+from .ml.prediction import AI_SERVICE_URL # Import the AI service URL
 from datetime import datetime, timezone
 
-def run_ai_threat_hunt(db: Session, predictor, tenant_id: int):
+def run_ai_threat_hunt(db: Session, tenant_id: int):
     """
-    Uses the AI model's knowledge to generate and run proactive threat hunting queries.
+    Calls the AI model service to get top indicators and then hunts for them in Wazuh.
     """
     print("Starting AI-Driven Threat Hunt...")
-    if not predictor or not predictor.model:
-        return {"error": "Severity prediction model not loaded."}
 
     try:
-        # --- THIS IS THE FIX: Access the model pipeline directly from the predictor object ---
-        pipeline = predictor.model
-        classifier = pipeline.named_steps['logisticregression']
-        vectorizer = pipeline.named_steps['columntransformer'].named_transformers_['text']
+        # --- 1. Get Top Indicators from the AI Model Service ---
+        print(f"Querying AI service for top indicators at: {AI_SERVICE_URL}/get_top_indicators")
+        response = requests.get(f"{AI_SERVICE_URL}/get_top_indicators")
+        response.raise_for_status()
+        top_indicators = response.json().get("top_indicators", [])
         
-        critical_class_index = list(classifier.classes_).index('critical')
-        critical_coefs = classifier.coef_[critical_class_index]
+        if not top_indicators:
+            print("No indicators returned from AI service.")
+            return {"message": "Threat Hunt complete. No new indicators from AI."}
         
-        feature_names = vectorizer.get_feature_names_out()
-        
-        coef_df = pd.DataFrame({'feature': feature_names, 'coef': critical_coefs})
-        top_indicators = coef_df.sort_values(by='coef', ascending=False).head(5)
-        
-        print(f"Top indicators for 'critical' threats: {top_indicators['feature'].tolist()}")
+        print(f"Top indicators for 'critical' threats: {top_indicators}")
 
+        # --- 2. Generate and Run Hunting Queries in Wazuh ---
         jwt_token = get_wazuh_jwt()
         if not jwt_token:
             return {"error": "Could not authenticate with Wazuh for threat hunt."}
 
         all_results = []
-        for indicator in top_indicators['feature']:
-            wazuh_query = f'"{indicator}"'
+        for indicator in top_indicators:
+            # Create a simple query to search for this indicator in Wazuh logs
+            wazuh_query = f'"{indicator}"' # Search for the exact keyword
             print(f"Hunting in Wazuh for: {wazuh_query}")
             
-            response = requests.get(
+            alert_response = requests.get(
                 f"{WAZUH_URL}/alerts",
                 params={'q': wazuh_query, 'limit': 10},
                 headers={'Authorization': f'Bearer {jwt_token}'},
                 verify=False
             )
-            if response.ok:
-                results = response.json().get('data', {}).get('affected_items', [])
+            if alert_response.ok:
+                results = alert_response.json().get('data', {}).get('affected_items', [])
                 all_results.extend(results)
         
+        # Save hunt results to the database
         new_hunt = models.ThreatHunt(
             status="completed",
-            query=str(top_indicators['feature'].tolist()),
+            query=str(top_indicators),
             results={"found_alerts": all_results},
             tenant_id=tenant_id,
             completed_at=datetime.now(timezone.utc)

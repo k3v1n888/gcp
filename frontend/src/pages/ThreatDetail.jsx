@@ -128,7 +128,7 @@ export default function ThreatDetail() {
         </dl>
       </DetailCard>
       
-      {threat.timeline_threats && threat.timeline_threads.length > 1 && (
+      {threat.timeline_threats && threat.timeline_threats.length > 1 && (
         <DetailCard title="Attack Timeline">
           <div>
             {threat.timeline_threats.map((log, index, array) => (

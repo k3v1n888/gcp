@@ -1,4 +1,3 @@
-# backend/schemas.py
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional, Dict, Any
@@ -66,10 +65,11 @@ class SecurityIncident(BaseModel):
     threat_logs: List[ThreatLog] = []
     model_config = ConfigDict(from_attributes=True)
 
-# --- NEW: Schema for the Explainable AI (XAI) response from your custom model ---
+# --- THIS IS THE FIX ---
+# Update the shap_values to expect a 3D list (List[List[List[float]]])
 class XAIExplanation(BaseModel):
     base_value: float
-    shap_values: List[List[float]]
+    shap_values: List[List[List[float]]]
     features: Dict[str, Any]
 
 class ThreatDetailResponse(ThreatLog):
@@ -79,6 +79,4 @@ class ThreatDetailResponse(ThreatLog):
     soar_actions: List[AutomationLog] = []
     misp_summary: Optional[str] = None
     timeline_threats: List[ThreatLog] = []
-
-    # --- ADD THIS NEW FIELD ---
     xai_explanation: Optional[XAIExplanation] = None

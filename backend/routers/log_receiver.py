@@ -1,3 +1,5 @@
+# log_Receiver.py
+
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -28,24 +30,36 @@ async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Sessio
     # Get enrichment and prediction data
     intel = get_intel_from_misp(threat.ip)
     ip_score = intel.get("ip_reputation_score", 0)
+    cvss = intel.get("cvss_score", 0)
+    crit_score = intel.get("criticality_score", 0)
     cve_id = find_cve_for_threat(threat.threat)
-    
+
     predicted_severity = predictor.predict(
         threat=threat.threat,
         source=threat.source,
         ip_reputation_score=ip_score,
-        cve_id=cve_id
+        cve_id=cve_id,
+        cvss_score=cvss,
+        criticality_score=crit_score
     )
 
-    temp_log_for_check = {**threat.dict(), "ip_reputation_score": ip_score, "cve_id": cve_id}
+    temp_log_for_check = {
+        **threat.dict(),
+        "ip_reputation_score": ip_score,
+        "cve_id": cve_id,
+        "cvss_score": cvss,
+        "criticality_score": crit_score
+    }
     is_anomaly = anomaly_detector.check_for_anomaly(temp_log_for_check)
-    
+
     db_log = models.ThreatLog(
         **threat.dict(), 
         severity=predicted_severity,
         ip_reputation_score=ip_score,
         cve_id=cve_id,
         is_anomaly=is_anomaly,
+        cvss_score=cvss,
+        criticality_score=crit_score,
         timestamp=datetime.now(timezone.utc)
     )
     db.add(db_log)
@@ -54,13 +68,12 @@ async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Sessio
 
     if predicted_severity == 'critical' and ip_score >= 90:
         block_ip_with_cloud_armor(db, db_log)
-    
-    # --- THIS IS THE FIX ---
-    # Add the newly created threat log to the graph database
+
+    # Add to graph DB
     graph_service.add_threat_to_graph(db_log)
-    
-    # Broadcast the final record
+
+    # Broadcast to clients
     pydantic_log = schemas.ThreatLog.from_orm(db_log)
     await manager.broadcast_json(pydantic_log.dict())
-    
+
     return db_log

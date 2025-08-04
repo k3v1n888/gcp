@@ -1,12 +1,12 @@
 # backend/ml/prediction.py
+
 import os
 import requests
 import pandas as pd
 import google.auth
 import google.auth.transport.requests
-from datetime import datetime, timezone # <-- 1. Import datetime and timezone
+from datetime import datetime, timezone
 
-# The URL of your new, deployed AI model service
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "https://quantum-predictor-api-1020401092050.asia-southeast1.run.app")
 
 class SeverityPredictor:
@@ -16,7 +16,6 @@ class SeverityPredictor:
         print("✅ Predictor initialized to call remote AI service.")
 
     def _get_auth_token(self):
-        """Generates a Google-signed ID token for service-to-service auth."""
         try:
             creds, project = google.auth.default()
             creds.refresh(self.auth_req)
@@ -26,10 +25,6 @@ class SeverityPredictor:
             return None
 
     def _prepare_payload(self, threat_log: dict) -> dict:
-        """
-        Creates a JSON payload with the exact features your new model expects,
-        based on your Postman collection.
-        """
         technique_map = {
             "sql injection": "T1055", "log4j": "T1190",
             "xss": "T1059", "brute force": "T1110",
@@ -39,15 +34,9 @@ class SeverityPredictor:
             if key in threat_log.get('threat', '').lower():
                 technique_id = val
                 break
-        
-        # --- THIS IS THE FIX ---
-        # Get the timestamp. It could be a string or a datetime object.
+
         timestamp_input = threat_log.get('timestamp')
-        
-        # If the timestamp is a string (from an API call), parse it.
-        # Otherwise, assume it's a datetime object (from a direct call).
         if isinstance(timestamp_input, str):
-            # The 'Z' at the end means UTC, so we can parse it directly.
             dt_object = datetime.fromisoformat(timestamp_input.replace('Z', '+00:00'))
         else:
             dt_object = timestamp_input
@@ -65,49 +54,52 @@ class SeverityPredictor:
             "bytes_received": 50000,
             "location_mismatch": 1 if "new country" in threat_log.get('threat', '').lower() else 0,
             "previous_alerts": 0,
-            "criticality_score": 0.7,
-            "cvss_score": 7.5 if threat_log.get('cve_id') else 0,
+            "criticality_score": threat_log.get("criticality_score", 0),
+            "cvss_score": threat_log.get("cvss_score", 0),
             "ioc_risk_score": (threat_log.get('ip_reputation_score', 0) or 0) / 100.0
         }
 
-    def predict(self, threat: str, source: str, ip_reputation_score: int, cve_id: str | None) -> str:
-        """Calls the remote AI service to get a severity prediction."""
+    def predict(self, threat: str, source: str, ip_reputation_score: int, cve_id: str | None,
+                cvss_score: float = 0.0, criticality_score: float = 0.0) -> str:
         token = self._get_auth_token()
         if not token:
             return "unknown"
 
         headers = {'Authorization': f'Bearer {token}'}
         temp_log = {
-            "threat": threat, "source": source,
-            "ip_reputation_score": ip_reputation_score, "cve_id": cve_id,
+            "threat": threat,
+            "source": source,
+            "ip_reputation_score": ip_reputation_score,
+            "cve_id": cve_id,
+            "cvss_score": cvss_score,
+            "criticality_score": criticality_score,
             "timestamp": datetime.now(timezone.utc)
         }
         payload = self._prepare_payload(temp_log)
+        print(f"📦 Sending to AI model: {payload}")
 
         try:
             response = requests.post(f"{AI_SERVICE_URL}/predict", json=payload, headers=headers)
             response.raise_for_status()
-            
             prediction_map = {0: "low", 1: "medium", 2: "high", 3: "critical"}
             prediction_int = response.json().get('prediction', 0)
             return prediction_map.get(prediction_int, "unknown")
         except Exception as e:
-            print(f"Prediction API call to remote AI service failed: {e}")
+            print(f"Prediction API call failed: {e}")
             return "unknown"
-            
+
     def explain_prediction(self, threat_log: dict) -> dict | None:
-        """Calls the remote AI service to get a SHAP-based explanation."""
         token = self._get_auth_token()
         if not token:
             return None
 
         headers = {'Authorization': f'Bearer {token}'}
         payload = self._prepare_payload(threat_log)
-        
+
         try:
             response = requests.post(f"{AI_SERVICE_URL}/explain", json=payload, headers=headers)
             response.raise_for_status()
             return response.json()
         except Exception as e:
-            print(f"Explanation API call to remote AI service failed: {e}")
+            print(f"Explanation API call failed: {e}")
             return None

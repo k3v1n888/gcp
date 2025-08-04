@@ -46,6 +46,9 @@ class ThreatLog(Base):
     ip_reputation_score = Column(Integer, nullable=True)
     cve_id = Column(String, nullable=True)
     is_anomaly = Column(Boolean, default=False)
+	cvss_score = Column(Float, nullable=True, default=0.0)
+    criticality_score = Column(Float, nullable=True, default=0.0)
+    ioc_risk_score = Column(Float, nullable=True, default=0.0)
     automation_actions = relationship("AutomationLog", back_populates="threat")
     incidents = relationship("SecurityIncident", secondary=incident_threat_association, back_populates="threat_logs")
 

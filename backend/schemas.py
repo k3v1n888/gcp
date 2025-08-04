@@ -21,6 +21,9 @@ class ThreatLog(BaseModel):
     ip_reputation_score: Optional[int] = None
     cve_id: Optional[str] = None
     is_anomaly: bool = False
+    cvss_score: Optional[float] = 0.0
+    criticality_score: Optional[float] = 0.0
+    ioc_risk_score: Optional[float] = 0.0
     model_config = ConfigDict(from_attributes=True)
 
 class SystemSettings(BaseModel):

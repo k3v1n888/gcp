@@ -4,7 +4,6 @@ import pandas as pd
 import google.auth
 import google.auth.transport.requests
 
-# The URL of your new, deployed AI model service
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "https://quantum-predictor-api-1020401092050.asia-southeast1.run.app")
 
 class SeverityPredictor:
@@ -23,6 +22,38 @@ class SeverityPredictor:
             print(f"❌ Could not generate auth token for AI service: {e}")
             return None
 
+    def _prepare_payload(self, threat_log: dict) -> dict:
+        """
+        Creates a JSON payload with the exact features your new model expects,
+        based on your Postman collection.
+        """
+        # This is a simplified mapping. You can make this more sophisticated.
+        technique_map = {
+            "sql injection": "T1055", "log4j": "T1190",
+            "xss": "T1059", "brute force": "T1110",
+        }
+        technique_id = "T1595" # Default for general scanning/recon
+        for key, val in technique_map.items():
+            if key in threat_log.get('threat', '').lower():
+                technique_id = val
+                break
+        
+        return {
+            "technique_id": technique_id,
+            "asset_type": "server",
+            "login_hour": threat_log.get('timestamp').hour,
+            "is_admin": 1,
+            "is_remote_session": 1 if threat_log.get('source') == "VPN" else 0,
+            "num_failed_logins": 1 if "failed" in threat_log.get('threat', '').lower() else 0,
+            "bytes_sent": 10000, # Placeholder
+            "bytes_received": 50000, # Placeholder
+            "location_mismatch": 1 if "new country" in threat_log.get('threat', '').lower() else 0,
+            "previous_alerts": 0, # Placeholder
+            "criticality_score": 0.7, # Placeholder
+            "cvss_score": 7.5 if threat_log.get('cve_id') else 0,
+            "ioc_risk_score": (threat_log.get('ip_reputation_score', 0) or 0) / 100.0
+        }
+
     def predict(self, threat: str, source: str, ip_reputation_score: int, cve_id: str | None) -> str:
         """Calls the remote AI service to get a severity prediction."""
         token = self._get_auth_token()
@@ -30,19 +61,21 @@ class SeverityPredictor:
             return "unknown"
 
         headers = {'Authorization': f'Bearer {token}'}
-        payload = {
-            "threat": threat,
-            "source": source,
-            "ip_reputation_score": ip_reputation_score,
-            "cve_id": cve_id
+        # Create a temporary dict to pass to the payload preparer
+        temp_log = {
+            "threat": threat, "source": source,
+            "ip_reputation_score": ip_reputation_score, "cve_id": cve_id,
+            "timestamp": datetime.now(timezone.utc)
         }
+        payload = self._prepare_payload(temp_log)
 
         try:
-            # Assuming your AI service has a '/predict' endpoint
             response = requests.post(f"{AI_SERVICE_URL}/predict", json=payload, headers=headers)
             response.raise_for_status()
-            # The "correctness" of the severity comes from your custom model's logic
-            return response.json().get('severity', 'unknown')
+            
+            prediction_map = {0: "low", 1: "medium", 2: "high", 3: "critical"}
+            prediction_int = response.json().get('prediction', 0)
+            return prediction_map.get(prediction_int, "unknown")
         except Exception as e:
             print(f"Prediction API call to remote AI service failed: {e}")
             return "unknown"
@@ -54,10 +87,10 @@ class SeverityPredictor:
             return None
 
         headers = {'Authorization': f'Bearer {token}'}
+        payload = self._prepare_payload(threat_log)
         
         try:
-            # Assuming your AI service has an '/explain' endpoint
-            response = requests.post(f"{AI_SERVICE_URL}/explain", json=threat_log, headers=headers)
+            response = requests.post(f"{AI_SERVICE_URL}/explain", json=payload, headers=headers)
             response.raise_for_status()
             return response.json()
         except Exception as e:

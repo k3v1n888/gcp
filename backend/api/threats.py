@@ -41,10 +41,15 @@ def get_threat_detail(
     if not threat_log:
         raise HTTPException(status_code=404, detail="Threat log not found")
 
+    # --- Fetch all related data for the response ---
     timeline_threats = []
     if threat_log.incidents:
         parent_incident = threat_log.incidents[0]
-        timeline_threats = sorted(parent_incident.threat_logs, key=lambda log: log.timestamp)
+        # Ensure timestamp is not None before sorting
+        timeline_threats = sorted(
+            [t for t in parent_incident.threat_logs if t.timestamp], 
+            key=lambda log: log.timestamp
+        )
 
     correlated_threat = db.query(models.CorrelatedThreat).filter(
         models.CorrelatedThreat.title == f"Attack Pattern: {threat_log.threat}",
@@ -55,14 +60,17 @@ def get_threat_detail(
     misp_summary = get_and_summarize_misp_intel(threat_log.ip)
     soar_actions = db.query(models.AutomationLog).filter(models.AutomationLog.threat_id == threat_id).order_by(models.AutomationLog.timestamp.desc()).all()
 
-    # --- FIX 1: Convert the log to a dictionary and then format the timestamp ---
+    # --- Prepare data for the external AI model call ---
+    # Convert the log to a dictionary for JSON serialization
     threat_log_dict = schemas.ThreatLog.from_orm(threat_log).dict()
-    threat_log_dict['timestamp'] = threat_log_dict['timestamp'].isoformat()
+    # Convert the datetime object to a JSON-compatible string
+    if threat_log_dict['timestamp']:
+        threat_log_dict['timestamp'] = threat_log_dict['timestamp'].isoformat()
     
     predictor = request.app.state.predictor
     xai_explanation = predictor.explain_prediction(threat_log_dict)
 
-    # --- FIX 2: Build the final response and correctly instantiate the Recommendation schema ---
+    # --- Build the final, validated response ---
     response_data = schemas.ThreatDetailResponse.from_orm(threat_log)
     response_data.correlation = correlated_threat
     response_data.misp_summary = misp_summary
@@ -70,6 +78,7 @@ def get_threat_detail(
     response_data.timeline_threats = timeline_threats
     response_data.xai_explanation = xai_explanation
     
+    # Correctly instantiate the Recommendation schema to avoid warnings
     if recommendations_dict:
         response_data.recommendations = schemas.Recommendation(**recommendations_dict)
     

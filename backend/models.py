@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, func, Boolean, Table, JSON
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, func, Boolean, Table, JSON, Float
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy import create_engine
 import os

@@ -1,5 +1,4 @@
 # backend/ml/prediction.py
-
 import os
 import requests
 import pandas as pd
@@ -39,14 +38,12 @@ class SeverityPredictor:
         if isinstance(timestamp_input, str):
             dt_object = datetime.fromisoformat(timestamp_input.replace('Z', '+00:00'))
         else:
-            dt_object = timestamp_input
-
-        login_hour = dt_object.hour if dt_object else datetime.now(timezone.utc).hour
+            dt_object = timestamp_input or datetime.now(timezone.utc)
 
         return {
             "technique_id": technique_id,
             "asset_type": "server",
-            "login_hour": login_hour,
+            "login_hour": dt_object.hour,
             "is_admin": 1,
             "is_remote_session": 1 if threat_log.get('source') == "VPN" else 0,
             "num_failed_logins": 1 if "failed" in threat_log.get('threat', '').lower() else 0,
@@ -54,13 +51,13 @@ class SeverityPredictor:
             "bytes_received": 50000,
             "location_mismatch": 1 if "new country" in threat_log.get('threat', '').lower() else 0,
             "previous_alerts": 0,
-            "criticality_score": threat_log.get("criticality_score", 0),
-            "cvss_score": threat_log.get("cvss_score", 0),
+            "criticality_score": threat_log.get('criticality_score', 0),
+            "cvss_score": threat_log.get('cvss_score', 0),
             "ioc_risk_score": (threat_log.get('ip_reputation_score', 0) or 0) / 100.0
         }
 
     def predict(self, threat: str, source: str, ip_reputation_score: int, cve_id: str | None,
-                cvss_score: float = 0.0, criticality_score: float = 0.0) -> str:
+                cvss_score: float = 0, criticality_score: float = 0) -> str:
         token = self._get_auth_token()
         if not token:
             return "unknown"
@@ -76,14 +73,12 @@ class SeverityPredictor:
             "timestamp": datetime.now(timezone.utc)
         }
         payload = self._prepare_payload(temp_log)
-        print(f"📦 Sending to AI model: {payload}")
 
         try:
             response = requests.post(f"{AI_SERVICE_URL}/predict", json=payload, headers=headers)
             response.raise_for_status()
             prediction_map = {0: "low", 1: "medium", 2: "high", 3: "critical"}
-            prediction_int = response.json().get('prediction', 0)
-            return prediction_map.get(prediction_int, "unknown")
+            return prediction_map.get(response.json().get('prediction', 0), "unknown")
         except Exception as e:
             print(f"Prediction API call failed: {e}")
             return "unknown"
@@ -92,10 +87,8 @@ class SeverityPredictor:
         token = self._get_auth_token()
         if not token:
             return None
-
         headers = {'Authorization': f'Bearer {token}'}
         payload = self._prepare_payload(threat_log)
-
         try:
             response = requests.post(f"{AI_SERVICE_URL}/explain", json=payload, headers=headers)
             response.raise_for_status()

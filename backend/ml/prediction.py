@@ -23,40 +23,51 @@ class SeverityPredictor:
             print(f"❌ Could not generate auth token for AI service: {e}")
             return None
 
-    def _prepare_payload(self, threat_log: dict) -> dict:
-        technique_map = {
-            "sql injection": "T1055",
-            "log4j": "T1190",
-            "xss": "T1059",
-            "brute force": "T1110",
-        }
-        technique_id = "T1595"
-        for key, val in technique_map.items():
-            if key in threat_log.get('threat', '').lower():
-                technique_id = val
-                break
+	def _prepare_payload(self, threat_log: dict) -> dict:
+    technique_map = {
+        "sql injection": "T1055",
+        "log4j": "T1190",
+        "xss": "T1059",
+        "brute force": "T1110",
+    }
+    technique_id = "T1595"
+    for key, val in technique_map.items():
+        if key in threat_log.get('threat', '').lower():
+            technique_id = val
+            break
 
-        timestamp_input = threat_log.get('timestamp')
-        if isinstance(timestamp_input, str):
+    # Timestamp handling with fallback
+    timestamp_input = threat_log.get('timestamp')
+    if isinstance(timestamp_input, str):
+        try:
             dt_object = datetime.fromisoformat(timestamp_input.replace('Z', '+00:00'))
-        else:
-            dt_object = timestamp_input or datetime.now(timezone.utc)
+        except Exception:
+            dt_object = datetime.now(timezone.utc)
+    elif isinstance(timestamp_input, datetime):
+        dt_object = timestamp_input
+    else:
+        dt_object = datetime.now(timezone.utc)
 
-        return {
-            "technique_id": technique_id,
-            "asset_type": "server",
-            "login_hour": dt_object.hour,
-            "is_admin": 1,
-            "is_remote_session": 1 if threat_log.get('source') == "VPN" else 0,
-            "num_failed_logins": 1 if "failed" in threat_log.get('threat', '').lower() else 0,
-            "bytes_sent": threat_log.get("bytes_sent", 10000),
-            "bytes_received": threat_log.get("bytes_received", 50000),
-            "location_mismatch": 1 if "new country" in threat_log.get('threat', '').lower() else 0,
-            "previous_alerts": threat_log.get("previous_alerts", 0),
-            "criticality_score": round(threat_log.get('criticality_score', 0), 2),
-            "cvss_score": round(threat_log.get('cvss_score', 0), 2),
-            "ioc_risk_score": round((threat_log.get('ip_reputation_score', 0) or 0) / 100.0, 2)
-        }
+    payload = {
+        "technique_id": technique_id,
+        "asset_type": threat_log.get("asset_type", "server"),
+        "login_hour": dt_object.hour,
+        "is_admin": int(threat_log.get("is_admin", 1)),
+        "is_remote_session": 1 if threat_log.get('source') == "VPN" else 0,
+        "num_failed_logins": 1 if "failed" in threat_log.get('threat', '').lower() else 0,
+        "bytes_sent": int(threat_log.get("bytes_sent", 10000) or 0),
+        "bytes_received": int(threat_log.get("bytes_received", 50000) or 0),
+        "location_mismatch": 1 if "new country" in threat_log.get('threat', '').lower() else 0,
+        "previous_alerts": int(threat_log.get("previous_alerts", 0) or 0),
+        "criticality_score": round(threat_log.get("criticality_score", 0.0) or 0.0, 2),
+        "cvss_score": round(threat_log.get("cvss_score", 0.0) or 0.0, 2),
+        "ioc_risk_score": round((threat_log.get("ip_reputation_score", 0) or 0) / 100.0, 2)
+    }
+
+    # Optional debug log
+    print(f"✅ Prepared model payload: {json.dumps(payload, indent=2)}")
+
+    return payload
 
     def predict(self, threat: str, source: str, ip_reputation_score: int, cve_id: str | None,
                 cvss_score: float = 0, criticality_score: float = 0, **kwargs) -> str:

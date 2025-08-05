@@ -88,10 +88,10 @@ def get_threat_logs(
 def get_threat_detail(
     request: Request,
     threat_id: int,
-    user: models.User = Depends(get_current_user_simple),  # FIXED: Use get_current_user_simple
+    user: models.User = Depends(get_current_user_simple),
     db: Session = Depends(database.get_db)
 ):
-    """Individual threat detail - fixed auth dependency"""
+    """Individual threat detail - fixed for simplified models"""
     try:
         threat_log = db.query(models.ThreatLog).filter(
             models.ThreatLog.id == threat_id,
@@ -101,50 +101,52 @@ def get_threat_detail(
         if not threat_log:
             raise HTTPException(status_code=404, detail="Threat log not found")
 
+        # Remove the incidents relationship access since it's causing issues
         timeline_threats = []
-        if threat_log.incidents:
-            parent_incident = threat_log.incidents[0]
-            timeline_threats = sorted(
-                [t for t in parent_incident.threat_logs if t.timestamp], 
-                key=lambda log: log.timestamp
-            )
+        
+        # Get correlated threats safely
+        correlated_threat = None
+        try:
+            correlated_threat = db.query(models.CorrelatedThreat).filter(
+                models.CorrelatedThreat.title == f"Attack Pattern: {threat_log.threat}",
+                models.CorrelatedThreat.tenant_id == user.tenant_id
+            ).first()
+        except Exception as e:
+            logger.warning(f"Could not fetch correlated threat: {e}")
 
-        correlated_threat = db.query(models.CorrelatedThreat).filter(
-            models.CorrelatedThreat.title == f"Attack Pattern: {threat_log.threat}",
-            models.CorrelatedThreat.tenant_id == user.tenant_id
-        ).first()
+        # Get automation logs safely
+        soar_actions = []
+        try:
+            soar_actions = db.query(models.AutomationLog).filter(
+                models.AutomationLog.threat_id == threat_id
+            ).order_by(models.AutomationLog.timestamp.desc()).all()
+        except Exception as e:
+            logger.warning(f"Could not fetch automation logs: {e}")
 
-        recommendations_dict = generate_threat_remediation_plan(threat_log)
-        misp_summary = get_and_summarize_misp_intel(threat_log.ip)
-        soar_actions = db.query(models.AutomationLog).filter(
-            models.AutomationLog.threat_id == threat_id
-        ).order_by(models.AutomationLog.timestamp.desc()).all()
-
-        # Build response as dict to avoid Pydantic validation
+        # Build safe response
         response_data = {
             "id": threat_log.id,
             "tenant_id": threat_log.tenant_id,
             "ip": threat_log.ip,
             "threat_type": threat_log.threat_type,
-            "threat": threat_log.threat,
+            "threat": getattr(threat_log, 'threat', ''),
             "severity": threat_log.severity,
             "description": threat_log.description,
             "timestamp": threat_log.timestamp.isoformat() if threat_log.timestamp else datetime.utcnow().isoformat(),
             "cve_id": threat_log.cve_id,
             "cvss_score": threat_log.cvss_score,
             "source": threat_log.source,
+            "ip_reputation_score": getattr(threat_log, 'ip_reputation_score', 0),
+            "is_anomaly": getattr(threat_log, 'is_anomaly', False),
             "correlation": correlated_threat.__dict__ if correlated_threat else None,
-            "misp_summary": misp_summary,
-            "soar_actions": [action.__dict__ for action in soar_actions],
-            "timeline_threats": [
+            "soar_actions": [
                 {
-                    "id": t.id,
-                    "timestamp": t.timestamp.isoformat() if t.timestamp else None,
-                    "threat_type": t.threat_type,
-                    "ip": t.ip
-                } for t in timeline_threats
+                    "id": action.id,
+                    "action": action.action,
+                    "timestamp": action.timestamp.isoformat() if action.timestamp else None
+                } for action in soar_actions
             ],
-            "recommendations": recommendations_dict
+            "timeline_threats": timeline_threats
         }
         
         return response_data

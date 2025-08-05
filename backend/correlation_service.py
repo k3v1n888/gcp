@@ -70,12 +70,36 @@ def get_cvss_score(cve_id: str) -> float:
     if not cve_id:
         return 0.0
     try:
-        url = f"https://www.cve.org/api/cve/{cve_id}"
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
+        url = f"https://services.nvd.nist.gov/rest/json/cve/1.0/{cve_id}"
+        headers = {
+            "User-Agent": "QuantumAI-CVE-Fetcher"
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+
+        if response.status_code != 200:
+            logger.warning(f"⚠️ Failed to fetch CVE {cve_id}: HTTP {response.status_code}")
+            return 0.0
+
+        if not response.text.strip():
+            logger.warning(f"⚠️ Empty response for CVE {cve_id}")
+            return 0.0
+
         data = response.json()
-        score = data.get("cvssMetrics", [{}])[0].get("cvssData", {}).get("baseScore", 0.0)
-        return float(score or 0.0)
+        cve_items = data.get("result", {}).get("CVE_Items", [])
+
+        if not cve_items:
+            logger.warning(f"⚠️ No CVE data found for {cve_id}")
+            return 0.0
+
+        impact = cve_items[0].get("impact", {})
+        if "baseMetricV3" in impact:
+            return float(impact["baseMetricV3"]["cvssV3"]["baseScore"])
+        elif "baseMetricV2" in impact:
+            return float(impact["baseMetricV2"]["cvssV2"]["baseScore"])
+
+        logger.warning(f"⚠️ CVSS score not available for {cve_id}")
+        return 0.0
+
     except Exception as e:
         logger.warning(f"⚠️ Could not fetch CVSS score for {cve_id}: {e}")
         return 0.0

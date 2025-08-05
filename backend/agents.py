@@ -2,14 +2,10 @@ from fastapi import APIRouter, Depends
 from datetime import datetime
 import torch
 import random
-from sqlalchemy.orm import Session
-
-# Restore original import
 from backend.models import SessionLocal, ThreatLog
 
 router = APIRouter()
 
-# Keep all your original code exactly as it was
 AGENT_NAMES = ["SIEM", "XDR", "ASM", "Network"]
 THREATS = ["Ransomware", "Phishing", "DDoS", "C2 Communication"]
 
@@ -31,7 +27,7 @@ def get_db():
         db.close()
 
 @router.get("/api/agents/threats")
-def get_threat_predictions(db: Session = Depends(get_db)):
+def get_threat_predictions(db: SessionLocal = Depends(get_db)):
     response = []
     device = "cuda" if torch.cuda.is_available() else "cpu"
     for agent in AGENT_NAMES:
@@ -46,15 +42,7 @@ def get_threat_predictions(db: Session = Depends(get_db)):
                 "message": msg,
                 "timestamp": datetime.utcnow().isoformat()
             })
-            log = ThreatLog(
-                tenant_id=1,
-                ip="127.0.0.1", 
-                threat_type=threat_type,
-                threat=threat_type, 
-                source=agent,
-                severity="medium",
-                timestamp=datetime.utcnow()
-            )
+            log = ThreatLog(ip="127.0.0.1", threat=threat_type, source=agent)
             db.add(log)
     db.commit()
     return response

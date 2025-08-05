@@ -1,13 +1,13 @@
 import os
-from fastapi import APIRouter, Request, Depends, HTTPException, status
+from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from authlib.integrations.starlette_client import OAuth
-from datetime import datetime, timedelta
-from typing import Optional
 
-from .. import models, schemas  # Remove database import
-from ..models import User, Tenant, SessionLocal  # Import User, Tenant, and SessionLocal from models
+from .. import models, database, schemas
+from ..models import User, Tenant
+from ..database import get_db
+from ..ueba_service import check_user_activity_anomaly
 
 router = APIRouter()
 oauth = OAuth()
@@ -23,14 +23,6 @@ oauth.register(
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={'scope': 'openid email profile'}
 )
-
-# Restore your original database dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get('/api/auth/login')
 async def login(request: Request):

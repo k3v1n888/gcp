@@ -1,21 +1,16 @@
 # backend/auth/rbac.py
 
 from fastapi import Request, HTTPException, Depends
-from sqlalchemy.orm import Session
-from fastapi import Depends, HTTPException, status
-
-# Restore original imports
 from backend.models import SessionLocal, User
+from jose import jwt, JWTError
+import os
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-def get_current_user(db: Session = Depends(get_db)) -> User:
-    """Get current user from database"""
+def get_current_user(request: Request):
+    """
+    MODIFIED: Use session data to get the user's email, then fetch the full
+    user object (including role and tenant) from the database.
+    This ensures that role changes are reflected immediately.
+    """
     session_user = request.session.get("user")
     if not session_user or not session_user.get("email"):
         raise HTTPException(status_code=401, detail="Not authenticated")

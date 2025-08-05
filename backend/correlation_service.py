@@ -180,3 +180,52 @@ def generate_threat_remediation_plan(threat_log: models.ThreatLog) -> dict | Non
     except Exception as e:
         logger.error(f"Error generating remediation plan: {e}")
         return None
+        
+# --- NEW: Function to get a detailed AI summary from MISP ---
+def get_and_summarize_misp_intel(indicator: str) -> str | None:
+    """
+    Fetches all related attributes for an indicator from MISP and uses an LLM
+    to generate a concise summary.
+    """
+    if not MISP_URL or not MISP_API_KEY:
+        logger.warning("MISP credentials not configured for summary.")
+        return "Quantum Intel hub not configured."
+
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    if not openai.api_key:
+        logger.warning("OpenAI key not configured for MISP summary.")
+        return "AI summarizer not configured."
+
+    try:
+        response = requests.post(
+            f"{MISP_URL}/attributes/restSearch",
+            headers={'Authorization': MISP_API_KEY, 'Accept': 'application/json'},
+            json={"value": indicator, "includeEventData": True},
+            verify=False
+        )
+        response.raise_for_status()
+        attributes = response.json().get("response", {}).get("Attribute", [])
+
+        if not attributes:
+            return "No intelligence found for this indicator in the Quantum Intel hub."
+
+        prompt = f"""
+        You are a threat intelligence analyst. Summarize the following raw threat intelligence data from a MISP instance for the indicator '{indicator}'.
+        Focus on what the indicator is, what it's associated with (e.g., malware families, threat actors), and its overall reputation.
+        Provide a brief, human-readable paragraph.
+
+        --- Raw MISP Data ---
+        {json.dumps(attributes, indent=2)}
+        """
+
+        summary_response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
+            max_tokens=200
+        )
+        return summary_response.choices[0].message.content.strip()
+
+    except Exception as e:
+        logger.error(f"Failed to get or summarize MISP intel for {indicator}: {e}")
+        return f"An error occurred while fetching intelligence: {e}"

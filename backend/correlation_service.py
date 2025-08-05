@@ -38,7 +38,6 @@ def get_intel_from_misp(indicator: str) -> dict:
         logger.error(f"MISP Error for indicator {indicator}: {e}")
         return {"ip_reputation_score": 0}
 
-@lru_cache(maxsize=500)
 def find_cve_for_threat(threat_text: str) -> str | None:
     """
     Attempts to find the most relevant CVE ID for a given threat description.

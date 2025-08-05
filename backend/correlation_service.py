@@ -1,18 +1,19 @@
-# backend/correlation_service.py
 import os
 import requests
 import openai
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 import json
-from . import models
 import logging
+from functools import lru_cache
+from . import models
 
 logger = logging.getLogger(__name__)
 
 MISP_URL = os.getenv("MISP_URL", "https://intel.quantum-ai.asia")
 MISP_API_KEY = os.getenv("MISP_API_KEY")
 
+# --- MISP Intel Fetcher ---
 def get_intel_from_misp(indicator: str) -> dict:
     if not MISP_URL or not MISP_API_KEY:
         logger.warning("MISP_URL or MISP_API_KEY not configured. Skipping MISP enrichment.")
@@ -38,29 +39,21 @@ def get_intel_from_misp(indicator: str) -> dict:
         logger.error(f"MISP Error for indicator {indicator}: {e}")
         return {"ip_reputation_score": 0}
 
+# --- CVE Identifier ---
+@lru_cache(maxsize=500)
 def find_cve_for_threat(threat_text: str) -> str | None:
-    """
-    Attempts to find the most relevant CVE ID for a given threat description.
-    First tries a live CIRCL search, then falls back to hardcoded rules.
-    """
-    if not threat_text:
-        return None
-
     try:
-        search_url = f"https://cve.circl.lu/api/search/{threat_text}"
-        response = requests.get(search_url, timeout=5)
+        response = requests.get(f"https://cve.circl.lu/api/search/{threat_text}", timeout=5)
         response.raise_for_status()
-        results = response.json()
-
-        if isinstance(results, list) and results:
-            for entry in results:
-                cve_id = entry.get("id")
-                if cve_id and cve_id.startswith("CVE"):
-                    return cve_id
+        data = response.json()
+        for item in data.get("data", []):
+            cve_id = item.get("id")
+            if cve_id and cve_id.startswith("CVE-"):
+                return cve_id
     except Exception as e:
         logger.warning(f"⚠️ Failed to retrieve CVE from CIRCL for '{threat_text}': {e}")
 
-    # Fallback keyword mappings
+    # Fallback pattern-based CVE lookup
     threat_text_lower = threat_text.lower()
     if "log4j" in threat_text_lower or "jndi" in threat_text_lower:
         return "CVE-2021-44228"
@@ -68,16 +61,32 @@ def find_cve_for_threat(threat_text: str) -> str | None:
         return "CWE-89"
     if "xss" in threat_text_lower or "cross-site scripting" in threat_text_lower:
         return "CWE-79"
-    if "cobalt strike" in threat_text_lower:
-        return "CVE-2019-0708"
-    if "powershell" in threat_text_lower:
-        return "CVE-2021-31166"
-    if "brute force" in threat_text_lower:
-        return "CWE-307"
-    if "ransomware" in threat_text_lower:
-        return "CWE-501"
-
     return None
+
+# --- CVSS Score Fetcher ---
+def get_cvss_score(cve_id: str) -> float:
+    if not cve_id:
+        return 0.0
+    try:
+        url = f"https://www.cve.org/api/cve/{cve_id}"
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        score = data.get("cvssMetrics", [{}])[0].get("cvssData", {}).get("baseScore", 0.0)
+        return float(score or 0.0)
+    except Exception as e:
+        logger.warning(f"⚠️ Could not fetch CVSS score for {cve_id}: {e}")
+        return 0.0
+
+# --- Criticality Score Calculator ---
+def calculate_criticality_score(ip_score: int, cvss_score: float) -> float:
+    ip_weight = 0.5
+    cvss_weight = 0.5
+    ip_norm = ip_score / 100.0
+    cvss_norm = cvss_score / 10.0
+    return round(ip_weight * ip_norm + cvss_weight * cvss_norm, 2)
+
+# --- Correlation and AI Summary Logic ---
 
 def correlate_and_enrich_threats(db: Session, tenant_id: int):
     common_threats = (
@@ -171,52 +180,3 @@ def generate_threat_remediation_plan(threat_log: models.ThreatLog) -> dict | Non
     except Exception as e:
         logger.error(f"Error generating remediation plan: {e}")
         return None
-
-# --- NEW: Function to get a detailed AI summary from MISP ---
-def get_and_summarize_misp_intel(indicator: str) -> str | None:
-    """
-    Fetches all related attributes for an indicator from MISP and uses an LLM
-    to generate a concise summary.
-    """
-    if not MISP_URL or not MISP_API_KEY:
-        logger.warning("MISP credentials not configured for summary.")
-        return "Quantum Intel hub not configured."
-
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    if not openai.api_key:
-        logger.warning("OpenAI key not configured for MISP summary.")
-        return "AI summarizer not configured."
-
-    try:
-        response = requests.post(
-            f"{MISP_URL}/attributes/restSearch",
-            headers={'Authorization': MISP_API_KEY, 'Accept': 'application/json'},
-            json={"value": indicator, "includeEventData": True},
-            verify=False
-        )
-        response.raise_for_status()
-        attributes = response.json().get("response", {}).get("Attribute", [])
-
-        if not attributes:
-            return "No intelligence found for this indicator in the Quantum Intel hub."
-
-        prompt = f"""
-        You are a threat intelligence analyst. Summarize the following raw threat intelligence data from a MISP instance for the indicator '{indicator}'.
-        Focus on what the indicator is, what it's associated with (e.g., malware families, threat actors), and its overall reputation.
-        Provide a brief, human-readable paragraph.
-
-        --- Raw MISP Data ---
-        {json.dumps(attributes, indent=2)}
-        """
-
-        summary_response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-            max_tokens=200
-        )
-        return summary_response.choices[0].message.content.strip()
-
-    except Exception as e:
-        logger.error(f"Failed to get or summarize MISP intel for {indicator}: {e}")
-        return f"An error occurred while fetching intelligence: {e}"

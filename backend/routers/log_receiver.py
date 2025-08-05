@@ -1,17 +1,19 @@
 import os
-import requests
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import logging
 from datetime import datetime, timezone
-from functools import lru_cache
 
 from backend import models, database, schemas
 from backend.app.websocket.threats import manager
 from backend.soar_service import block_ip_with_cloud_armor
-from backend.correlation_service import get_intel_from_misp
-from backend.correlation_service import find_cve_for_threat
+from backend.correlation_service import (
+    get_intel_from_misp,
+    find_cve_with_fallback,
+    get_cvss_score,
+    calculate_criticality_score
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,36 +25,21 @@ class ThreatCreate(BaseModel):
 
 router = APIRouter()
 
-# --- Live CVSS score fetcher ---
-def get_cvss_score(cve_id: str) -> float:
-    if not cve_id:
-        return 0.0
-
-    try:
-        url = f"https://www.cve.org/api/cve/{cve_id}"
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-        score = data.get("cvssMetrics", [{}])[0].get("cvssData", {}).get("baseScore", 0.0)
-        return float(score or 0.0)
-    except Exception as e:
-        logger.warning(f"⚠️ Could not fetch CVSS score for {cve_id}: {e}")
-        return 0.0
-
 @router.post("/api/log_threat", response_model=schemas.ThreatLog, status_code=201)
 async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Session = Depends(database.get_db)):
     predictor = request.app.state.predictor
     anomaly_detector = request.app.state.anomaly_detector
     graph_service = request.app.state.graph_service
 
+    # Enrichment
     intel = get_intel_from_misp(threat.ip)
     ip_score = intel.get("ip_reputation_score", 0)
 
-    # NEW: Live CVE + CVSS enrichment
-    cve_id = find_cve_for_threat(threat.threat)
+    cve_id = find_cve_with_fallback(threat.threat)
     cvss_score = get_cvss_score(cve_id)
-    criticality_score = 0.9  # Replace with logic later
+    criticality_score = calculate_criticality_score(ip_score, cvss_score)
 
+    # Severity prediction
     predicted_severity = predictor.predict(
         threat=threat.threat,
         source=threat.source,
@@ -62,6 +49,7 @@ async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Sessio
         criticality_score=criticality_score
     )
 
+    # Anomaly detection
     enriched_log = {
         **threat.dict(),
         "ip_reputation_score": ip_score,
@@ -69,9 +57,9 @@ async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Sessio
         "cvss_score": cvss_score,
         "criticality_score": criticality_score
     }
-
     is_anomaly = anomaly_detector.check_for_anomaly(enriched_log)
 
+    # Save to DB
     db_log = models.ThreatLog(
         **threat.dict(),
         severity=predicted_severity,

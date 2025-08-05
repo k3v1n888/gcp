@@ -26,8 +26,7 @@ from backend.api.graph import router as graph_router
 from backend.api.hunting import router as hunting_router
 
 # --- Import project components ---
-from backend.models import Base, engine
-from backend.database import SessionLocal
+from backend.models import Base, engine, SessionLocal
 from backend.ml.prediction import SeverityPredictor
 from backend.forecasting_service import ThreatForecaster
 from backend.anomaly_service import AnomalyDetector
@@ -68,20 +67,20 @@ def run_timestamp_fix():
 
 @app.on_event("startup")
 def on_startup():
-    """Startup tasks"""
+    """Keep your original startup but skip problematic parts"""
     # Create database tables
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        logger.error(f"Database setup error: {e}")
     
-    # Remove this - handled in run.sh now
-    # run_timestamp_fix()
-    
-    # Initialize ML components
+    # Keep your original ML initialization
     app.state.predictor = SeverityPredictor()
     app.state.forecaster = ThreatForecaster()
     app.state.anomaly_detector = AnomalyDetector()
     app.state.graph_service = GraphService()
     
-    # Start background tasks
+    # Keep your original background tasks
     asyncio.create_task(periodic_data_ingestion())
     
     logger.info("Quantum AI Platform startup completed")

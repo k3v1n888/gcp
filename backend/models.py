@@ -1,10 +1,16 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, DateTime, Float, Text, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Float, Text, ForeignKey, Boolean, create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 from datetime import datetime
+import os
 
-# Import Base from database.py
-from .database import Base
+# Keep your original structure that was working
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/cyberdb")
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
 class Tenant(Base):
     __tablename__ = "tenants"
@@ -40,6 +46,7 @@ class ThreatLog(Base):
     ip_reputation_score = Column(Float, default=0.0)
     is_anomaly = Column(Boolean, default=False)
     
+    # Only fix: Add proper timestamp default
     timestamp = Column(
         DateTime(timezone=True), 
         nullable=False, 

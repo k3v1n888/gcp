@@ -147,6 +147,8 @@ def correlate_and_enrich_threats(db: Session, tenant_id: int):
                 chosen_ip = ip
 
         criticality_score = calculate_criticality_score(highest_risk_score, cvss_score)
+        logger.info(f"[AI INPUT] threat='{threat_desc}', ip_score={highest_risk_score}, cvss_score={cvss_score}, criticality_score={criticality_score}, cve_id={cve_id}")
+
         predicted_severity = predictor.predict(
             threat=threat_desc,
             source="correlation",
@@ -155,6 +157,8 @@ def correlate_and_enrich_threats(db: Session, tenant_id: int):
             cvss_score=cvss_score,
             criticality_score=criticality_score
         )
+
+        logger.info(f"[AI SEVERITY] Predicted severity for '{threat_desc}' = {predicted_severity}")
 
         new_correlated_threat = models.CorrelatedThreat(
             title=f"Attack Pattern: {threat_desc}",

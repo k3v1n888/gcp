@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, func, Boolean, Table, JSON, Float
+from sqlalchemy import Column, Integer, String, DateTime, Float, Text, Index, ForeignKey, func, Boolean, Table, JSON
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy import create_engine
 import os
@@ -35,14 +35,32 @@ class User(Base):
 
 class ThreatLog(Base):
     __tablename__ = "threat_logs"
-    id = Column(Integer, primary_key=True)
-    ip = Column(String)
-    threat = Column(Text)
-    source = Column(String)
-    severity = Column(String, default="unknown")
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
-    tenant_id = Column(Integer, ForeignKey("tenants.id"))
-    tenant = relationship("Tenant", back_populates="threats")
+    
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, nullable=False, index=True)
+    ip = Column(String(45), nullable=False, index=True)  # IPv6 support
+    threat_type = Column(String(100), nullable=False)
+    severity = Column(String(20), nullable=False, default="medium")
+    description = Column(Text)
+    cve_id = Column(String(20), index=True)
+    cvss_score = Column(Float)
+    source = Column(String(50))
+    
+    # Fix timestamp to always have a default value
+    timestamp = Column(
+        DateTime(timezone=True), 
+        nullable=False, 
+        default=func.now(),  # Database-level default
+        server_default=func.now()  # Server-side default
+    )
+    
+    # Add indexes for performance
+    __table_args__ = (
+        Index('idx_threat_tenant_timestamp', 'tenant_id', 'timestamp'),
+        Index('idx_threat_severity', 'severity'),
+        Index('idx_threat_ip', 'ip'),
+        Index('idx_threat_cve', 'cve_id'),
+    )
     
     # AI-Driven fields
     ip_reputation_score = Column(Integer, nullable=True)

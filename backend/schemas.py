@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, validator
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 
@@ -83,3 +83,42 @@ class ThreatDetailResponse(ThreatLog):
     misp_summary: Optional[str] = None
     timeline_threats: List[ThreatLog] = []
     xai_explanation: Optional[XAIExplanation] = None
+
+class ThreatResponse(BaseModel):
+    """Updated threat response model with proper timestamp handling"""
+    id: int
+    ip: str
+    threat_type: str
+    severity: str
+    timestamp: Optional[datetime] = None  # Allow None values
+    description: Optional[str] = None
+    cve_id: Optional[str] = None
+    cvss_score: Optional[float] = None
+    source: Optional[str] = None
+    tenant_id: int
+    
+    @validator('timestamp', pre=True)
+    def validate_timestamp(cls, v):
+        """Handle None timestamps and convert to datetime if needed"""
+        if v is None:
+            return datetime.utcnow()  # Use current time as fallback
+        if isinstance(v, str):
+            try:
+                return datetime.fromisoformat(v.replace('Z', '+00:00'))
+            except ValueError:
+                return datetime.utcnow()
+        return v
+    
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat() if v else None
+        }
+
+class ThreatListResponse(BaseModel):
+    """Response model for threat list"""
+    threats: List[ThreatResponse]
+    total: int
+    limit: int
+    offset: int
+    has_more: bool

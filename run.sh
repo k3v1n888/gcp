@@ -8,6 +8,10 @@
 
 set -eux
 
+# Run timestamp fix before starting services
+echo "Running timestamp fix..."
+python3 backend/fix_timestamps.py || echo "Warning: Timestamp fix failed, continuing..."
+
 # 1) Start Nginx in the foreground
 nginx -g 'daemon off;' &
 

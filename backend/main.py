@@ -1,5 +1,6 @@
 import os
 import asyncio
+import logging
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,7 +22,6 @@ from backend.routers.predictive import router as predictive_router
 from backend.routers.forecasting import router as forecasting_router
 from backend.routers.chat import router as chat_router
 from backend.routers.webhooks import router as webhook_router
-# --- THIS IS THE FIX: Correctly import the 'router' object from the modules ---
 from backend.api.graph import router as graph_router
 from backend.api.hunting import router as hunting_router
 
@@ -37,36 +37,62 @@ from backend.wazuh_service import fetch_and_save_wazuh_alerts
 from backend.threatmapper_service import fetch_and_save_threatmapper_vulns
 from backend.incident_service import correlate_logs_into_incidents
 
-app = FastAPI()
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="Quantum AI Cybersecurity Platform")
 
 async def periodic_data_ingestion():
     """Runs all data ingestion and correlation services on a schedule."""
     while True:
         db = SessionLocal()
         try:
-            print("Running periodic data ingestion and correlation...")
+            logger.info("Running periodic data ingestion and correlation...")
             fetch_and_save_threat_feed(db)
             fetch_and_save_wazuh_alerts(db)
             fetch_and_save_threatmapper_vulns(db)
             correlate_logs_into_incidents(db)
-            print("Data ingestion and correlation complete.")
+            logger.info("Data ingestion and correlation complete.")
         finally:
             db.close()
         await asyncio.sleep(3600)
 
+def run_timestamp_fix():
+    """Run timestamp fix on startup"""
+    try:
+        from backend.fix_timestamps import fix_null_timestamps
+        logger.info("Running timestamp fix on startup...")
+        fix_null_timestamps()
+        logger.info("Timestamp fix completed successfully")
+    except Exception as e:
+        logger.error(f"Error running timestamp fix: {e}")
+
 @app.on_event("startup")
 def on_startup():
+    """Startup tasks"""
+    # Create database tables
     Base.metadata.create_all(bind=engine)
+    
+    # Remove this - handled in run.sh now
+    # run_timestamp_fix()
+    
+    # Initialize ML components
     app.state.predictor = SeverityPredictor()
     app.state.forecaster = ThreatForecaster()
     app.state.anomaly_detector = AnomalyDetector()
     app.state.graph_service = GraphService()
+    
+    # Start background tasks
     asyncio.create_task(periodic_data_ingestion())
+    
+    logger.info("Quantum AI Platform startup completed")
 
 @app.on_event("shutdown")
 def on_shutdown():
+    """Cleanup on shutdown"""
     app.state.graph_service.close()
+    logger.info("Quantum AI Platform shutdown completed")
 
+# Middleware configuration
 SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")
 app.add_middleware(
     SessionMiddleware,
@@ -75,22 +101,25 @@ app.add_middleware(
     same_site="none",
     max_age=86400
 )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://ai-cyber-fullstack-1020401092050.us-central1.run.app",
-        "https://qai.quantum-ai.asia"
+        "https://qai.quantum-ai.asia",
+        "http://localhost:3000"  # Add for local development
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Include all routers
 app.include_router(auth_router)
 app.include_router(feed_router)
 app.include_router(agents_router)
 app.include_router(admin_router)
-app.include_router(threats_router)
+app.include_router(threats_router)  # This is where your threats endpoints are
 app.include_router(incidents_router)
 app.include_router(ws_router)
 app.include_router(alert_router)
@@ -107,4 +136,14 @@ app.include_router(hunting_router)
 
 @app.get("/_fastapi_health")
 def fastapi_health():
-    return {"status": "ok"}
+    """Health check endpoint"""
+    return {"status": "ok", "service": "quantum-ai-platform"}
+
+@app.get("/health")
+def health_check():
+    """Detailed health check"""
+    return {
+        "status": "healthy",
+        "service": "quantum-ai-platform", 
+        "timestamp": "2025-08-06T01:00:00Z"
+    }

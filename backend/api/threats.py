@@ -1,14 +1,21 @@
-from fastapi import APIRouter, Depends, Response, HTTPException, Request
+from fastapi import APIRouter, Depends, Response, HTTPException, Request, Query
 from sqlalchemy.orm import Session
-from typing import List
+from sqlalchemy import desc
+from datetime import datetime, timezone
+from typing import List, Optional
+import logging
 
 from .. import models, database, schemas
 from ..auth.rbac import get_current_user
 from ..correlation_service import generate_threat_remediation_plan, get_and_summarize_misp_intel
+from ..database import get_db
+from ..models import ThreatLog
+from ..auth.auth import get_current_user, get_current_tenant
 
-router = APIRouter()
+router = APIRouter(prefix="/api", tags=["threats"])
+logger = logging.getLogger(__name__)
 
-@router.get("/api/threats", response_model=List[schemas.ThreatLog])
+@router.get("/threats", response_model=List[schemas.ThreatLog])
 def get_threat_logs(
     response: Response,
     user: models.User = Depends(get_current_user),
@@ -26,7 +33,7 @@ def get_threat_logs(
     )
     return logs
 
-@router.get("/api/threats/{threat_id}", response_model=schemas.ThreatDetailResponse)
+@router.get("/threats/{threat_id}", response_model=schemas.ThreatDetailResponse)
 def get_threat_detail(
     request: Request,
     threat_id: int,
@@ -88,3 +95,139 @@ def get_threat_detail(
         )
     
     return response_data
+
+@router.get("/threats")
+async def get_threats(
+    limit: int = Query(100, le=1000, description="Number of threats to return"),
+    offset: int = Query(0, ge=0, description="Number of threats to skip"),
+    severity: Optional[str] = Query(None, description="Filter by severity"),
+    tenant_id: int = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """Get threats - Fixed timestamp handling"""
+    try:
+        logger.info(f"Fetching threats for tenant {tenant_id}")
+        
+        # Build query
+        query = db.query(ThreatLog).filter(ThreatLog.tenant_id == tenant_id)
+        
+        if severity:
+            query = query.filter(ThreatLog.severity == severity)
+        
+        # Get total count
+        total_count = query.count()
+        
+        # Get paginated results
+        threats = query.order_by(desc(ThreatLog.timestamp)).offset(offset).limit(limit).all()
+        
+        # Convert to response format with proper timestamp handling
+        threat_list = []
+        for threat in threats:
+            # Handle timestamp safely
+            timestamp_str = None
+            if threat.timestamp:
+                try:
+                    timestamp_str = threat.timestamp.isoformat()
+                except Exception as e:
+                    logger.warning(f"Error converting timestamp for threat {threat.id}: {e}")
+                    timestamp_str = datetime.utcnow().isoformat()
+            else:
+                logger.warning(f"Threat {threat.id} has NULL timestamp")
+                timestamp_str = datetime.utcnow().isoformat()
+            
+            threat_dict = {
+                "id": threat.id,
+                "ip": threat.ip or "unknown",
+                "threat_type": threat.threat_type or "unknown",
+                "severity": threat.severity or "medium",
+                "timestamp": timestamp_str,
+                "description": threat.description or "",
+                "cve_id": threat.cve_id,
+                "cvss_score": float(threat.cvss_score) if threat.cvss_score else None,
+                "source": threat.source or "unknown",
+                "tenant_id": threat.tenant_id
+            }
+            threat_list.append(threat_dict)
+        
+        return {
+            "threats": threat_list,
+            "total": total_count,
+            "limit": limit,
+            "offset": offset,
+            "has_more": (offset + len(threats)) < total_count,
+            "success": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching threats: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch threats: {str(e)}"
+        )
+
+@router.post("/log_threat")
+async def log_threat(
+    threat_data: dict,
+    tenant_id: int = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """Log a new threat with guaranteed timestamp"""
+    try:
+        # Always use current UTC time
+        current_time = datetime.now(timezone.utc)
+        
+        threat_log = ThreatLog(
+            tenant_id=tenant_id,
+            ip=str(threat_data.get("ip", "unknown"))[:45],
+            threat_type=str(threat_data.get("threat_type", "unknown"))[:100],
+            severity=str(threat_data.get("severity", "medium"))[:20],
+            description=str(threat_data.get("description", ""))[:1000] if threat_data.get("description") else None,
+            cve_id=str(threat_data.get("cve_id"))[:20] if threat_data.get("cve_id") else None,
+            cvss_score=float(threat_data.get("cvss_score")) if threat_data.get("cvss_score") else None,
+            source=str(threat_data.get("source", "api"))[:50],
+            timestamp=current_time
+        )
+        
+        db.add(threat_log)
+        db.commit()
+        db.refresh(threat_log)
+        
+        logger.info(f"Successfully logged threat with ID: {threat_log.id}")
+        
+        return {
+            "success": True,
+            "message": "Threat logged successfully",
+            "threat_id": threat_log.id,
+            "timestamp": threat_log.timestamp.isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error logging threat: {e}", exc_info=True)
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to log threat: {str(e)}")
+
+@router.get("/debug/threats-raw")
+async def get_threats_raw(db: Session = Depends(get_db)):
+    """Debug endpoint to check raw threat data"""
+    try:
+        threats = db.query(ThreatLog).order_by(desc(ThreatLog.timestamp)).limit(10).all()
+        
+        threats_data = []
+        for threat in threats:
+            threats_data.append({
+                "id": threat.id,
+                "ip": threat.ip,
+                "threat_type": threat.threat_type,
+                "tenant_id": threat.tenant_id,
+                "timestamp": threat.timestamp.isoformat() if threat.timestamp else None,
+                "timestamp_raw": str(threat.timestamp)
+            })
+        
+        return {
+            "total_threats": len(threats_data),
+            "threats": threats_data,
+            "success": True
+        }
+    except Exception as e:
+        logger.error(f"Debug endpoint error: {e}")
+        return {"error": str(e), "success": False}

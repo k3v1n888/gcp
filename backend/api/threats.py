@@ -8,7 +8,7 @@ from ..correlation_service import generate_threat_remediation_plan, get_and_summ
 
 router = APIRouter()
 
-@router.get("/api/threats", response_model=List[schemas.ThreatLog])
+@router.get("/api/threats")
 def get_threat_logs(
     response: Response,
     user: models.User = Depends(get_current_user),

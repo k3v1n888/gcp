@@ -10,7 +10,7 @@ from backend.app.websocket.threats import manager
 from backend.soar_service import block_ip_with_cloud_armor
 from backend.correlation_service import (
     get_intel_from_misp,
-    find_cve_with_threat,
+    find_cve_for_threat,
     get_cvss_score,
     calculate_criticality_score
 )
@@ -31,11 +31,12 @@ async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Sessio
     anomaly_detector = request.app.state.anomaly_detector
     graph_service = request.app.state.graph_service
 
-    # Enrichment
+    # MISP enrichment
     intel = get_intel_from_misp(threat.ip)
     ip_score = intel.get("ip_reputation_score", 0)
 
-    cve_id = find_cve_for_threat(threat_text)
+    # CVE, CVSS, Criticality
+    cve_id = find_cve_for_threat(threat.threat)
     cvss_score = get_cvss_score(cve_id)
     criticality_score = calculate_criticality_score(ip_score, cvss_score)
 
@@ -76,10 +77,13 @@ async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Sessio
     db.commit()
     db.refresh(db_log)
 
+    # Auto-blocking if needed
     if predicted_severity == 'critical' and ip_score >= 90:
         block_ip_with_cloud_armor(db, db_log)
 
+    # Update graph & broadcast
     graph_service.add_threat_to_graph(db_log)
     pydantic_log = schemas.ThreatLog.from_orm(db_log)
     await manager.broadcast_json(pydantic_log.dict())
+
     return db_log

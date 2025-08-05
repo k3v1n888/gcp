@@ -1,11 +1,12 @@
 import os
 import requests
 import openai
-from sqlalchemy.orm import Session
-from sqlalchemy import func
 import json
 import logging
 from functools import lru_cache
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+
 from . import models
 
 logger = logging.getLogger(__name__)
@@ -86,8 +87,7 @@ def calculate_criticality_score(ip_score: int, cvss_score: float) -> float:
     cvss_norm = cvss_score / 10.0
     return round(ip_weight * ip_norm + cvss_weight * cvss_norm, 2)
 
-# --- Correlation and AI Summary Logic ---
-
+# --- Correlation Engine ---
 def correlate_and_enrich_threats(db: Session, tenant_id: int):
     common_threats = (
         db.query(models.ThreatLog.threat)
@@ -123,11 +123,12 @@ def correlate_and_enrich_threats(db: Session, tenant_id: int):
         db.add(new_correlated_threat)
     db.commit()
 
+# --- Executive Summary ---
 def generate_holistic_summary(db: Session, tenant_id: int) -> str:
     correlate_and_enrich_threats(db, tenant_id)
     critical_logs = db.query(models.ThreatLog).filter_by(severity='critical', tenant_id=tenant_id).limit(5).all()
     correlated_threats = db.query(models.CorrelatedThreat).filter_by(tenant_id=tenant_id).order_by(models.CorrelatedThreat.risk_score.desc()).limit(3).all()
-    prompt = "You are a cybersecurity analyst. Based on the following data, provide a brief, high-level executive summary of the current security landscape for a non-technical manager. Highlight the most pressing issue.\n\n"
+    prompt = "You are a cybersecurity analyst. Based on the following data, provide a brief, high-level executive summary of the current security landscape for a non-technical manager.\n\n"
     prompt += "== Top Correlated Attack Patterns ==\n"
     for threat in correlated_threats:
         prompt += f"- {threat.title} (Risk Score: {threat.risk_score}, CVE: {threat.cve_id or 'N/A'})\n"
@@ -148,6 +149,7 @@ def generate_holistic_summary(db: Session, tenant_id: int) -> str:
     except Exception as e:
         return f"Failed to generate AI summary: {e}"
 
+# --- AI Remediation Plan ---
 def generate_threat_remediation_plan(threat_log: models.ThreatLog) -> dict | None:
     openai.api_key = os.getenv("OPENAI_API_KEY")
     if not openai.api_key:
@@ -164,9 +166,6 @@ def generate_threat_remediation_plan(threat_log: models.ThreatLog) -> dict | Non
     - Associated CVE: "{threat_log.cve_id or 'N/A'}"
 
     Based on these details, provide a structured JSON response with three keys: "explanation", "impact", and "mitigation".
-    - "explanation": Briefly explain what this threat is in simple terms.
-    - "impact": Describe the potential business or security impact if this threat is successful.
-    - "mitigation": Provide a list of concrete, actionable steps to mitigate or remediate this threat.
     """
     try:
         response = openai.chat.completions.create(
@@ -175,27 +174,20 @@ def generate_threat_remediation_plan(threat_log: models.ThreatLog) -> dict | Non
             response_format={"type": "json_object"},
             temperature=0.3,
         )
-        recommendations = json.loads(response.choices[0].message.content)
-        return recommendations
+        return json.loads(response.choices[0].message.content)
     except Exception as e:
         logger.error(f"Error generating remediation plan: {e}")
         return None
-        
-# --- NEW: Function to get a detailed AI summary from MISP ---
+
+# --- AI MISP Summarizer ---
 def get_and_summarize_misp_intel(indicator: str) -> str | None:
-    """
-    Fetches all related attributes for an indicator from MISP and uses an LLM
-    to generate a concise summary.
-    """
     if not MISP_URL or not MISP_API_KEY:
         logger.warning("MISP credentials not configured for summary.")
         return "Quantum Intel hub not configured."
-
     openai.api_key = os.getenv("OPENAI_API_KEY")
     if not openai.api_key:
         logger.warning("OpenAI key not configured for MISP summary.")
         return "AI summarizer not configured."
-
     try:
         response = requests.post(
             f"{MISP_URL}/attributes/restSearch",
@@ -205,10 +197,8 @@ def get_and_summarize_misp_intel(indicator: str) -> str | None:
         )
         response.raise_for_status()
         attributes = response.json().get("response", {}).get("Attribute", [])
-
         if not attributes:
             return "No intelligence found for this indicator in the Quantum Intel hub."
-
         prompt = f"""
         You are a threat intelligence analyst. Summarize the following raw threat intelligence data from a MISP instance for the indicator '{indicator}'.
         Focus on what the indicator is, what it's associated with (e.g., malware families, threat actors), and its overall reputation.
@@ -217,7 +207,6 @@ def get_and_summarize_misp_intel(indicator: str) -> str | None:
         --- Raw MISP Data ---
         {json.dumps(attributes, indent=2)}
         """
-
         summary_response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
@@ -225,7 +214,6 @@ def get_and_summarize_misp_intel(indicator: str) -> str | None:
             max_tokens=200
         )
         return summary_response.choices[0].message.content.strip()
-
     except Exception as e:
         logger.error(f"Failed to get or summarize MISP intel for {indicator}: {e}")
         return f"An error occurred while fetching intelligence: {e}"

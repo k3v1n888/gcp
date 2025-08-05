@@ -11,6 +11,7 @@ from backend import models, database, schemas
 from backend.app.websocket.threats import manager
 from backend.soar_service import block_ip_with_cloud_armor
 from backend.correlation_service import get_intel_from_misp
+from backend.correlation_service import find_cve_for_threat
 
 logger = logging.getLogger(__name__)
 
@@ -21,22 +22,6 @@ class ThreatCreate(BaseModel):
     tenant_id: int
 
 router = APIRouter()
-
-# --- Live CVE lookup from CIRCL ---
-@lru_cache(maxsize=500)
-def find_cve_for_threat(threat_text: str) -> str | None:
-    try:
-        response = requests.get(f"https://cve.circl.lu/api/search/{threat_text}", timeout=5)
-        response.raise_for_status()
-        data = response.json()
-
-        for item in data.get("data", []):
-            cve_id = item.get("id")
-            if cve_id and cve_id.startswith("CVE-"):
-                return cve_id
-    except Exception as e:
-        logger.warning(f"⚠️ Failed to retrieve CVE from CIRCL for '{threat_text}': {e}")
-    return None
 
 # --- Live CVSS score fetcher ---
 def get_cvss_score(cve_id: str) -> float:

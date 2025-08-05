@@ -38,7 +38,30 @@ def get_intel_from_misp(indicator: str) -> dict:
         logger.error(f"MISP Error for indicator {indicator}: {e}")
         return {"ip_reputation_score": 0}
 
+@lru_cache(maxsize=500)
 def find_cve_for_threat(threat_text: str) -> str | None:
+    """
+    Attempts to find the most relevant CVE ID for a given threat description.
+    First tries a live CIRCL search, then falls back to hardcoded rules.
+    """
+    if not threat_text:
+        return None
+
+    try:
+        search_url = f"https://cve.circl.lu/api/search/{threat_text}"
+        response = requests.get(search_url, timeout=5)
+        response.raise_for_status()
+        results = response.json()
+
+        if isinstance(results, list) and results:
+            for entry in results:
+                cve_id = entry.get("id")
+                if cve_id and cve_id.startswith("CVE"):
+                    return cve_id
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to retrieve CVE from CIRCL for '{threat_text}': {e}")
+
+    # Fallback keyword mappings
     threat_text_lower = threat_text.lower()
     if "log4j" in threat_text_lower or "jndi" in threat_text_lower:
         return "CVE-2021-44228"
@@ -46,6 +69,15 @@ def find_cve_for_threat(threat_text: str) -> str | None:
         return "CWE-89"
     if "xss" in threat_text_lower or "cross-site scripting" in threat_text_lower:
         return "CWE-79"
+    if "cobalt strike" in threat_text_lower:
+        return "CVE-2019-0708"
+    if "powershell" in threat_text_lower:
+        return "CVE-2021-31166"
+    if "brute force" in threat_text_lower:
+        return "CWE-307"
+    if "ransomware" in threat_text_lower:
+        return "CWE-501"
+
     return None
 
 def correlate_and_enrich_threats(db: Session, tenant_id: int):

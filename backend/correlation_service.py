@@ -45,6 +45,14 @@ def get_intel_from_misp(indicator: str) -> dict:
 # --- CVE Identifier ---
 @lru_cache(maxsize=500)
 def find_cve_for_threat(threat_text: str) -> str | None:
+    threat_text_lower = threat_text.lower()
+    if "log4j" in threat_text_lower or "jndi" in threat_text_lower:
+        return "CVE-2021-44228"
+    if "sql injection" in threat_text_lower:
+        return "CWE-89"
+    if "xss" in threat_text_lower or "cross-site scripting" in threat_text_lower:
+        return "CWE-79"
+
     try:
         response = requests.get(f"https://cve.circl.lu/api/search/{threat_text}", timeout=5)
         response.raise_for_status()
@@ -56,39 +64,32 @@ def find_cve_for_threat(threat_text: str) -> str | None:
     except Exception as e:
         logger.warning(f"⚠️ Failed to retrieve CVE from CIRCL for '{threat_text}': {e}")
 
-    threat_text_lower = threat_text.lower()
-    if "log4j" in threat_text_lower or "jndi" in threat_text_lower:
-        return "CVE-2021-44228"
-    if "sql injection" in threat_text_lower:
-        return "CWE-89"
-    if "xss" in threat_text_lower or "cross-site scripting" in threat_text_lower:
-        return "CWE-79"
     return None
 
 # --- CVSS Score Fetcher ---
 def get_cvss_score(cve_id: str) -> float:
     if not cve_id:
         return 0.0
+
+    NVD_API_KEY = os.getenv("NVD_API_KEY")
     try:
         url = f"https://services.nvd.nist.gov/rest/json/cve/1.0/{cve_id}"
         headers = {
             "User-Agent": "QuantumAI-CVE-Fetcher"
         }
+        if NVD_API_KEY:
+            url += f"?apiKey={NVD_API_KEY}"
+
         response = requests.get(url, headers=headers, timeout=10)
 
         if response.status_code != 200:
             logger.warning(f"⚠️ Failed to fetch CVE {cve_id}: HTTP {response.status_code}")
             return 0.0
 
-        if not response.text.strip():
-            logger.warning(f"⚠️ Empty response for CVE {cve_id}")
-            return 0.0
-
         data = response.json()
         cve_items = data.get("result", {}).get("CVE_Items", [])
 
         if not cve_items:
-            logger.warning(f"⚠️ No CVE data found for {cve_id}")
             return 0.0
 
         impact = cve_items[0].get("impact", {})
@@ -97,7 +98,6 @@ def get_cvss_score(cve_id: str) -> float:
         elif "baseMetricV2" in impact:
             return float(impact["baseMetricV2"]["cvssV2"]["baseScore"])
 
-        logger.warning(f"⚠️ CVSS score not available for {cve_id}")
         return 0.0
 
     except Exception as e:

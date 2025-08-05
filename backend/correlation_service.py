@@ -73,35 +73,75 @@ def get_cvss_score(cve_id: str) -> float:
 
     NVD_API_KEY = os.getenv("NVD_API_KEY")
     try:
-        url = f"https://services.nvd.nist.gov/rest/json/cve/1.0/{cve_id}"
+        # Updated to NVD API v2.0 endpoint
+        url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
         headers = {
-            "User-Agent": "QuantumAI-CVE-Fetcher"
+            "User-Agent": "QuantumAI-CVE-Fetcher/2.0"
         }
+        
+        # Parameters for the new API
+        params = {
+            "cveId": cve_id
+        }
+        
+        # Add API key to headers (not URL) for v2.0
         if NVD_API_KEY:
-            url += f"?apiKey={NVD_API_KEY}"
+            headers["apiKey"] = NVD_API_KEY
+        else:
+            logger.warning(f"⚠️ No NVD API key - rate limited to 5 requests per 30 seconds")
 
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, params=params, timeout=10)
 
-        if response.status_code != 200:
+        if response.status_code == 403:
+            logger.error(f"❌ NVD API access denied for {cve_id}. Check API key validity.")
+            return 0.0
+        elif response.status_code == 429:
+            logger.warning(f"⚠️ Rate limited by NVD API for {cve_id}")
+            return 0.0
+        elif response.status_code != 200:
             logger.warning(f"⚠️ Failed to fetch CVE {cve_id}: HTTP {response.status_code}")
             return 0.0
 
         data = response.json()
-        cve_items = data.get("result", {}).get("CVE_Items", [])
-
-        if not cve_items:
+        
+        # Parse the new v2.0 response format
+        vulnerabilities = data.get("vulnerabilities", [])
+        if not vulnerabilities:
+            logger.info(f"No vulnerability data found for {cve_id}")
             return 0.0
 
-        impact = cve_items[0].get("impact", {})
-        if "baseMetricV3" in impact:
-            return float(impact["baseMetricV3"]["cvssV3"]["baseScore"])
-        elif "baseMetricV2" in impact:
-            return float(impact["baseMetricV2"]["cvssV2"]["baseScore"])
+        # Get the CVE data from the first vulnerability
+        cve_data = vulnerabilities[0].get("cve", {})
+        metrics = cve_data.get("metrics", {})
+        
+        # Try CVSS versions in order of preference: v3.1 > v3.0 > v2.0
+        if "cvssMetricV31" in metrics and metrics["cvssMetricV31"]:
+            cvss_data = metrics["cvssMetricV31"][0]["cvssData"]
+            score = float(cvss_data["baseScore"])
+            logger.info(f"Found CVSS v3.1 score {score} for {cve_id}")
+            return score
+        elif "cvssMetricV30" in metrics and metrics["cvssMetricV30"]:
+            cvss_data = metrics["cvssMetricV30"][0]["cvssData"]
+            score = float(cvss_data["baseScore"])
+            logger.info(f"Found CVSS v3.0 score {score} for {cve_id}")
+            return score
+        elif "cvssMetricV2" in metrics and metrics["cvssMetricV2"]:
+            cvss_data = metrics["cvssMetricV2"][0]["cvssData"]
+            score = float(cvss_data["baseScore"])
+            logger.info(f"Found CVSS v2.0 score {score} for {cve_id}")
+            return score
+        else:
+            logger.info(f"No CVSS score available for {cve_id}")
+            return 0.0
 
+    except requests.exceptions.RequestException as e:
+        logger.error(f"⚠️ Network error fetching CVSS score for {cve_id}: {e}")
         return 0.0
-
+    except (KeyError, ValueError, TypeError) as e:
+        logger.error(f"⚠️ Error parsing CVSS data for {cve_id}: {e}")
+        return 0.0
     except Exception as e:
-        logger.warning(f"⚠️ Could not fetch CVSS score for {cve_id}: {e}")
+        logger.error(f"⚠️ Unexpected error fetching CVSS score for {cve_id}: {e}")
         return 0.0
 
 # --- Criticality Score Calculator ---

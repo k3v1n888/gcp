@@ -16,7 +16,7 @@ class SeverityPredictor:
 
     def _get_auth_token(self):
         try:
-            creds, project = google.auth.default()
+            creds, _ = google.auth.default()
             creds.refresh(self.auth_req)
             return creds.token
         except Exception as e:
@@ -25,8 +25,10 @@ class SeverityPredictor:
 
     def _prepare_payload(self, threat_log: dict) -> dict:
         technique_map = {
-            "sql injection": "T1055", "log4j": "T1190",
-            "xss": "T1059", "brute force": "T1110",
+            "sql injection": "T1055",
+            "log4j": "T1190",
+            "xss": "T1059",
+            "brute force": "T1110",
         }
         technique_id = "T1595"
         for key, val in technique_map.items():
@@ -47,17 +49,17 @@ class SeverityPredictor:
             "is_admin": 1,
             "is_remote_session": 1 if threat_log.get('source') == "VPN" else 0,
             "num_failed_logins": 1 if "failed" in threat_log.get('threat', '').lower() else 0,
-            "bytes_sent": 10000,
-            "bytes_received": 50000,
+            "bytes_sent": threat_log.get("bytes_sent", 10000),
+            "bytes_received": threat_log.get("bytes_received", 50000),
             "location_mismatch": 1 if "new country" in threat_log.get('threat', '').lower() else 0,
-            "previous_alerts": 0,
-            "criticality_score": threat_log.get('criticality_score', 0),
-            "cvss_score": threat_log.get('cvss_score', 0),
-            "ioc_risk_score": (threat_log.get('ip_reputation_score', 0) or 0) / 100.0
+            "previous_alerts": threat_log.get("previous_alerts", 0),
+            "criticality_score": round(threat_log.get('criticality_score', 0), 2),
+            "cvss_score": round(threat_log.get('cvss_score', 0), 2),
+            "ioc_risk_score": round((threat_log.get('ip_reputation_score', 0) or 0) / 100.0, 2)
         }
 
     def predict(self, threat: str, source: str, ip_reputation_score: int, cve_id: str | None,
-                cvss_score: float = 0, criticality_score: float = 0) -> str:
+                cvss_score: float = 0, criticality_score: float = 0, **kwargs) -> str:
         token = self._get_auth_token()
         if not token:
             return "unknown"

@@ -155,6 +155,7 @@ def generate_threat_remediation_plan(threat_log: models.ThreatLog) -> dict | Non
     if not openai.api_key:
         logger.error("OpenAI API key not configured for remediation plan.")
         return None
+
     prompt = f"""
     You are a cybersecurity analyst providing a detailed report on a specific threat event.
     The event details are:
@@ -166,7 +167,11 @@ def generate_threat_remediation_plan(threat_log: models.ThreatLog) -> dict | Non
     - Associated CVE: "{threat_log.cve_id or 'N/A'}"
 
     Based on these details, provide a structured JSON response with three keys: "explanation", "impact", and "mitigation".
+    - "explanation": Briefly explain what this threat is in simple terms.
+    - "impact": Describe the potential business or security impact if this threat is successful.
+    - "mitigation": Provide a list of concrete, actionable steps to mitigate or remediate this threat.
     """
+
     try:
         response = openai.chat.completions.create(
             model="gpt-4-turbo",
@@ -174,11 +179,17 @@ def generate_threat_remediation_plan(threat_log: models.ThreatLog) -> dict | Non
             response_format={"type": "json_object"},
             temperature=0.3,
         )
-        return json.loads(response.choices[0].message.content)
+        recommendations = json.loads(response.choices[0].message.content)
+
+        # 🔧 FIX: Ensure mitigation is always a list
+        if isinstance(recommendations.get("mitigation"), str):
+            recommendations["mitigation"] = [recommendations["mitigation"]]
+
+        return recommendations
     except Exception as e:
         logger.error(f"Error generating remediation plan: {e}")
         return None
-
+        
 # --- AI MISP Summarizer ---
 def get_and_summarize_misp_intel(indicator: str) -> str | None:
     if not MISP_URL or not MISP_API_KEY:

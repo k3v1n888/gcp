@@ -10,7 +10,7 @@ from backend.app.websocket.threats import manager
 from backend.soar_service import block_ip_with_cloud_armor
 from backend.correlation_service import (
     get_intel_from_misp,
-    find_cve_with_fallback,
+    find_cve_with_threat,
     get_cvss_score,
     calculate_criticality_score
 )
@@ -35,7 +35,7 @@ async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Sessio
     intel = get_intel_from_misp(threat.ip)
     ip_score = intel.get("ip_reputation_score", 0)
 
-    cve_id = find_cve_with_fallback(threat.threat)
+    cve_id = find_cve_for_threat(threat_text)
     cvss_score = get_cvss_score(cve_id)
     criticality_score = calculate_criticality_score(ip_score, cvss_score)
 

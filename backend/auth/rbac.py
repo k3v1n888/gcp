@@ -1,9 +1,18 @@
 # backend/auth/rbac.py
 
 from fastapi import Request, HTTPException, Depends
-from backend.database import SessionLocal, get_db  # Correct import
-from backend.models import User  # Models import
 from sqlalchemy.orm import Session
+from fastapi import Depends, HTTPException, status
+
+# Restore original imports
+from backend.models import SessionLocal, User
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 def get_current_user(db: Session = Depends(get_db)) -> User:
     """Get current user from database"""

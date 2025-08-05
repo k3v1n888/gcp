@@ -6,7 +6,7 @@ from typing import List, Optional
 import logging
 
 from .. import models, schemas
-from ..auth.rbac import get_current_user  # Use your original auth
+from ..auth.rbac import get_current_user
 from ..correlation_service import generate_threat_remediation_plan, get_and_summarize_misp_intel
 from ..models import ThreatLog
 
@@ -21,7 +21,7 @@ def get_db():
     finally:
         db.close()
 
-@router.get("/threats")  # ONLY remove response_model
+@router.get("/threats")  # ONLY REMOVE RESPONSE_MODEL - THIS WAS THE ISSUE
 def get_threat_logs(
     response: Response,
     limit: int = Query(100, le=1000),
@@ -29,13 +29,12 @@ def get_threat_logs(
     user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get threats - ONLY fix the timestamp serialization issue"""
+    """Get threats - ONLY fix: remove response_model to avoid timestamp validation"""
     try:
         response.headers["Cache-Control"] = "no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
         
-        # Keep your original query logic
         logs = (
             db.query(models.ThreatLog)
             .filter(models.ThreatLog.tenant_id == user.tenant_id)
@@ -45,10 +44,10 @@ def get_threat_logs(
             .all()
         )
         
-        # ONLY change: Convert to dict to avoid Pydantic timestamp validation
+        # Convert to dict to avoid Pydantic validation issues
         safe_logs = []
         for log in logs:
-            # Safe timestamp conversion
+            # Safe timestamp handling
             timestamp_str = log.timestamp.isoformat() if log.timestamp else datetime.utcnow().isoformat()
             
             log_dict = {
@@ -74,7 +73,7 @@ def get_threat_logs(
         logger.error(f"Error fetching threats: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to fetch threats: {str(e)}")
 
-# Keep ALL your other endpoints exactly as they were
+# KEEP ALL OTHER ENDPOINTS EXACTLY AS THEY WERE - DON'T CHANGE ANYTHING ELSE
 @router.get("/threats/{threat_id}", response_model=schemas.ThreatDetailResponse)
 def get_threat_detail(
     request: Request,

@@ -26,7 +26,7 @@ def get_threat_logs(
     )
     return logs
 
-@router.get("/api/threats/{threat_id}", response_model=schemas.ThreatDetailResponse)
+@router.get("/api/threats/{threat_id}")
 def get_threat_detail(
     request: Request,
     threat_id: int,

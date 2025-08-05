@@ -15,23 +15,55 @@ from ..auth.auth import get_current_user, get_current_tenant
 router = APIRouter(prefix="/api", tags=["threats"])
 logger = logging.getLogger(__name__)
 
-@router.get("/threats", response_model=List[schemas.ThreatLog])
+@router.get("/threats")  # Remove response_model completely
 def get_threat_logs(
     response: Response,
+    limit: int = Query(100, le=1000),
+    offset: int = Query(0, ge=0),
     user: models.User = Depends(get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    response.headers["Cache-Control"] = "no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    logs = (
-        db.query(models.ThreatLog)
-        .filter(models.ThreatLog.tenant_id == user.tenant_id)
-        .order_by(models.ThreatLog.timestamp.desc())
-        .limit(100)
-        .all()
-    )
-    return logs
+    """Get threats with safe timestamp handling"""
+    try:
+        response.headers["Cache-Control"] = "no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        
+        logs = (
+            db.query(models.ThreatLog)
+            .filter(models.ThreatLog.tenant_id == user.tenant_id)
+            .order_by(models.ThreatLog.timestamp.desc().nulls_last())  # Handle nulls
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        
+        # Convert to safe dict format
+        safe_logs = []
+        for log in logs:
+            log_dict = {
+                "id": log.id,
+                "tenant_id": log.tenant_id,
+                "ip": log.ip or "unknown",
+                "threat_type": log.threat_type or "unknown",
+                "threat": log.threat or "",
+                "severity": log.severity or "medium",
+                "description": log.description or "",
+                "cve_id": log.cve_id,
+                "cvss_score": log.cvss_score,
+                "source": log.source or "api",
+                "ip_reputation_score": log.ip_reputation_score,
+                "is_anomaly": log.is_anomaly or False,
+                # Safe timestamp handling
+                "timestamp": log.timestamp.isoformat() if log.timestamp else datetime.utcnow().isoformat()
+            }
+            safe_logs.append(log_dict)
+        
+        return safe_logs
+        
+    except Exception as e:
+        logger.error(f"Error fetching threats: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch threats: {str(e)}")
 
 @router.get("/threats/{threat_id}", response_model=schemas.ThreatDetailResponse)
 def get_threat_detail(
@@ -95,75 +127,6 @@ def get_threat_detail(
         )
     
     return response_data
-
-@router.get("/threats")
-async def get_threats(
-    limit: int = Query(100, le=1000, description="Number of threats to return"),
-    offset: int = Query(0, ge=0, description="Number of threats to skip"),
-    severity: Optional[str] = Query(None, description="Filter by severity"),
-    tenant_id: int = Depends(get_current_tenant),
-    db: Session = Depends(get_db)
-):
-    """Get threats - Fixed timestamp handling"""
-    try:
-        logger.info(f"Fetching threats for tenant {tenant_id}")
-        
-        # Build query
-        query = db.query(ThreatLog).filter(ThreatLog.tenant_id == tenant_id)
-        
-        if severity:
-            query = query.filter(ThreatLog.severity == severity)
-        
-        # Get total count
-        total_count = query.count()
-        
-        # Get paginated results
-        threats = query.order_by(desc(ThreatLog.timestamp)).offset(offset).limit(limit).all()
-        
-        # Convert to response format with proper timestamp handling
-        threat_list = []
-        for threat in threats:
-            # Handle timestamp safely
-            timestamp_str = None
-            if threat.timestamp:
-                try:
-                    timestamp_str = threat.timestamp.isoformat()
-                except Exception as e:
-                    logger.warning(f"Error converting timestamp for threat {threat.id}: {e}")
-                    timestamp_str = datetime.utcnow().isoformat()
-            else:
-                logger.warning(f"Threat {threat.id} has NULL timestamp")
-                timestamp_str = datetime.utcnow().isoformat()
-            
-            threat_dict = {
-                "id": threat.id,
-                "ip": threat.ip or "unknown",
-                "threat_type": threat.threat_type or "unknown",
-                "severity": threat.severity or "medium",
-                "timestamp": timestamp_str,
-                "description": threat.description or "",
-                "cve_id": threat.cve_id,
-                "cvss_score": float(threat.cvss_score) if threat.cvss_score else None,
-                "source": threat.source or "unknown",
-                "tenant_id": threat.tenant_id
-            }
-            threat_list.append(threat_dict)
-        
-        return {
-            "threats": threat_list,
-            "total": total_count,
-            "limit": limit,
-            "offset": offset,
-            "has_more": (offset + len(threats)) < total_count,
-            "success": True
-        }
-        
-    except Exception as e:
-        logger.error(f"Error fetching threats: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch threats: {str(e)}"
-        )
 
 @router.post("/log_threat")
 async def log_threat(

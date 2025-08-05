@@ -2,7 +2,11 @@ from fastapi import APIRouter, Depends
 from datetime import datetime
 import torch
 import random
-from backend.models import SessionLocal, ThreatLog
+from sqlalchemy.orm import Session
+
+# Fix the imports - SessionLocal should come from database.py
+from backend.database import SessionLocal, get_db
+from backend.models import ThreatLog
 
 router = APIRouter()
 
@@ -19,15 +23,8 @@ class SimpleThreatModel(torch.nn.Module):
 
 models = {agent: SimpleThreatModel().to("cuda" if torch.cuda.is_available() else "cpu") for agent in AGENT_NAMES}
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @router.get("/api/agents/threats")
-def get_threat_predictions(db: SessionLocal = Depends(get_db)):
+def get_threat_predictions(db: Session = Depends(get_db)):  # Use proper type annotation
     response = []
     device = "cuda" if torch.cuda.is_available() else "cpu"
     for agent in AGENT_NAMES:
@@ -42,7 +39,16 @@ def get_threat_predictions(db: SessionLocal = Depends(get_db)):
                 "message": msg,
                 "timestamp": datetime.utcnow().isoformat()
             })
-            log = ThreatLog(ip="127.0.0.1", threat=threat_type, source=agent)
+            # Fix ThreatLog creation with required fields
+            log = ThreatLog(
+                tenant_id=1,  # Add default tenant
+                ip="127.0.0.1", 
+                threat_type=threat_type,
+                threat=threat_type, 
+                source=agent,
+                severity="medium",
+                timestamp=datetime.utcnow()
+            )
             db.add(log)
     db.commit()
     return response

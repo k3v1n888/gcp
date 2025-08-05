@@ -1,11 +1,10 @@
 # backend/models.py
 from sqlalchemy import Column, Integer, String, DateTime, Float, Text, ForeignKey, Boolean
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
-import os
+from datetime import datetime
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@db:5432/cyberdb")
-Base = declarative_base()
+# Import Base from database.py
+from .database import Base
 
 class Tenant(Base):
     __tablename__ = "tenants"
@@ -15,8 +14,6 @@ class Tenant(Base):
     email = Column(String(255), unique=True, index=True)
     created_at = Column(DateTime(timezone=True), default=func.now())
     is_active = Column(Boolean, default=True)
-    
-    # Remove the problematic relationship for now
 
 class User(Base):
     __tablename__ = "users"
@@ -43,7 +40,6 @@ class ThreatLog(Base):
     ip_reputation_score = Column(Float, default=0.0)
     is_anomaly = Column(Boolean, default=False)
     
-    # Fix timestamp with proper default
     timestamp = Column(
         DateTime(timezone=True), 
         nullable=False, 

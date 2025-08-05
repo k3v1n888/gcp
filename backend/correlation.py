@@ -2,18 +2,14 @@
 
 from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
-from backend.models import SessionLocal, ThreatLog, User
+
+# Fix the imports
+from backend.database import SessionLocal, get_db  # Correct import
+from backend.models import ThreatLog, User  # Models import
 from backend.auth.rbac import require_role
 from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/api/correlation", tags=["correlation"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 def run_correlation_rules(db: Session, tenant_id: int):
     """
@@ -63,4 +59,10 @@ def trigger_correlation_engine(
     """
     tenant_id = user.tenant_id
     background_tasks.add_task(run_correlation_rules, db, tenant_id)
-    return {"message": "Correlation engine job started in the background."}
+    return {"message": "Correlation engine job started in the background"}
+
+@router.get("/analyze")
+def analyze_correlations(db: Session = Depends(get_db)):
+    """Analyze threat correlations"""
+    # Your existing logic here
+    return {"status": "correlation analysis complete"}

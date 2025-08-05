@@ -19,3 +19,6 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Export everything that other files need
+__all__ = ['engine', 'SessionLocal', 'Base', 'get_db']

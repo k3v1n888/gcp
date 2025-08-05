@@ -6,6 +6,7 @@ from typing import List, Optional
 import logging
 
 from .. import models, database, schemas
+from ..auth.rbac import get_current_user  # Use your original auth
 from ..correlation_service import generate_threat_remediation_plan, get_and_summarize_misp_intel
 from ..database import get_db
 from ..models import ThreatLog
@@ -13,152 +14,137 @@ from ..models import ThreatLog
 router = APIRouter(prefix="/api", tags=["threats"])
 logger = logging.getLogger(__name__)
 
-# Simple auth dependency for now
-def get_current_user_simple(db: Session = Depends(get_db)) -> models.User:
-    """Simplified auth - returns default user for testing"""
-    # For now, return a default user or create one
-    # This is a temporary fix - replace with proper auth later
-    user = db.query(models.User).first()
-    if not user:
-        # Create a default user for testing
-        user = models.User(
-            id=1,
-            email="test@quantum-ai.asia",
-            tenant_id=1,
-            is_admin=True
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    return user
-
-@router.get("/threats")
+@router.get("/threats")  # Remove response_model - this was the main issue
 def get_threat_logs(
     response: Response,
     limit: int = Query(100, le=1000),
     offset: int = Query(0, ge=0),
-    user: models.User = Depends(get_current_user_simple),  # Use simple auth
+    user: models.User = Depends(get_current_user),  # Use your original auth
     db: Session = Depends(database.get_db)
 ):
-    """Get threats with safe timestamp handling"""
+    """Get threats - ONLY fix the timestamp serialization issue"""
     try:
         response.headers["Cache-Control"] = "no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
         
+        # Keep your original query logic
         logs = (
             db.query(models.ThreatLog)
             .filter(models.ThreatLog.tenant_id == user.tenant_id)
-            .order_by(models.ThreatLog.timestamp.desc().nulls_last())
+            .order_by(models.ThreatLog.timestamp.desc())
             .offset(offset)
             .limit(limit)
             .all()
         )
         
-        # Convert to safe dict format
+        # ONLY change: Convert to dict to avoid Pydantic timestamp validation
         safe_logs = []
         for log in logs:
-            timestamp_str = log.timestamp.isoformat() if log.timestamp else datetime.utcnow().isoformat()
+            # Safe timestamp conversion - this was the core issue
+            if log.timestamp:
+                try:
+                    timestamp_str = log.timestamp.isoformat()
+                except:
+                    timestamp_str = datetime.utcnow().isoformat()
+            else:
+                timestamp_str = datetime.utcnow().isoformat()
             
+            # Convert to dict to bypass Pydantic validation
             log_dict = {
                 "id": log.id,
                 "tenant_id": log.tenant_id,
-                "ip": log.ip or "unknown",
-                "threat_type": log.threat_type or "unknown",
-                "threat": log.threat or "",
-                "severity": log.severity or "medium",
-                "description": log.description or "",
+                "ip": log.ip,
+                "threat_type": log.threat_type,
+                "threat": getattr(log, 'threat', ''),
+                "severity": log.severity,
+                "description": log.description,
+                "timestamp": timestamp_str,  # Always a string now
                 "cve_id": log.cve_id,
-                "cvss_score": float(log.cvss_score) if log.cvss_score else None,
-                "source": log.source or "api",
-                "ip_reputation_score": log.ip_reputation_score or 0,
-                "is_anomaly": log.is_anomaly or False,
-                "timestamp": timestamp_str
+                "cvss_score": log.cvss_score,
+                "source": log.source,
+                "ip_reputation_score": getattr(log, 'ip_reputation_score', None),
+                "is_anomaly": getattr(log, 'is_anomaly', False)
             }
             safe_logs.append(log_dict)
         
-        logger.info(f"Returning {len(safe_logs)} threats for tenant {user.tenant_id}")
-        return safe_logs
+        return safe_logs  # Return list of dicts instead of Pydantic models
         
     except Exception as e:
         logger.error(f"Error fetching threats: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to fetch threats: {str(e)}")
 
-@router.get("/threats/{threat_id}")  # Remove response_model to avoid validation issues
+# Keep your other endpoints as they were - only remove response_model from problematic ones
+@router.get("/threats/{threat_id}")  # Remove response_model
 def get_threat_detail(
     request: Request,
     threat_id: int,
-    user: models.User = Depends(get_current_user_simple),
+    user: models.User = Depends(get_current_user),  # Use original auth
     db: Session = Depends(database.get_db)
 ):
-    """Individual threat detail - fixed for simplified models"""
-    try:
-        threat_log = db.query(models.ThreatLog).filter(
-            models.ThreatLog.id == threat_id,
-            models.ThreatLog.tenant_id == user.tenant_id
-        ).first()
+    """Individual threat detail - minimal changes"""
+    # Keep your original logic but return dict instead of Pydantic model
+    threat_log = db.query(models.ThreatLog).filter(
+        models.ThreatLog.id == threat_id,
+        models.ThreatLog.tenant_id == user.tenant_id
+    ).first()
 
-        if not threat_log:
-            raise HTTPException(status_code=404, detail="Threat log not found")
+    if not threat_log:
+        raise HTTPException(status_code=404, detail="Threat log not found")
 
-        # Remove the incidents relationship access since it's causing issues
-        timeline_threats = []
-        
-        # Get correlated threats safely
-        correlated_threat = None
-        try:
-            correlated_threat = db.query(models.CorrelatedThreat).filter(
-                models.CorrelatedThreat.title == f"Attack Pattern: {threat_log.threat}",
-                models.CorrelatedThreat.tenant_id == user.tenant_id
-            ).first()
-        except Exception as e:
-            logger.warning(f"Could not fetch correlated threat: {e}")
+    # Keep your original correlation logic
+    timeline_threats = []
+    if hasattr(threat_log, 'incidents') and threat_log.incidents:
+        parent_incident = threat_log.incidents[0]
+        timeline_threats = sorted(
+            [t for t in parent_incident.threat_logs if t.timestamp], 
+            key=lambda log: log.timestamp
+        )
 
-        # Get automation logs safely
-        soar_actions = []
-        try:
-            soar_actions = db.query(models.AutomationLog).filter(
-                models.AutomationLog.threat_id == threat_id
-            ).order_by(models.AutomationLog.timestamp.desc()).all()
-        except Exception as e:
-            logger.warning(f"Could not fetch automation logs: {e}")
+    correlated_threat = db.query(models.CorrelatedThreat).filter(
+        models.CorrelatedThreat.title == f"Attack Pattern: {threat_log.threat}",
+        models.CorrelatedThreat.tenant_id == user.tenant_id
+    ).first()
 
-        # Build safe response
-        response_data = {
-            "id": threat_log.id,
-            "tenant_id": threat_log.tenant_id,
-            "ip": threat_log.ip,
-            "threat_type": threat_log.threat_type,
-            "threat": getattr(threat_log, 'threat', ''),
-            "severity": threat_log.severity,
-            "description": threat_log.description,
-            "timestamp": threat_log.timestamp.isoformat() if threat_log.timestamp else datetime.utcnow().isoformat(),
-            "cve_id": threat_log.cve_id,
-            "cvss_score": threat_log.cvss_score,
-            "source": threat_log.source,
-            "ip_reputation_score": getattr(threat_log, 'ip_reputation_score', 0),
-            "is_anomaly": getattr(threat_log, 'is_anomaly', False),
-            "correlation": correlated_threat.__dict__ if correlated_threat else None,
-            "soar_actions": [
-                {
-                    "id": action.id,
-                    "action": action.action,
-                    "timestamp": action.timestamp.isoformat() if action.timestamp else None
-                } for action in soar_actions
-            ],
-            "timeline_threats": timeline_threats
-        }
-        
-        return response_data
-        
-    except Exception as e:
-        logger.error(f"Error fetching threat detail: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to fetch threat detail: {str(e)}")
+    recommendations_dict = generate_threat_remediation_plan(threat_log)
+    misp_summary = get_and_summarize_misp_intel(threat_log.ip)
+    soar_actions = db.query(models.AutomationLog).filter(
+        models.AutomationLog.threat_id == threat_id
+    ).order_by(models.AutomationLog.timestamp.desc()).all()
+
+    # Convert to dict with safe timestamp handling
+    response_data = {
+        "id": threat_log.id,
+        "tenant_id": threat_log.tenant_id,
+        "ip": threat_log.ip,
+        "threat_type": threat_log.threat_type,
+        "threat": getattr(threat_log, 'threat', ''),
+        "severity": threat_log.severity,
+        "description": threat_log.description,
+        "timestamp": threat_log.timestamp.isoformat() if threat_log.timestamp else datetime.utcnow().isoformat(),
+        "cve_id": threat_log.cve_id,
+        "cvss_score": threat_log.cvss_score,
+        "source": threat_log.source,
+        # Add other fields as needed
+        "correlation": correlated_threat.__dict__ if correlated_threat else None,
+        "misp_summary": misp_summary,
+        "recommendations": recommendations_dict,
+        "timeline_threats": [
+            {
+                "id": t.id,
+                "timestamp": t.timestamp.isoformat() if t.timestamp else None,
+                "threat_type": t.threat_type,
+                "ip": t.ip
+            } for t in timeline_threats
+        ]
+    }
+    
+    return response_data
 
 @router.post("/log_threat")
 async def log_threat(
     threat_data: dict,
-    user: models.User = Depends(get_current_user_simple),  # FIXED: Use get_current_user_simple
+    user: models.User = Depends(get_current_user),  # FIXED: Use get_current_user_simple
     db: Session = Depends(database.get_db)
 ):
     """Log a new threat with guaranteed timestamp"""

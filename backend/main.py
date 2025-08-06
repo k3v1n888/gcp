@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 # --- Import all application routers ---
 from backend.auth.auth import router as auth_router
@@ -22,7 +23,6 @@ from backend.routers.predictive import router as predictive_router
 from backend.routers.forecasting import router as forecasting_router
 from backend.routers.chat import router as chat_router
 from backend.routers.webhooks import router as webhook_router
-# --- THIS IS THE FIX: Correctly import the 'router' object from the modules ---
 from backend.api.graph import router as graph_router
 from backend.api.hunting import router as hunting_router
 
@@ -41,28 +41,6 @@ from backend.incident_service import correlate_logs_into_incidents
 # Create tables
 Base.metadata.create_all(bind=engine)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    print("🚀 Starting Quantum AI Threat Detection System...")
-    
-    try:
-        # Initialize any services you need
-        app.state.predictor = SeverityPredictor()
-        app.state.forecaster = ThreatForecaster()
-        app.state.anomaly_detector = AnomalyDetector()
-        app.state.graph_service = GraphService()
-        print("✅ Services initialized")
-    except Exception as e:
-        print(f"⚠️ Warning: Could not initialize services: {e}")
-    
-    yield
-    
-    # Shutdown
-    print("🛑 Shutting down...")
-
-app = FastAPI(lifespan=lifespan)
-
 async def periodic_data_ingestion():
     """Runs all data ingestion and correlation services on a schedule."""
     while True:
@@ -78,13 +56,32 @@ async def periodic_data_ingestion():
             db.close()
         await asyncio.sleep(3600)
 
-@app.on_event("startup")
-def on_startup():
-    asyncio.create_task(periodic_data_ingestion())
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print("🚀 Starting Quantum AI Threat Detection System...")
+    
+    try:
+        # Initialize services
+        app.state.predictor = SeverityPredictor()
+        app.state.forecaster = ThreatForecaster()
+        app.state.anomaly_detector = AnomalyDetector()
+        app.state.graph_service = GraphService()
+        
+        # Start the periodic data ingestion
+        asyncio.create_task(periodic_data_ingestion())
+        print("✅ Services initialized")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not initialize services: {e}")
+    
+    yield
+    
+    # Shutdown
+    print("🛑 Shutting down...")
+    if hasattr(app.state, 'graph_service'):
+        app.state.graph_service.close()
 
-@app.on_event("shutdown")
-def on_shutdown():
-    app.state.graph_service.close()
+app = FastAPI(lifespan=lifespan)
 
 SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")
 app.add_middleware(

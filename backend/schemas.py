@@ -129,6 +129,13 @@ class XAIExplanation(BaseModel):
                 cleaned[key] = value
         return cleaned
 
+class FeedbackSubmission(BaseModel):
+    feedback_type: str
+    corrected_prediction: Optional[float] = None
+    feature_corrections: Optional[Dict[str, float]] = None
+    explanation: Optional[str] = None
+    confidence_level: int
+
 class AnalystFeedback(BaseModel):
     id: Optional[int] = None
     threat_id: int
@@ -141,13 +148,6 @@ class AnalystFeedback(BaseModel):
     confidence_level: int  # 1-5 scale
     timestamp: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
-
-class FeedbackSubmission(BaseModel):
-    feedback_type: str
-    corrected_prediction: Optional[float] = None
-    feature_corrections: Optional[Dict[str, float]] = None
-    explanation: Optional[str] = None
-    confidence_level: int
 
 # Update ThreatDetailResponse to include feedback
 class ThreatDetailResponse(ThreatLog):

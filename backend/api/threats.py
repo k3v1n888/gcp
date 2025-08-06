@@ -233,6 +233,12 @@ def get_threat_detail(
         import traceback
         traceback.print_exc()
 
+    # Get existing analyst feedback
+    analyst_feedback = db.query(models.AnalystFeedback).filter(
+        models.AnalystFeedback.threat_id == threat_id,
+        models.AnalystFeedback.tenant_id == user.tenant_id
+    ).first()
+
     # Build the final response
     response_data = schemas.ThreatDetailResponse.from_orm(threat_log)
     response_data.correlation = correlated_threat
@@ -246,22 +252,15 @@ def get_threat_detail(
     if xai_explanation_dict:
         response_data.xai_explanation = schemas.XAIExplanation(**xai_explanation_dict)
     
+    if analyst_feedback:
+        response_data.analyst_feedback = schemas.AnalystFeedback.from_orm(analyst_feedback)
+    
     if threat_log.is_anomaly:
         response_data.anomaly_features = schemas.AnomalyFeatures(
             text_feature=f"{threat_log.threat} {threat_log.source}",
             ip_reputation_score=clean_and_validate_numeric(threat_log.ip_reputation_score),
             has_cve=1 if threat_log.cve_id else 0
         )
-    
-    # Get existing analyst feedback
-    analyst_feedback = db.query(models.AnalystFeedback).filter(
-        models.AnalystFeedback.threat_id == threat_id,
-        models.AnalystFeedback.tenant_id == user.tenant_id
-    ).first()
-    
-    # Add feedback to response
-    if analyst_feedback:
-        response_data.analyst_feedback = schemas.AnalystFeedback.from_orm(analyst_feedback)
     
     return response_data
 
@@ -280,21 +279,6 @@ def submit_analyst_feedback(
     
     if not threat_log:
         raise HTTPException(status_code=404, detail="Threat log not found")
-    
-    # Get current prediction from XAI explanation or make new prediction
-    original_prediction = 0.0
-    try:
-        if hasattr(request.app.state, 'predictor'):
-            predictor = request.app.state.predictor
-            threat_log_dict = schemas.ThreatLog.from_orm(threat_log).dict()
-            if threat_log_dict.get('timestamp'):
-                threat_log_dict['timestamp'] = threat_log_dict['timestamp'].isoformat()
-            
-            prediction_result = predictor.predict(threat_log_dict)
-            if prediction_result and 'prediction' in prediction_result:
-                original_prediction = float(prediction_result['prediction'])
-    except Exception as e:
-        print(f"Error getting prediction for feedback: {e}")
     
     # Check if feedback already exists
     existing_feedback = db.query(models.AnalystFeedback).filter(
@@ -320,7 +304,7 @@ def submit_analyst_feedback(
             threat_id=threat_id,
             analyst_id=user.id,
             feedback_type=feedback.feedback_type,
-            original_prediction=original_prediction,
+            original_prediction=0.0,  # You can get this from the explanation if needed
             corrected_prediction=feedback.corrected_prediction,
             feature_corrections=feedback.feature_corrections,
             explanation=feedback.explanation,

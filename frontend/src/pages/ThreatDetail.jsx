@@ -189,7 +189,7 @@ export default function ThreatDetail() {
       <DetailCard title="Explainable AI (XAI) Analysis">
         <ModelExplanation 
             explanation={threat.xai_explanation}
-            threatId={id}
+            threatId={parseInt(id)}  // Make sure threatId is a number
             existingFeedback={threat.analyst_feedback}
         />
       </DetailCard>

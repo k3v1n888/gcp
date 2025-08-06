@@ -1,7 +1,8 @@
 import os
 import asyncio
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from starlette.middleware.sessions import SessionMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 # --- Import all application routers ---
@@ -37,7 +38,30 @@ from backend.wazuh_service import fetch_and_save_wazuh_alerts
 from backend.threatmapper_service import fetch_and_save_threatmapper_vulns
 from backend.incident_service import correlate_logs_into_incidents
 
-app = FastAPI()
+# Create tables
+Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print("🚀 Starting Quantum AI Threat Detection System...")
+    
+    try:
+        # Initialize any services you need
+        app.state.predictor = SeverityPredictor()
+        app.state.forecaster = ThreatForecaster()
+        app.state.anomaly_detector = AnomalyDetector()
+        app.state.graph_service = GraphService()
+        print("✅ Services initialized")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not initialize services: {e}")
+    
+    yield
+    
+    # Shutdown
+    print("🛑 Shutting down...")
+
+app = FastAPI(lifespan=lifespan)
 
 async def periodic_data_ingestion():
     """Runs all data ingestion and correlation services on a schedule."""
@@ -56,11 +80,6 @@ async def periodic_data_ingestion():
 
 @app.on_event("startup")
 def on_startup():
-    Base.metadata.create_all(bind=engine)
-    app.state.predictor = SeverityPredictor()
-    app.state.forecaster = ThreatForecaster()
-    app.state.anomaly_detector = AnomalyDetector()
-    app.state.graph_service = GraphService()
     asyncio.create_task(periodic_data_ingestion())
 
 @app.on_event("shutdown")

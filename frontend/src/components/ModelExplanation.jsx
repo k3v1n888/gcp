@@ -3,7 +3,9 @@ import React from 'react';
 const FeatureImpact = ({ feature, value, impact }) => {
     const isPushingHigher = impact > 0;
     const color = isPushingHigher ? 'text-red-400' : 'text-green-400';
-    const arrow = isPushingHigher ? '↑' : '↓';
+    const bgColor = isPushingHigher ? 'bg-red-900/20' : 'bg-green-900/20';
+    const borderColor = isPushingHigher ? 'border-red-500/30' : 'border-green-500/30';
+    const arrow = isPushingHigher ? '↗' : '↘';
     const absImpact = Math.abs(impact);
 
     // Helper function to safely format numeric values
@@ -11,13 +13,12 @@ const FeatureImpact = ({ feature, value, impact }) => {
         if (val === null || val === undefined) return 'N/A';
         if (typeof val === 'number') {
             if (isNaN(val) || !isFinite(val)) return '0';
-            // Show appropriate precision based on magnitude
             if (absImpact < 0.001 && absImpact > 0) {
                 return val.toExponential(2);
-            } else if (absImpact < 1) {
+            } else if (absImpact < 0.1) {
                 return val.toFixed(4);
             } else {
-                return val.toFixed(2);
+                return val.toFixed(3);
             }
         }
         return String(val);
@@ -32,14 +33,35 @@ const FeatureImpact = ({ feature, value, impact }) => {
         return String(val);
     };
 
+    // Create a visual impact bar
+    const impactPercentage = Math.min(100, (absImpact / 0.2) * 100); // Scale relative to 0.2 max impact
+
     return (
-        <div className="flex justify-between items-center text-sm p-3 bg-slate-800 rounded-lg border border-slate-700">
-            <span className="flex-1">
-                <span className="text-slate-300 font-medium">{feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</span> 
-                <span className="font-semibold ml-2 text-slate-100">{formatFeatureValue(value)}</span>
-            </span>
-            <span className={`${color} font-bold ml-4 min-w-[100px] text-right`}>
-                {arrow} {formatValue(absImpact)}
+        <div className={`flex justify-between items-center text-sm p-3 rounded-lg border ${borderColor} ${bgColor}`}>
+            <div className="flex-1">
+                <div className="flex items-center justify-between">
+                    <span className="text-slate-300 font-medium">
+                        {feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </span>
+                    <span className="font-semibold ml-2 text-slate-100">
+                        {formatFeatureValue(value)}
+                    </span>
+                </div>
+                
+                {/* Impact visualization bar */}
+                {absImpact > 0.001 && (
+                    <div className="mt-1 w-full bg-slate-700 rounded-full h-1">
+                        <div 
+                            className={`h-1 rounded-full ${isPushingHigher ? 'bg-red-400' : 'bg-green-400'}`}
+                            style={{ width: `${impactPercentage}%` }}
+                        />
+                    </div>
+                )}
+            </div>
+            
+            <span className={`${color} font-bold ml-4 min-w-[100px] text-right flex items-center`}>
+                <span className="mr-1">{arrow}</span>
+                {formatValue(absImpact)}
             </span>
         </div>
     );
@@ -68,7 +90,7 @@ export default function ModelExplanation({ explanation }) {
     // Safely get base value
     const baseValue = safeNumber(explanation.base_value);
 
-    // Handle different possible structures of explanation data
+    // Handle explanation data structure
     let featureImpacts = [];
 
     if (explanation.features && explanation.shap_values) {
@@ -86,21 +108,15 @@ export default function ModelExplanation({ explanation }) {
                 impact: shapValue
             };
         });
-    } else if (explanation.feature_importance && explanation.features) {
-        // Alternative structure with feature_importance
-        featureImpacts = Object.entries(explanation.feature_importance).map(([feature, impact]) => ({
-            feature: feature,
-            value: explanation.features[feature] || 'N/A',
-            impact: safeNumber(impact)
-        }));
     }
 
     // Sort by absolute impact value (highest first)
     featureImpacts.sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
 
     // Check if we have meaningful impacts
-    const hasNonZeroImpacts = featureImpacts.some(fi => Math.abs(fi.impact) > 0.0001);
-    const maxImpact = featureImpacts.length > 0 ? Math.abs(featureImpacts[0].impact) : 0;
+    const hasNonZeroImpacts = featureImpacts.some(fi => Math.abs(fi.impact) > 0.001);
+    const totalPositiveImpact = featureImpacts.filter(fi => fi.impact > 0).reduce((sum, fi) => sum + fi.impact, 0);
+    const totalNegativeImpact = featureImpacts.filter(fi => fi.impact < 0).reduce((sum, fi) => sum + Math.abs(fi.impact), 0);
 
     if (featureImpacts.length === 0) {
         return (
@@ -117,27 +133,38 @@ export default function ModelExplanation({ explanation }) {
     }
 
     return (
-        <div className="space-y-3">
+        <div className="space-y-4">
             <div className="p-4 bg-slate-800 rounded-lg border border-slate-700">
-                <p className="text-slate-300 text-sm">
-                    <span className="font-semibold">Model Base Prediction:</span>{' '}
-                    <span className="font-mono text-slate-100">{baseValue.toFixed(4)}</span>
-                </p>
+                <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-slate-300">Model Base Prediction:</span>
+                    <span className="font-mono text-slate-100 text-lg">{baseValue.toFixed(4)}</span>
+                </div>
+                
+                {hasNonZeroImpacts && (
+                    <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
+                        <div className="text-red-400">
+                            <span className="font-medium">Risk Increasing:</span> +{totalPositiveImpact.toFixed(3)}
+                        </div>
+                        <div className="text-green-400">
+                            <span className="font-medium">Risk Decreasing:</span> -{totalNegativeImpact.toFixed(3)}
+                        </div>
+                    </div>
+                )}
+                
                 {hasNonZeroImpacts ? (
-                    <p className="text-slate-400 text-sm mt-2">
-                        The features below show how much each factor influenced the final risk assessment, 
-                        either increasing (🔴) or decreasing (🟢) the threat score.
+                    <p className="text-slate-400 text-sm mt-3">
+                        Features are ranked by their impact on the final risk score. 
+                        Red indicates factors that increase risk, green indicates factors that decrease risk.
                     </p>
                 ) : (
-                    <p className="text-yellow-400 text-sm mt-2">
-                        ⚠️ All feature impacts are near zero. This may indicate the model is using default predictions 
-                        or there's an issue with the explanation generation.
+                    <p className="text-yellow-400 text-sm mt-3">
+                        ⚠️ All feature impacts are near zero. This may indicate an issue with the AI model's explanation service.
                     </p>
                 )}
             </div>
             
             <div className="space-y-2">
-                {featureImpacts.slice(0, hasNonZeroImpacts ? 6 : 8).map((fi, index) => (
+                {featureImpacts.slice(0, hasNonZeroImpacts ? 8 : 6).map((fi, index) => (
                     <FeatureImpact key={`${fi.feature}-${index}`} {...fi} />
                 ))}
             </div>

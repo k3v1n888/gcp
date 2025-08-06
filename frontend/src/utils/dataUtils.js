@@ -5,7 +5,6 @@ export const sanitizeApiResponse = (data) => {
     const sanitized = {};
     for (const [key, value] of Object.entries(data)) {
       if (typeof value === 'number' && (isNaN(value) || !isFinite(value))) {
-        // Handle specific cases
         if (key.includes('score') || key.includes('value') || key.includes('impact')) {
           sanitized[key] = 0;
         } else {

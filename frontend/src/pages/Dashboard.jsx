@@ -4,21 +4,36 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Link } from 'react-router-dom';
 import AISummary from '../components/AISummary';
 import ThreatForecast from '../components/ThreatForecast';
+import { sanitizeApiResponse, formatNumber } from '../utils/dataUtils';
 
 // Helper component for the IP Reputation progress bar
 const ReputationScore = ({ score }) => {
-    const numericScore = typeof score === 'number' ? score : 0;
+    // Safely handle the score value
+    const numericScore = (() => {
+        if (score === null || score === undefined || isNaN(score) || !isFinite(score)) {
+            return 0;
+        }
+        return Math.max(0, Math.min(100, Number(score))); // Clamp between 0-100
+    })();
+    
     const getScoreColor = () => {
         if (numericScore > 75) return 'bg-red-600';
         if (numericScore > 40) return 'bg-orange-500';
         return 'bg-green-600';
     };
+    
     return (
         <div className="flex items-center">
             <div className="w-full bg-slate-700 rounded-full h-2.5">
-                <div className={`${getScoreColor()} h-2.5 rounded-full`} style={{ width: `${numericScore}%` }} title={`MISP Score: ${numericScore}`}></div>
+                <div 
+                    className={`${getScoreColor()} h-2.5 rounded-full`} 
+                    style={{ width: `${numericScore}%` }} 
+                    title={`MISP Score: ${formatNumber(numericScore)}`}
+                ></div>
             </div>
-            <span className="text-xs font-semibold ml-3 text-slate-300">{numericScore}</span>
+            <span className="text-xs font-semibold ml-3 text-slate-300">
+                {formatNumber(numericScore)}
+            </span>
         </div>
     );
 };
@@ -81,7 +96,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         const cacheBuster = `?_=${new Date().getTime()}`;
-        fetch(`/api/threats${cacheBuster}`).then(res => res.json()).then(data => setLogs(data));
+        fetch(`/api/threats${cacheBuster}`).then(res => res.json()).then(data => setLogs(sanitizeApiResponse(data)));
         fetch(`/api/analytics/summary${cacheBuster}`).then(res => res.json()).then(data => {
             const formattedData = {
               by_type: Object.entries(data.by_type).map(([name, value]) => ({ name, value })),

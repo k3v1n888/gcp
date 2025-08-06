@@ -55,6 +55,7 @@ class ThreatLog(Base):
     # Relationships
     automation_actions = relationship("AutomationLog", back_populates="threat")
     incidents = relationship("SecurityIncident", secondary=incident_threat_association, back_populates="threat_logs")
+    analyst_feedback = relationship("AnalystFeedback", back_populates="threat", uselist=False)
     
 class SystemSettings(Base):
     __tablename__ = "system_settings"
@@ -109,6 +110,25 @@ class ThreatHunt(Base):
     completed_at = Column(DateTime(timezone=True), nullable=True)
     results = Column(JSON, nullable=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"))
+
+class AnalystFeedback(Base):
+    __tablename__ = "analyst_feedback"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    threat_id = Column(Integer, ForeignKey("threat_logs.id"), nullable=False)
+    analyst_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    feedback_type = Column(String, nullable=False)  # 'correction', 'confirmation', 'feature_importance'
+    original_prediction = Column(Float, nullable=False)
+    corrected_prediction = Column(Float, nullable=True)
+    feature_corrections = Column(JSON, nullable=True)  # Store as JSON
+    explanation = Column(Text, nullable=True)
+    confidence_level = Column(Integer, nullable=False)  # 1-5 scale
+    timestamp = Column(DateTime, default=func.now())
+    tenant_id = Column(Integer, ForeignKey("users.tenant_id"), nullable=False)
+    
+    # Relationships
+    threat = relationship("ThreatLog", back_populates="analyst_feedback")
+    analyst = relationship("User")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

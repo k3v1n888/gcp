@@ -253,4 +253,105 @@ def get_threat_detail(
             has_cve=1 if threat_log.cve_id else 0
         )
     
+    # Get existing analyst feedback
+    analyst_feedback = db.query(models.AnalystFeedback).filter(
+        models.AnalystFeedback.threat_id == threat_id,
+        models.AnalystFeedback.tenant_id == user.tenant_id
+    ).first()
+    
+    # Add feedback to response
+    if analyst_feedback:
+        response_data.analyst_feedback = schemas.AnalystFeedback.from_orm(analyst_feedback)
+    
     return response_data
+
+@router.post("/api/threats/{threat_id}/feedback")
+def submit_analyst_feedback(
+    threat_id: int,
+    feedback: schemas.FeedbackSubmission,
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    # Verify threat exists and belongs to user's tenant
+    threat_log = db.query(models.ThreatLog).filter(
+        models.ThreatLog.id == threat_id,
+        models.ThreatLog.tenant_id == user.tenant_id
+    ).first()
+    
+    if not threat_log:
+        raise HTTPException(status_code=404, detail="Threat log not found")
+    
+    # Get current prediction from XAI explanation or make new prediction
+    original_prediction = 0.0
+    try:
+        if hasattr(request.app.state, 'predictor'):
+            predictor = request.app.state.predictor
+            threat_log_dict = schemas.ThreatLog.from_orm(threat_log).dict()
+            if threat_log_dict.get('timestamp'):
+                threat_log_dict['timestamp'] = threat_log_dict['timestamp'].isoformat()
+            
+            prediction_result = predictor.predict(threat_log_dict)
+            if prediction_result and 'prediction' in prediction_result:
+                original_prediction = float(prediction_result['prediction'])
+    except Exception as e:
+        print(f"Error getting prediction for feedback: {e}")
+    
+    # Check if feedback already exists
+    existing_feedback = db.query(models.AnalystFeedback).filter(
+        models.AnalystFeedback.threat_id == threat_id,
+        models.AnalystFeedback.analyst_id == user.id
+    ).first()
+    
+    if existing_feedback:
+        # Update existing feedback
+        existing_feedback.feedback_type = feedback.feedback_type
+        existing_feedback.corrected_prediction = feedback.corrected_prediction
+        existing_feedback.feature_corrections = feedback.feature_corrections
+        existing_feedback.explanation = feedback.explanation
+        existing_feedback.confidence_level = feedback.confidence_level
+        existing_feedback.timestamp = func.now()
+        
+        db.commit()
+        db.refresh(existing_feedback)
+        return {"message": "Feedback updated successfully", "feedback_id": existing_feedback.id}
+    else:
+        # Create new feedback
+        new_feedback = models.AnalystFeedback(
+            threat_id=threat_id,
+            analyst_id=user.id,
+            feedback_type=feedback.feedback_type,
+            original_prediction=original_prediction,
+            corrected_prediction=feedback.corrected_prediction,
+            feature_corrections=feedback.feature_corrections,
+            explanation=feedback.explanation,
+            confidence_level=feedback.confidence_level,
+            tenant_id=user.tenant_id
+        )
+        
+        db.add(new_feedback)
+        db.commit()
+        db.refresh(new_feedback)
+        return {"message": "Feedback submitted successfully", "feedback_id": new_feedback.id}
+
+@router.get("/api/feedback/summary")
+def get_feedback_summary(
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """Get summary of analyst feedback for model improvement insights"""
+    feedback_summary = db.query(
+        models.AnalystFeedback.feedback_type,
+        func.count(models.AnalystFeedback.id).label('count'),
+        func.avg(models.AnalystFeedback.confidence_level).label('avg_confidence')
+    ).filter(
+        models.AnalystFeedback.tenant_id == user.tenant_id
+    ).group_by(models.AnalystFeedback.feedback_type).all()
+    
+    return [
+        {
+            "feedback_type": item.feedback_type,
+            "count": item.count,
+            "average_confidence": round(item.avg_confidence, 2) if item.avg_confidence else 0
+        }
+        for item in feedback_summary
+    ]

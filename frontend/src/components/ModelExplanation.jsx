@@ -1,4 +1,5 @@
 import React from 'react';
+import AnalystFeedback from './AnalystFeedback';
 
 const FeatureImpact = ({ feature, value, impact }) => {
     const isPushingHigher = impact > 0;
@@ -67,7 +68,7 @@ const FeatureImpact = ({ feature, value, impact }) => {
     );
 };
 
-export default function ModelExplanation({ explanation }) {
+export default function ModelExplanation({ explanation, threatId, existingFeedback }) {
     if (!explanation) {
         return (
             <div className="text-slate-400 p-4 bg-slate-800 rounded-lg">
@@ -132,6 +133,12 @@ export default function ModelExplanation({ explanation }) {
         );
     }
 
+    const handleFeedbackSubmitted = (result) => {
+        console.log('Feedback submitted:', result);
+        // Optionally refresh the page or update state
+        window.location.reload();
+    };
+
     return (
         <div className="space-y-4">
             <div className="p-4 bg-slate-800 rounded-lg border border-slate-700">
@@ -179,6 +186,14 @@ export default function ModelExplanation({ explanation }) {
                     </pre>
                 </details>
             )}
+            
+            {/* Add the analyst feedback component */}
+            <AnalystFeedback 
+                explanation={explanation}
+                threatId={threatId}
+                existingFeedback={existingFeedback}
+                onFeedbackSubmitted={handleFeedbackSubmitted}
+            />
         </div>
     );
 }

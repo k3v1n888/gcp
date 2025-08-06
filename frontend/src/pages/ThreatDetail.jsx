@@ -187,7 +187,11 @@ export default function ThreatDetail() {
       
       {/* --- ADD THIS NEW CARD --- */}
       <DetailCard title="Explainable AI (XAI) Analysis">
-        <ModelExplanation explanation={threat.xai_explanation} />
+        <ModelExplanation 
+            explanation={threat.xai_explanation}
+            threatId={id}
+            existingFeedback={threat.analyst_feedback}
+        />
       </DetailCard>
       
       <DetailCard title="Automated Response Log">

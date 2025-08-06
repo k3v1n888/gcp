@@ -129,11 +129,33 @@ class XAIExplanation(BaseModel):
                 cleaned[key] = value
         return cleaned
 
+class AnalystFeedback(BaseModel):
+    id: Optional[int] = None
+    threat_id: int
+    analyst_id: int
+    feedback_type: str  # 'correction', 'confirmation', 'feature_importance'
+    original_prediction: float
+    corrected_prediction: Optional[float] = None
+    feature_corrections: Optional[Dict[str, float]] = None
+    explanation: Optional[str] = None
+    confidence_level: int  # 1-5 scale
+    timestamp: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class FeedbackSubmission(BaseModel):
+    feedback_type: str
+    corrected_prediction: Optional[float] = None
+    feature_corrections: Optional[Dict[str, float]] = None
+    explanation: Optional[str] = None
+    confidence_level: int
+
+# Update ThreatDetailResponse to include feedback
 class ThreatDetailResponse(ThreatLog):
     recommendations: Optional[Recommendation] = None
     correlation: Optional[CorrelatedThreat] = None
+    misp_summary: Optional[str] = None
+    xai_explanation: Optional[XAIExplanation] = None
     anomaly_features: Optional[AnomalyFeatures] = None
     soar_actions: List[AutomationLog] = []
-    misp_summary: Optional[str] = None
-    timeline_threats: List[ThreatLog] = []
-    xai_explanation: Optional[XAIExplanation] = None
+    timeline_threats: List['ThreatLog'] = []
+    analyst_feedback: Optional[AnalystFeedback] = None  # Add this line

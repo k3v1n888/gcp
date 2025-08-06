@@ -124,11 +124,11 @@ class AnalystFeedback(Base):
     explanation = Column(Text, nullable=True)
     confidence_level = Column(Integer, nullable=False)  # 1-5 scale
     timestamp = Column(DateTime, default=func.now())
-    tenant_id = Column(Integer, ForeignKey("users.tenant_id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)  # FIXED: Reference tenants.id instead of users.tenant_id
     
-    # Relationships
+    # Relationships - FIXED: Specify foreign_keys explicitly
     threat = relationship("ThreatLog", back_populates="analyst_feedback")
-    analyst = relationship("User")
+    analyst = relationship("User", foreign_keys=[analyst_id])  # FIXED: Specify which foreign key to use
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

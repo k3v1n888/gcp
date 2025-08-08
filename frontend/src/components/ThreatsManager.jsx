@@ -80,6 +80,7 @@ const ThreatsManager = () => {
 
   const fetchThreatDetail = async (threatId) => {
     setLoading(true);
+    setThreatDetail(null); // Clear previous data
     
     try {
       const response = await fetch(`/api/threats/${threatId}`, {
@@ -89,6 +90,8 @@ const ThreatsManager = () => {
       if (response.ok) {
         const result = await response.json();
         setThreatDetail(result);
+      } else {
+        console.error(`Failed to fetch threat detail: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.error('Failed to fetch threat detail:', error);
@@ -452,6 +455,19 @@ const ThreatsManager = () => {
                     <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
                     <span className="ml-3 text-slate-400">Loading threat details...</span>
                   </div>
+                ) : !threatDetail ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="text-red-400 text-lg font-medium mb-2">Failed to Load Threat Details</div>
+                      <div className="text-slate-400">Unable to fetch threat analysis. Please try again.</div>
+                      <button
+                        onClick={() => fetchThreatDetail(selectedThreat.id)}
+                        className="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition-colors duration-200"
+                      >
+                        Retry Analysis
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-6">
                 {/* Threat Overview */}
@@ -471,6 +487,12 @@ const ThreatsManager = () => {
                         <span className="text-slate-400 text-sm">Source:</span>
                         <p className="text-white">{selectedThreat.source}</p>
                       </div>
+                      {threatDetail.timestamp && (
+                        <div>
+                          <span className="text-slate-400 text-sm">Detected:</span>
+                          <p className="text-white">{formatTimestamp(threatDetail.timestamp)}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -489,12 +511,46 @@ const ThreatsManager = () => {
                           <span className="ml-2 text-white font-medium">{selectedThreat.cvss_score.toFixed(1)}</span>
                         </div>
                       )}
+                      {threatDetail.confidence_score && (
+                        <div>
+                          <span className="text-slate-400 text-sm">Confidence:</span>
+                          <span className="ml-2 text-white font-medium">{(threatDetail.confidence_score * 100).toFixed(1)}%</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
+                {/* AI Analysis */}
+                {threatDetail.analysis && (
+                  <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4">
+                    <h4 className="font-semibold text-white mb-3">AI Threat Analysis</h4>
+                    <p className="text-slate-300">{threatDetail.analysis}</p>
+                  </div>
+                )}
+
+                {/* SHAP Values */}
+                {threatDetail.shap_values && threatDetail.shap_values.length > 0 && (
+                  <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4">
+                    <h4 className="font-semibold text-white mb-3">Feature Importance</h4>
+                    <div className="space-y-2">
+                      {threatDetail.shap_values.map((shap, index) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <span className="text-slate-300 text-sm">{shap.feature}</span>
+                          <div className="flex items-center">
+                            <div className={`w-20 h-2 rounded-full mr-2 ${shap.value > 0 ? 'bg-red-400' : 'bg-blue-400'}`} style={{opacity: Math.abs(shap.value)}} />
+                            <span className={`text-sm font-mono ${shap.value > 0 ? 'text-red-400' : 'text-blue-400'}`}>
+                              {shap.value > 0 ? '+' : ''}{shap.value.toFixed(3)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* AI Recommendations */}
-                {threatDetail.recommendations && (
+                {threatDetail.recommendations && threatDetail.recommendations.length > 0 && (
                   <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4">
                     <h4 className="font-semibold text-white mb-3">AI Recommendations</h4>
                     <div className="space-y-3">

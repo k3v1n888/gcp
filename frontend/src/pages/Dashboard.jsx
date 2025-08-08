@@ -108,7 +108,17 @@ export default function Dashboard() {
         console.log('🔥 Dashboard useEffect starting...');
         const cacheBuster = `?_=${new Date().getTime()}`;
         
-        fetch(`/api/threats${cacheBuster}`)
+        // Add timeout to fetch calls
+        const fetchWithTimeout = (url, options = {}, timeout = 30000) => {
+            return Promise.race([
+                fetch(url, options),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Request timeout')), timeout)
+                )
+            ]);
+        };
+        
+        fetchWithTimeout(`/api/threats${cacheBuster}`, {}, 30000)
             .then(res => {
                 console.log('🔥 Threats API response:', res.status);
                 return res.json();
@@ -117,9 +127,12 @@ export default function Dashboard() {
                 console.log('🔥 Threats data:', data?.length, 'items');
                 setLogs(sanitizeApiResponse(data));
             })
-            .catch(error => console.error('❌ Threats API error:', error));
+            .catch(error => {
+                console.error('❌ Threats API error:', error);
+                setLogs([]); // Set empty array on timeout
+            });
             
-        fetch(`/api/analytics/summary${cacheBuster}`)
+        fetchWithTimeout(`/api/analytics/summary${cacheBuster}`, {}, 30000)
             .then(res => {
                 console.log('🔥 Analytics API response:', res.status);
                 return res.json();
@@ -127,14 +140,19 @@ export default function Dashboard() {
             .then(data => {
                 console.log('🔥 Analytics data:', data);
                 const formattedData = {
-                  by_type: Object.entries(data.by_type).map(([name, value]) => ({ name, value })),
-                  by_source: Object.entries(data.by_source).map(([name, value]) => ({ name, value }))
+                  by_type: Object.entries(data.by_type || {}).map(([name, value]) => ({ name, value })),
+                  by_source: Object.entries(data.by_source || {}).map(([name, value]) => ({ name, value })),
+                  sources: Object.entries(data.by_source || {}).map(([name, value]) => ({ name, value })),
+                  daily: data.daily || []
                 };
                 setAnalytics(formattedData);
             })
-            .catch(error => console.error('❌ Analytics API error:', error));
+            .catch(error => {
+                console.error('❌ Analytics API error:', error);
+                setAnalytics({ sources: [], daily: [], by_type: [], by_source: [] });
+            });
             
-        fetch(`/api/incidents${cacheBuster}`)
+        fetchWithTimeout(`/api/incidents${cacheBuster}`, {}, 30000)
             .then(res => {
                 console.log('🔥 Incidents API response:', res.status);
                 return res.json();
@@ -143,7 +161,10 @@ export default function Dashboard() {
                 console.log('🔥 Incidents data:', data?.length, 'items');
                 setIncidents(data);
             })
-            .catch(error => console.error('❌ Incidents API error:', error));
+            .catch(error => {
+                console.error('❌ Incidents API error:', error);
+                setIncidents([]); // Set empty array on timeout
+            });
         
         try {
             const socket = new WebSocket(`wss://${window.location.hostname}/ws/threats`);

@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Link } from 'react-router-dom';
 import AISummary from '../components/AISummary';
 import ThreatForecast from '../components/ThreatForecast';
+import SecurityOutlook from '../components/SecurityOutlook';
 import { sanitizeApiResponse, formatNumber } from '../utils/dataUtils';
 
 // Helper component for the IP Reputation progress bar
@@ -119,6 +120,11 @@ export default function Dashboard() {
     return (
         <div className="p-4 md:p-6">
             <h1 className="text-3xl font-bold mb-6 text-slate-100">Cyber Operations Dashboard</h1>
+
+            {/* Enhanced Security Outlook - Full Width */}
+            <div className="mb-6">
+                <SecurityOutlook />
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <div className="widget-card p-6"><AISummary /></div>

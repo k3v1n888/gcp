@@ -111,12 +111,13 @@ class SafeThreatForecaster:
         """
         Mock forecast for when no real data is available
         """
-        # Simulate realistic threat predictions
+        # Simulate realistic threat predictions with varied probabilities
         mock_threats = {
-            "Malware Detection": 0.15,
-            "Suspicious Network Traffic": 0.12,
-            "Failed Authentication": 0.08,
-            "Privilege Escalation": 0.05
+            "Suspicious PowerShell activity detected": 0.12,
+            "Multiple failed login attempts observed": 0.08,
+            "Network scanning behavior identified": 0.06,
+            "Unusual outbound connections detected": 0.05,
+            "Potential malware communication patterns": 0.04
         }
         
         return {
@@ -124,7 +125,17 @@ class SafeThreatForecaster:
             "predicted_threats": mock_threats,
             "method": "mock",
             "note": note,
-            "warning": "This is simulated data for demonstration purposes"
+            "warning": "This is simulated data for demonstration purposes",
+            "threat_categories": {
+                "endpoint": ["Suspicious PowerShell activity detected", "Potential malware communication patterns"],
+                "identity": ["Multiple failed login attempts observed"],
+                "network": ["Network scanning behavior identified", "Unusual outbound connections detected"]
+            },
+            "risk_assessment": {
+                "overall_risk": "medium",
+                "confidence": 0.7,
+                "trend": "stable"
+            }
         }
     
     def health_check(self) -> Dict[str, Any]:

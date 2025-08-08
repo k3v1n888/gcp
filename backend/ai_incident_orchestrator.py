@@ -635,19 +635,6 @@ async def run_ai_incident_orchestration(db: Session, tenant_id: int = 1) -> Dict
     Call this periodically (e.g., every 15 minutes) to create incidents.
     """
     print(f"🔥 DEBUG: Starting orchestration for tenant {tenant_id}")
-    
-    # TEMPORARY: Return immediately for debugging
-    print("🔥 DEBUG: Returning immediately for timeout debugging")
-    return {
-        "status": "success",
-        "incidents_created": 0,
-        "incidents": [],
-        "message": "Debug mode - no actual orchestration performed",
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    }
-    
-    # Original code commented out for debugging
-    """
     orchestrator = AIIncidentOrchestrator()
     print(f"🔥 DEBUG: Orchestrator initialized")
     
@@ -673,7 +660,6 @@ async def run_ai_incident_orchestration(db: Session, tenant_id: int = 1) -> Dict
             "incidents_created": 0,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
-    """
 
 def get_ai_incident_recommendations(incident_id: int, db: Session) -> Dict[str, Any]:
     """

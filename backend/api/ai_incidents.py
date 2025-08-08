@@ -51,7 +51,7 @@ async def get_ai_provider_status():
             "message": f"❌ Quantum AI service unavailable: {str(e)}"
         }
 
-@router.post("/orchestrate")
+@router.post("/incidents/orchestrate")
 async def trigger_ai_incident_orchestration(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)

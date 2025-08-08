@@ -101,10 +101,18 @@ async def auth_callback(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/api/auth/me")
 def get_current_user_from_session(request: Request):
-    user = request.session.get('user')
-    if user:
-        return user
-    return None
+    print("🔥 DEBUG: /api/auth/me endpoint called")
+    try:
+        user = request.session.get('user')
+        print(f"🔥 DEBUG: Session user: {user is not None}")
+        if user:
+            print("🔥 DEBUG: Returning user session data")
+            return user
+        print("🔥 DEBUG: No user in session, returning None")
+        return None
+    except Exception as e:
+        print(f"🔥 DEBUG: Error in /api/auth/me: {e}")
+        raise
 
 @router.post("/api/auth/logout")
 async def logout(request: Request):

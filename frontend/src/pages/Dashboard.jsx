@@ -2,10 +2,14 @@ import { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../context/UserContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
+import { ChartBarIcon } from '@heroicons/react/24/outline';
 import AISummary from '../components/AISummary';
 import ThreatForecast from '../components/ThreatForecast';
 import SecurityOutlook from '../components/SecurityOutlook';
 import AIIncidentManager from '../components/AIIncidentManager';
+import ThreatsManager from '../components/ThreatsManager';
+import IncidentsManager from '../components/IncidentsManager';
+import AIThreatHunting from '../components/AIThreatHunting';
 import { sanitizeApiResponse, formatNumber } from '../utils/dataUtils';
 
 // Helper component for the IP Reputation progress bar
@@ -119,12 +123,30 @@ export default function Dashboard() {
     const COLORS = ['#38bdf8', '#4ade80', '#facc15', '#fb923c', '#f87171'];
 
     return (
-        <div className="p-4 md:p-6">
-            <h1 className="text-3xl font-bold mb-6 text-slate-100">Cyber Operations Dashboard</h1>
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
+            <div className="max-w-7xl mx-auto px-6 py-8">
+                {/* Header with same styling as AI Incident Manager */}
+                <div className="mb-8">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <div className="p-3 bg-gradient-to-r from-sky-500/20 to-blue-500/20 rounded-lg backdrop-blur-sm border border-sky-500/20">
+                                <ChartBarIcon className="h-8 w-8 text-sky-400" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-400">
+                                    Security Operations Center
+                                </h1>
+                                <p className="text-slate-400 mt-1">
+                                    Comprehensive cybersecurity management platform
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            {/* Tab Navigation */}
-            <div className="mb-6">
-                <nav className="flex space-x-8">
+                {/* Tab Navigation */}
+                <div className="mb-8">
+                    <nav className="flex space-x-8 border-b border-slate-700">
                     <button
                         onClick={() => setActiveTab('overview')}
                         className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -134,6 +156,39 @@ export default function Dashboard() {
                         }`}
                     >
                         Security Overview
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('incidents')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                            activeTab === 'incidents'
+                                ? 'border-orange-500 text-orange-400'
+                                : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-300'
+                        }`}
+                    >
+                        <span>⚠️</span>
+                        <span>Incidents</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('threats')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                            activeTab === 'threats'
+                                ? 'border-red-500 text-red-400'
+                                : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-300'
+                        }`}
+                    >
+                        <span>🔍</span>
+                        <span>Threats</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('ai-hunting')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                            activeTab === 'ai-hunting'
+                                ? 'border-pink-500 text-pink-400'
+                                : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-300'
+                        }`}
+                    >
+                        <span>🧠</span>
+                        <span>AI Hunting</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('ai-incidents')}
@@ -151,57 +206,80 @@ export default function Dashboard() {
 
             {/* Tab Content */}
             {activeTab === 'overview' && (
-                <>
-                    {/* Enhanced Security Outlook - Full Width */}
-                    <div className="mb-6">
+                <div className="space-y-8">
+                    {/* Enhanced Security Outlook - Full Width with AI Theme */}
+                    <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
                         <SecurityOutlook />
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        <div className="widget-card p-6"><AISummary /></div>
-                        <div className="widget-card p-6"><ThreatForecast /></div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
+                            <AISummary />
+                        </div>
+                        <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
+                            <ThreatForecast />
+                        </div>
                     </div>
 
-                    <div className="my-6">
-                        <ThreatHuntWidget />
-                    </div>
-
-                    {/* Analytics Charts */}
-                    {(user?.role === 'admin' || user?.role === 'analyst') && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
-                            <div className="widget-card p-6">
-                                <h2 className="text-xl font-semibold mb-4 glow-text">Threats by Type</h2>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <PieChart>
-                                        <Pie data={analytics?.by_type} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={90} fill="#8884d8" paddingAngle={5} labelLine={false}>
-                                            {analytics?.by_type.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                                        </Pie>
-                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} itemStyle={{ color: '#e2e8f0' }}/>
-                                        <Legend />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                            <div className="widget-card p-6">
-                                <h2 className="text-xl font-semibold mb-4 glow-text">Threats by Source</h2>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <BarChart data={analytics?.by_source}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                                        <XAxis dataKey="name" tick={{ fill: '#cbd5e1' }} />
-                                        <YAxis tick={{ fill: '#cbd5e1' }} />
-                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} itemStyle={{ color: '#e2e8f0' }} />
-                                        <Bar dataKey="value" fill="#38bdf8" fillOpacity={0.8} />
-                                    </BarChart>
-                                </ResponsiveContainer>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <div className="space-y-6">
+                            <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
+                                <ThreatHuntWidget />
                             </div>
                         </div>
-                    )}
+                        <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
+                            {analytics && (
+                                <>
+                                    <h2 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-400 mb-4">
+                                        Security Analytics
+                                    </h2>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                        <div className="bg-slate-900/30 p-4 rounded-lg">
+                                            <h3 className="text-slate-300 font-medium mb-2">Threat Sources</h3>
+                                            <ResponsiveContainer width="100%" height={200}>
+                                                <PieChart>
+                                                    <Pie 
+                                                        data={analytics.sources} 
+                                                        cx="50%" 
+                                                        cy="50%" 
+                                                        outerRadius={80} 
+                                                        fill="#8884d8" 
+                                                        dataKey="value" 
+                                                        label={({ name }) => name}
+                                                    >
+                                                        {analytics.sources.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                        <div className="bg-slate-900/30 p-4 rounded-lg">
+                                            <h3 className="text-slate-300 font-medium mb-2">Daily Threats</h3>
+                                            <ResponsiveContainer width="100%" height={200}>
+                                                <BarChart data={analytics.daily}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                                    <XAxis dataKey="date" stroke="#9CA3AF" />
+                                                    <YAxis stroke="#9CA3AF" />
+                                                    <Tooltip />
+                                                    <Bar dataKey="count" fill="#38bdf8" />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
 
-                    {/* Incidents and Threats Tables */}
                     <div className="grid grid-cols-12 gap-6">
-                        <div className="col-span-12 widget-card p-6 mb-6">
+                        <div className="col-span-12 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6 mb-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-semibold glow-text">Open Security Incidents</h2>
-                                <span className="text-sm text-slate-400 bg-slate-800 px-3 py-1 rounded-full">
+                                <h2 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">
+                                    Open Security Incidents
+                                </h2>
+                                <span className="text-sm text-slate-400 bg-slate-800/50 px-3 py-1 rounded-full">
                                     {incidents.length} Total
                                 </span>
                             </div>
@@ -239,11 +317,13 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        <div className="col-span-12 widget-card p-6">
+                        <div className="col-span-12 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-semibold glow-text">Live Threat Intel Feed</h2>
+                                <h2 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-pink-400">
+                                    Live Threat Intel Feed
+                                </h2>
                                 <div className="flex items-center space-x-3">
-                                    <span className="text-sm text-slate-400 bg-slate-800 px-3 py-1 rounded-full">
+                                    <span className="text-sm text-slate-400 bg-slate-800/50 px-3 py-1 rounded-full">
                                         {logs.length} Active Threats
                                     </span>
                                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -302,12 +382,25 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
-                </>
+                </div>
+            )}
+
+            {activeTab === 'incidents' && (
+                <IncidentsManager />
+            )}
+
+            {activeTab === 'threats' && (
+                <ThreatsManager />
+            )}
+
+            {activeTab === 'ai-hunting' && (
+                <AIThreatHunting />
             )}
 
             {activeTab === 'ai-incidents' && (
                 <AIIncidentManager />
             )}
+            </div>
         </div>
     );
 }

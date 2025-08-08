@@ -426,7 +426,7 @@ const ThreatsManager = () => {
         </div>
 
         {/* Threat Detail Modal */}
-        {selectedThreat && threatDetail && (
+        {selectedThreat && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-slate-800 border border-slate-700/50 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
               <div className="p-6 border-b border-slate-700/50">
@@ -447,6 +447,13 @@ const ThreatsManager = () => {
               </div>
               
               <div className="p-6 space-y-6">
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                    <span className="ml-3 text-slate-400">Loading threat details...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
                 {/* Threat Overview */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
@@ -505,6 +512,8 @@ const ThreatsManager = () => {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
                   </div>
                 )}
               </div>

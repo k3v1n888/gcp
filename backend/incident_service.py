@@ -12,10 +12,15 @@ def correlate_logs_into_incidents(db: Session):
     
     uncorrelated_logs = db.query(models.ThreatLog)\
         .filter(models.ThreatLog.incidents == None)\
+        .filter(models.ThreatLog.timestamp != None)\
         .order_by(models.ThreatLog.timestamp.asc())\
         .limit(200).all()
 
     for log in uncorrelated_logs:
+        # Skip logs without timestamps
+        if log.timestamp is None:
+            continue
+            
         time_window = log.timestamp - timedelta(hours=24)
         
         existing_incident = db.query(models.SecurityIncident)\

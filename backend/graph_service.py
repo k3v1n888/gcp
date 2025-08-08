@@ -42,7 +42,7 @@ class GraphService:
         )
         tx.run(query, ip=threat_log.ip, threat_description=threat_log.threat,
                source_name=threat_log.source, log_id=threat_log.id,
-               timestamp=threat_log.timestamp.isoformat())
+               timestamp=threat_log.timestamp.isoformat() if threat_log.timestamp else None)
 
     def get_attack_storyline(self, threat_log_id: int):
         if not self._driver:

@@ -1,6 +1,16 @@
 """
 🚀 AI-Driven Incident Management API
-Next-generation incid    import time
+Next-generation incid      """
+    Trigger AI-driven incident orchestration.
+    This will analyze existing data and create AI-generated incidents.
+    """
+    import time
+    start_time = time.time()
+    print(f"🔥 DEBUG: Orchestration endpoint started at {time.strftime('%H:%M:%S')}")
+    print(f"🔥 DEBUG: Current user: {current_user.email if current_user else 'None'}")
+    
+    tenant_id = current_user.tenant_id if current_user else 1
+    print(f"🔥 DEBUG: Using tenant_id: {tenant_id}")me
     start_time = time.time()
     print(f"🔥 DEBUG: Orchestration endpoint started at {time.strftime('%H:%M:%S')}")
     print(f"🔥 DEBUG: Current user: {current_user.email if current_user else 'None'}")
@@ -60,7 +70,7 @@ async def get_ai_provider_status():
 @router.post("/incidents/orchestrate")
 async def trigger_ai_incident_orchestration(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Trigger AI-driven incident orchestration.
@@ -69,9 +79,9 @@ async def trigger_ai_incident_orchestration(
     import time
     start_time = time.time()
     print(f"🔥 DEBUG: Orchestration endpoint started at {time.strftime('%H:%M:%S')}")
-    print(f"🔥 DEBUG: Current user: {current_user.get('email', 'unknown') if current_user else 'None'}")
+    print(f"🔥 DEBUG: Current user: {current_user.email if current_user else 'None'}")
     
-    tenant_id = current_user.get('tenant_id', 1) if current_user else 1
+    tenant_id = current_user.tenant_id if current_user else 1
     print(f"� DEBUG: Using tenant_id: {tenant_id}")
     
     print(f"🔥 DEBUG: About to call run_ai_incident_orchestration")

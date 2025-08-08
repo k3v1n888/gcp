@@ -11,31 +11,61 @@ export default function ThreatForecast() {
         setForecast(data);
       })
       .catch(() => {
-        setForecast({ error: 'Failed to load forecast' });
+        setForecast({ 
+          error: 'Failed to load forecast',
+          predicted_threats: {},
+          method: 'error_fallback'
+        });
       })
       .finally(() => {
         setIsLoading(false);
       });
   }, []);
 
+  const getMethodLabel = (method) => {
+    switch(method) {
+      case 'ml_based': return 'AI/ML Prediction';
+      case 'statistical': return 'Statistical Analysis';
+      case 'mock': return 'Demo Mode';
+      case 'emergency_fallback': return 'System Fallback';
+      default: return 'Threat Analysis';
+    }
+  };
+
   const renderContent = () => {
     if (isLoading) {
       return <p className="text-sm text-gray-500">Generating 24-hour forecast...</p>;
     }
-    if (forecast?.error || !forecast?.predicted_threats) {
-      return <p className="text-sm text-red-500">{forecast?.error || 'No forecast data available.'}</p>;
+    
+    // Handle the case where predicted_threats exists but is empty
+    if (!forecast?.predicted_threats || Object.keys(forecast.predicted_threats).length === 0) {
+      if (forecast?.error && forecast?.method !== 'mock') {
+        return <p className="text-sm text-red-500">{forecast.error}</p>;
+      }
+      return <p className="text-sm text-gray-500">No significant threats predicted in the next 24 hours.</p>;
     }
-    if (Object.keys(forecast.predicted_threats).length === 0) {
-        return <p className="text-sm text-gray-500">No significant threats predicted in the next 24 hours.</p>;
-    }
+    
     return (
-      <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-        {Object.entries(forecast.predicted_threats).map(([threat, score]) => (
-          <li key={threat}>
-            <span className="font-medium">{threat}</span>
-          </li>
-        ))}
-      </ul>
+      <div>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 mb-3">
+          {Object.entries(forecast.predicted_threats).map(([threat, score]) => (
+            <li key={threat}>
+              <span className="font-medium">{threat}</span>
+              {typeof score === 'number' && (
+                <span className="text-gray-500 ml-2">({Math.round(score * 100)}% probability)</span>
+              )}
+            </li>
+          ))}
+        </ul>
+        {forecast.method && (
+          <div className="text-xs text-gray-400 border-t pt-2">
+            Method: {getMethodLabel(forecast.method)}
+            {forecast.warning && (
+              <div className="text-amber-600 mt-1">{forecast.warning}</div>
+            )}
+          </div>
+        )}
+      </div>
     );
   };
 

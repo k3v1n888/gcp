@@ -31,6 +31,7 @@ from backend.models import Base, engine
 from backend.database import SessionLocal
 from backend.ml.prediction import SeverityPredictor
 from backend.forecasting_service import ThreatForecaster
+from backend.forecasting_service_safe import SafeThreatForecaster
 from backend.anomaly_service import AnomalyDetector
 from backend.graph_service import GraphService
 from backend.threat_feed import fetch_and_save_threat_feed
@@ -62,9 +63,19 @@ async def lifespan(app: FastAPI):
     print("🚀 Starting Quantum AI Threat Detection System...")
     
     try:
-        # Initialize services
+        # Initialize services with safe error handling
         app.state.predictor = SeverityPredictor()
-        app.state.forecaster = ThreatForecaster()
+        
+        # Use safe forecaster that won't break the app
+        app.state.safe_forecaster = SafeThreatForecaster()
+        
+        # Keep the original forecaster for backward compatibility (optional)
+        try:
+            app.state.forecaster = ThreatForecaster()
+        except Exception as e:
+            print(f"⚠️ Original forecaster unavailable: {e}")
+            app.state.forecaster = None
+        
         app.state.anomaly_detector = AnomalyDetector()
         app.state.graph_service = GraphService()
         
@@ -73,6 +84,12 @@ async def lifespan(app: FastAPI):
         print("✅ Services initialized")
     except Exception as e:
         print(f"⚠️ Warning: Could not initialize services: {e}")
+        # Ensure at least the safe forecaster is available
+        try:
+            app.state.safe_forecaster = SafeThreatForecaster()
+            print("✅ Safe forecaster initialized as fallback")
+        except Exception as fallback_error:
+            print(f"❌ Critical: Could not initialize fallback services: {fallback_error}")
     
     yield
     

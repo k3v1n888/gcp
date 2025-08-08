@@ -13,6 +13,7 @@ from backend.agents import router as agents_router
 from backend.api.admin import router as admin_router
 from backend.api.threats import router as threats_router
 from backend.api.incidents import router as incidents_router
+from backend.api.ai_incidents import router as ai_incidents_router  # New AI incidents API
 from backend.app.websocket.threats import router as ws_router
 from backend.alerting import router as alert_router
 from backend.analytics import router as analytics_router
@@ -38,6 +39,7 @@ from backend.threat_feed import fetch_and_save_threat_feed
 from backend.wazuh_service import fetch_and_save_wazuh_alerts
 from backend.threatmapper_service import fetch_and_save_threatmapper_vulns
 from backend.incident_service import correlate_logs_into_incidents
+from backend.ai_scheduler import start_ai_incident_scheduler, stop_ai_incident_scheduler  # AI orchestrator
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -51,6 +53,7 @@ async def periodic_data_ingestion():
             fetch_and_save_threat_feed(db)
             fetch_and_save_wazuh_alerts(db)
             fetch_and_save_threatmapper_vulns(db)
+            # Legacy basic correlation - AI orchestrator now handles advanced incident creation
             correlate_logs_into_incidents(db)
             print("Data ingestion and correlation complete.")
         finally:
@@ -79,6 +82,13 @@ async def lifespan(app: FastAPI):
         app.state.anomaly_detector = AnomalyDetector()
         app.state.graph_service = GraphService()
         
+        # 🚀 Start AI Incident Orchestration Scheduler
+        try:
+            start_ai_incident_scheduler()
+            print("🤖 AI Incident Orchestration Scheduler started (using Quantum AI)")
+        except Exception as scheduler_error:
+            print(f"⚠️ AI Scheduler initialization failed: {scheduler_error}")
+        
         # Start the periodic data ingestion
         asyncio.create_task(periodic_data_ingestion())
         print("✅ Services initialized")
@@ -95,6 +105,14 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     print("🛑 Shutting down...")
+    
+    # Stop AI Incident Scheduler
+    try:
+        stop_ai_incident_scheduler()
+        print("🤖 AI Incident Scheduler stopped")
+    except Exception as e:
+        print(f"⚠️ Error stopping AI scheduler: {e}")
+    
     if hasattr(app.state, 'graph_service'):
         app.state.graph_service.close()
 
@@ -125,6 +143,7 @@ app.include_router(agents_router)
 app.include_router(admin_router)
 app.include_router(threats_router)
 app.include_router(incidents_router)
+app.include_router(ai_incidents_router)  # 🤖 AI-powered incident management
 app.include_router(ws_router)
 app.include_router(alert_router)
 app.include_router(analytics_router)

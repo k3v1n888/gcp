@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import AISummary from '../components/AISummary';
 import ThreatForecast from '../components/ThreatForecast';
 import SecurityOutlook from '../components/SecurityOutlook';
+import AIIncidentManager from '../components/AIIncidentManager';
 import { sanitizeApiResponse, formatNumber } from '../utils/dataUtils';
 
 // Helper component for the IP Reputation progress bar
@@ -88,12 +89,12 @@ const ThreatHuntWidget = () => {
     );
 };
 
-
 export default function Dashboard() {
     const { user } = useContext(UserContext);
     const [logs, setLogs] = useState([]);
     const [analytics, setAnalytics] = useState(null);
     const [incidents, setIncidents] = useState([]);
+    const [activeTab, setActiveTab] = useState('overview');
 
     useEffect(() => {
         const cacheBuster = `?_=${new Date().getTime()}`;
@@ -121,157 +122,192 @@ export default function Dashboard() {
         <div className="p-4 md:p-6">
             <h1 className="text-3xl font-bold mb-6 text-slate-100">Cyber Operations Dashboard</h1>
 
-            {/* Enhanced Security Outlook - Full Width */}
+            {/* Tab Navigation */}
             <div className="mb-6">
-                <SecurityOutlook />
+                <nav className="flex space-x-8">
+                    <button
+                        onClick={() => setActiveTab('overview')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            activeTab === 'overview'
+                                ? 'border-sky-500 text-sky-400'
+                                : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-300'
+                        }`}
+                    >
+                        Security Overview
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('ai-incidents')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                            activeTab === 'ai-incidents'
+                                ? 'border-purple-500 text-purple-400'
+                                : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-300'
+                        }`}
+                    >
+                        <span>🤖</span>
+                        <span>AI Incident Orchestrator</span>
+                    </button>
+                </nav>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="widget-card p-6"><AISummary /></div>
-                <div className="widget-card p-6"><ThreatForecast /></div>
-            </div>
-
-            <div className="my-6">
-                <ThreatHuntWidget />
-            </div>
-
-                        {(user?.role === 'admin' || user?.role === 'analyst') && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
-                    <div className="widget-card p-6">
-                        <h2 className="text-xl font-semibold mb-4 glow-text">Threats by Type</h2>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie data={analytics?.by_type} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={90} fill="#8884d8" paddingAngle={5} labelLine={false}>
-                                    {analytics?.by_type.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                                </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} itemStyle={{ color: '#e2e8f0' }}/>
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
+            {/* Tab Content */}
+            {activeTab === 'overview' && (
+                <>
+                    {/* Enhanced Security Outlook - Full Width */}
+                    <div className="mb-6">
+                        <SecurityOutlook />
                     </div>
-                    <div className="widget-card p-6">
-                        <h2 className="text-xl font-semibold mb-4 glow-text">Threats by Source</h2>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={analytics?.by_source}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                                <XAxis dataKey="name" tick={{ fill: '#cbd5e1' }} />
-                                <YAxis tick={{ fill: '#cbd5e1' }} />
-                                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} itemStyle={{ color: '#e2e8f0' }} />
-                                <Bar dataKey="value" fill="#38bdf8" fillOpacity={0.8} />
-                            </BarChart>
-                        </ResponsiveContainer>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div className="widget-card p-6"><AISummary /></div>
+                        <div className="widget-card p-6"><ThreatForecast /></div>
                     </div>
-                </div>
+
+                    <div className="my-6">
+                        <ThreatHuntWidget />
+                    </div>
+
+                    {/* Analytics Charts */}
+                    {(user?.role === 'admin' || user?.role === 'analyst') && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
+                            <div className="widget-card p-6">
+                                <h2 className="text-xl font-semibold mb-4 glow-text">Threats by Type</h2>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie data={analytics?.by_type} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={90} fill="#8884d8" paddingAngle={5} labelLine={false}>
+                                            {analytics?.by_type.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
+                                        </Pie>
+                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} itemStyle={{ color: '#e2e8f0' }}/>
+                                        <Legend />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className="widget-card p-6">
+                                <h2 className="text-xl font-semibold mb-4 glow-text">Threats by Source</h2>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={analytics?.by_source}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                                        <XAxis dataKey="name" tick={{ fill: '#cbd5e1' }} />
+                                        <YAxis tick={{ fill: '#cbd5e1' }} />
+                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} itemStyle={{ color: '#e2e8f0' }} />
+                                        <Bar dataKey="value" fill="#38bdf8" fillOpacity={0.8} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Incidents and Threats Tables */}
+                    <div className="grid grid-cols-12 gap-6">
+                        <div className="col-span-12 widget-card p-6 mb-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-semibold glow-text">Open Security Incidents</h2>
+                                <span className="text-sm text-slate-400 bg-slate-800 px-3 py-1 rounded-full">
+                                    {incidents.length} Total
+                                </span>
+                            </div>
+                            <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-sky-600">
+                                <div className="overflow-x-auto">
+                                    <table className="cyber-table">
+                                        <thead className="sticky top-0 bg-slate-900 z-10">
+                                            <tr>
+                                                <th>Incident</th>
+                                                <th>Status</th>
+                                                <th>Severity</th>
+                                                <th>Last Activity</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {incidents.length > 0 ? (
+                                                incidents.map((incident) => (
+                                                    <tr key={incident.id} className="hover:bg-slate-800">
+                                                        <td><Link to={`/incidents/${incident.id}`} className="text-sky-400 hover:underline">{incident.title}</Link></td>
+                                                        <td><span className="text-orange-400 font-semibold">{incident.status.toUpperCase()}</span></td>
+                                                        <td><SeverityBadge severity={incident.severity} /></td>
+                                                        <td>{new Date(incident.end_time).toLocaleString()}</td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="4" className="text-center text-slate-500 py-8">
+                                                        No security incidents found
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="col-span-12 widget-card p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-semibold glow-text">Live Threat Intel Feed</h2>
+                                <div className="flex items-center space-x-3">
+                                    <span className="text-sm text-slate-400 bg-slate-800 px-3 py-1 rounded-full">
+                                        {logs.length} Active Threats
+                                    </span>
+                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                    <span className="text-xs text-red-400 font-semibold">LIVE</span>
+                                </div>
+                            </div>
+                            <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-sky-600">
+                                <div className="overflow-x-auto">
+                                    <table className="cyber-table">
+                                        <thead className="sticky top-0 bg-slate-900 z-10">
+                                            <tr>
+                                                <th>IP</th>
+                                                <th className="w-40">IP Reputation</th>
+                                                <th>Threat</th>
+                                                <th>Source</th>
+                                                <th>CVE</th>
+                                                <th>Severity</th>
+                                                <th>Status</th>
+                                                <th>Timestamp</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {logs.length > 0 ? (
+                                                logs.map((log) => (
+                                                    <tr key={log.id} className="hover:bg-slate-800 transition-colors duration-200">
+                                                        <td className="font-mono text-slate-400">{log.ip}</td>
+                                                        <td><ReputationScore score={log.ip_reputation_score} /></td>
+                                                        <td><Link to={`/threats/${log.id}`} className="text-sky-400 hover:underline">{log.threat}</Link></td>
+                                                        <td>{log.source}</td>
+                                                        <td className="font-mono">{log.cve_id || 'N/A'}</td>
+                                                        <td><SeverityBadge severity={log.severity} /></td>
+                                                        <td>
+                                                            {log.is_anomaly && (<span className="text-fuchsia-400 font-semibold mr-2">Anomaly</span>)}
+                                                            {log.source === 'UEBA Engine' && (<span className="text-amber-400 font-semibold">Insider</span>)}
+                                                        </td>
+                                                        <td>{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="8" className="text-center text-slate-500 py-8">
+                                                        <div className="flex flex-col items-center">
+                                                            <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center mb-3">
+                                                                <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                                                </svg>
+                                                            </div>
+                                                            <span>No active threats detected</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
             )}
-            
-            <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-12 widget-card p-6 mb-6">
-            
-            <div className="col-span-12 widget-card p-6 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold glow-text">Open Security Incidents</h2>
-                    <span className="text-sm text-slate-400 bg-slate-800 px-3 py-1 rounded-full">
-                        {incidents.length} Total
-                    </span>
-                </div>
-                <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-sky-600">
-                    <div className="overflow-x-auto">
-                        <table className="cyber-table">
-                            <thead className="sticky top-0 bg-slate-900 z-10">
-                                <tr>
-                                    <th>Incident</th>
-                                    <th>Status</th>
-                                    <th>Severity</th>
-                                    <th>Last Activity</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {incidents.length > 0 ? (
-                                    incidents.map((incident) => (
-                                        <tr key={incident.id} className="hover:bg-slate-800">
-                                            <td><Link to={`/incidents/${incident.id}`} className="text-sky-400 hover:underline">{incident.title}</Link></td>
-                                            <td><span className="text-orange-400 font-semibold">{incident.status.toUpperCase()}</span></td>
-                                            <td><SeverityBadge severity={incident.severity} /></td>
-                                            <td>{new Date(incident.end_time).toLocaleString()}</td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="4" className="text-center text-slate-500 py-8">
-                                            No security incidents found
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            </div>
 
-            <div className="col-span-12 widget-card p-6">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold glow-text">Live Threat Intel Feed</h2>
-                    <div className="flex items-center space-x-3">
-                        <span className="text-sm text-slate-400 bg-slate-800 px-3 py-1 rounded-full">
-                            {logs.length} Active Threats
-                        </span>
-                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                        <span className="text-xs text-red-400 font-semibold">LIVE</span>
-                    </div>
-                </div>
-                <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-sky-600">
-                    <div className="overflow-x-auto">
-                        <table className="cyber-table">
-                            <thead className="sticky top-0 bg-slate-900 z-10">
-                                <tr>
-                                    <th>IP</th>
-                                    <th className="w-40">IP Reputation</th>
-                                    <th>Threat</th>
-                                    <th>Source</th>
-                                    <th>CVE</th>
-                                    <th>Severity</th>
-                                    <th>Status</th>
-                                    <th>Timestamp</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {logs.length > 0 ? (
-                                    logs.map((log) => (
-                                        <tr key={log.id} className="hover:bg-slate-800 transition-colors duration-200">
-                                            <td className="font-mono text-slate-400">{log.ip}</td>
-                                            <td><ReputationScore score={log.ip_reputation_score} /></td>
-                                            <td><Link to={`/threats/${log.id}`} className="text-sky-400 hover:underline">{log.threat}</Link></td>
-                                            <td>{log.source}</td>
-                                            <td className="font-mono">{log.cve_id || 'N/A'}</td>
-                                            <td><SeverityBadge severity={log.severity} /></td>
-                                            <td>
-                                                {log.is_anomaly && (<span className="text-fuchsia-400 font-semibold mr-2">Anomaly</span>)}
-                                                {log.source === 'UEBA Engine' && (<span className="text-amber-400 font-semibold">Insider</span>)}
-                                            </td>
-                                            <td>{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="8" className="text-center text-slate-500 py-8">
-                                            <div className="flex flex-col items-center">
-                                                <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center mb-3">
-                                                    <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                                    </svg>
-                                                </div>
-                                                <span>No active threats detected</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            </div> {/* Close grid container */}
+            {activeTab === 'ai-incidents' && (
+                <AIIncidentManager />
+            )}
         </div>
     );
 }

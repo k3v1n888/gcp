@@ -34,3 +34,4 @@ openai
 statsmodels
 google.cloud.compute
 neo4j
+APScheduler>=3.10.0  # AI incident orchestration scheduler

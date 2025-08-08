@@ -37,7 +37,7 @@ async def get_ai_provider_status():
             "ai_provider_available": True,
             "provider_type": "quantum_ai",
             "provider_healthy": True,
-            "service_url": predictor.ai_service_url,
+            "service_url": predictor.target_audience,
             "message": "✅ Quantum AI Provider ready and integrated"
         }
             
@@ -65,9 +65,11 @@ async def trigger_ai_incident_orchestration(
     """
     try:
         logger.info(f"🚀 AI incident orchestration triggered by user {current_user.username}")
+        print(f"🚀 Starting orchestration for tenant {current_user.tenant_id}")
         
         # Run AI orchestration
         result = await run_ai_incident_orchestration(db, current_user.tenant_id)
+        print(f"✅ Orchestration result: {result}")
         
         return {
             "status": "success",
@@ -77,10 +79,15 @@ async def trigger_ai_incident_orchestration(
         }
         
     except Exception as e:
-        logger.error(f"❌ AI incident orchestration failed: {e}")
+        error_msg = f"AI incident orchestration failed: {str(e)}"
+        logger.error(f"❌ {error_msg}")
+        print(f"❌ Exception details: {e}")
+        import traceback
+        traceback.print_exc()
+        
         raise HTTPException(
             status_code=500, 
-            detail=f"AI incident orchestration failed: {str(e)}"
+            detail=error_msg
         )
 
 @router.get("/incidents/ai-enhanced")

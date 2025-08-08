@@ -105,8 +105,14 @@ class AIIncidentOrchestrator:
     """
     
     def __init__(self):
-        # Initialize your existing Quantum AI service
-        self.predictor = SeverityPredictor()
+        print("🔥 DEBUG: Initializing AIIncidentOrchestrator")
+        try:
+            # Initialize your existing Quantum AI service
+            self.predictor = SeverityPredictor()
+            print("🔥 DEBUG: SeverityPredictor initialized successfully")
+        except Exception as e:
+            print(f"🔥 DEBUG: Failed to initialize SeverityPredictor: {e}")
+            raise
         
         # Industry-standard time windows for correlation
         self.correlation_windows = {
@@ -118,6 +124,7 @@ class AIIncidentOrchestrator:
         
         # MITRE ATT&CK TTP mappings
         self.ttp_mappings = self._load_ttp_mappings()
+        print("🔥 DEBUG: AIIncidentOrchestrator initialization complete")
         
     def _load_ttp_mappings(self) -> Dict[str, Dict[str, Any]]:
         """Load MITRE ATT&CK technique mappings"""
@@ -627,10 +634,13 @@ async def run_ai_incident_orchestration(db: Session, tenant_id: int = 1) -> Dict
     Main entry point for AI-driven incident orchestration.
     Call this periodically (e.g., every 15 minutes) to create incidents.
     """
+    print(f"🔥 DEBUG: Starting orchestration for tenant {tenant_id}")
     orchestrator = AIIncidentOrchestrator()
+    print(f"🔥 DEBUG: Orchestrator initialized")
     
     try:
         incidents = await orchestrator.orchestrate_incident_creation(db, tenant_id)
+        print(f"🔥 DEBUG: Orchestration completed with {len(incidents)} incidents")
         
         return {
             "status": "success",
@@ -640,6 +650,9 @@ async def run_ai_incident_orchestration(db: Session, tenant_id: int = 1) -> Dict
         }
         
     except Exception as e:
+        print(f"🔥 DEBUG: Orchestration failed with error: {e}")
+        import traceback
+        traceback.print_exc()
         logger.error(f"AI incident orchestration failed: {e}")
         return {
             "status": "error",

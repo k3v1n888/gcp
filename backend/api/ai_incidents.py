@@ -12,7 +12,7 @@ from datetime import datetime
 from ..database import get_db
 from .. import models
 from ..ai_incident_orchestrator import run_ai_incident_orchestration, get_ai_incident_recommendations
-from ..auth.auth import get_current_user
+from ..auth.rbac import get_current_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["ai-incidents"])

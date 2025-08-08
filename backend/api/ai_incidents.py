@@ -1,6 +1,12 @@
 """
 🚀 AI-Driven Incident Management API
-Next-generation incident endpoints with AI orchestration capabilities
+Next-generation incid    import time
+    start_time = time.time()
+    print(f"🔥 DEBUG: Orchestration endpoint started at {time.strftime('%H:%M:%S')}")
+    print(f"🔥 DEBUG: Current user: {current_user.email if current_user else 'None'}")
+    
+    tenant_id = current_user.tenant_id if current_user else 1
+    print(f"🔥 DEBUG: Using tenant_id: {tenant_id}")points with AI orchestration capabilities
 """
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks

@@ -32,6 +32,22 @@ export default function ThreatForecast() {
     }
   };
 
+  const formatProbability = (score) => {
+    if (typeof score !== 'number') return '';
+    
+    // Handle different score formats
+    if (score > 100) {
+      // Score is already a percentage > 100, likely needs normalization
+      return `(${Math.round(score / 100)}% probability)`;
+    } else if (score > 1) {
+      // Score is already a percentage
+      return `(${Math.round(score)}% probability)`;
+    } else {
+      // Score is a decimal between 0-1, convert to percentage
+      return `(${Math.round(score * 100)}% probability)`;
+    }
+  };
+
   const renderContent = () => {
     if (isLoading) {
       return <p className="text-sm text-gray-500">Generating 24-hour forecast...</p>;
@@ -52,7 +68,9 @@ export default function ThreatForecast() {
             <li key={threat}>
               <span className="font-medium">{threat}</span>
               {typeof score === 'number' && (
-                <span className="text-gray-500 ml-2">({Math.round(score * 100)}% probability)</span>
+                <span className="text-gray-500 ml-2">
+                  {formatProbability(score)}
+                </span>
               )}
             </li>
           ))}

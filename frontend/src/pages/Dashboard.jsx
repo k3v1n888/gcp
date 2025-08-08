@@ -283,12 +283,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        <div className="space-y-6">
-                            <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
-                                <ThreatHuntWidget />
-                            </div>
-                        </div>
+                    <div className="grid grid-cols-1 gap-6">
                         <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
                             {analytics && (
                                 <>

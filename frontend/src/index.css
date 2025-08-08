@@ -32,3 +32,39 @@ body {
 .cyber-table td {
   @apply px-4 py-3 border-t border-slate-800;
 }
+
+/* Custom scrollbar styles for better appearance */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #0ea5e9 #1e293b;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #0ea5e9;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #38bdf8;
+}
+
+.scrollbar-track-slate-800::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.scrollbar-thumb-sky-600::-webkit-scrollbar-thumb {
+  background: #0284c7;
+}
+
+.scrollbar-thumb-sky-600::-webkit-scrollbar-thumb:hover {
+  background: #0ea5e9;
+}

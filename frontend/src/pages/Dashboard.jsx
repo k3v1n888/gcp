@@ -7,9 +7,10 @@ import AISummary from '../components/AISummary';
 import ThreatForecast from '../components/ThreatForecast';
 import SecurityOutlook from '../components/SecurityOutlook';
 import AIIncidentManager from '../components/AIIncidentManager';
-import ThreatsManager from '../components/ThreatsManager';
-import IncidentsManager from '../components/IncidentsManager';
-import AIThreatHunting from '../components/AIThreatHunting';
+// Temporarily comment out new components to test
+// import ThreatsManager from '../components/ThreatsManager';
+// import IncidentsManager from '../components/IncidentsManager';
+// import AIThreatHunting from '../components/AIThreatHunting';
 import { sanitizeApiResponse, formatNumber } from '../utils/dataUtils';
 
 // Helper component for the IP Reputation progress bar
@@ -94,35 +95,76 @@ const ThreatHuntWidget = () => {
 };
 
 export default function Dashboard() {
+    console.log('🔥 Dashboard component loading...');
+    
     const { user } = useContext(UserContext);
     const [logs, setLogs] = useState([]);
     const [analytics, setAnalytics] = useState(null);
     const [incidents, setIncidents] = useState([]);
     const [activeTab, setActiveTab] = useState('overview');
 
+    console.log('🔥 Dashboard state initialized, user:', user);
+
     useEffect(() => {
+        console.log('🔥 Dashboard useEffect starting...');
         const cacheBuster = `?_=${new Date().getTime()}`;
-        fetch(`/api/threats${cacheBuster}`).then(res => res.json()).then(data => setLogs(sanitizeApiResponse(data)));
-        fetch(`/api/analytics/summary${cacheBuster}`).then(res => res.json()).then(data => {
-            const formattedData = {
-              by_type: Object.entries(data.by_type).map(([name, value]) => ({ name, value })),
-              by_source: Object.entries(data.by_source).map(([name, value]) => ({ name, value }))
-            };
-            setAnalytics(formattedData);
-        });
-        fetch(`/api/incidents${cacheBuster}`).then(res => res.json()).then(data => setIncidents(data));
         
-        const socket = new WebSocket(`wss://${window.location.hostname}/ws/threats`);
-        socket.onmessage = (event) => {
-          const newLog = JSON.parse(event.data);
-          setLogs((prev) => [newLog, ...prev]);
-        };
-        return () => socket.close();
+        fetch(`/api/threats${cacheBuster}`)
+            .then(res => {
+                console.log('🔥 Threats API response:', res.status);
+                return res.json();
+            })
+            .then(data => {
+                console.log('🔥 Threats data:', data?.length, 'items');
+                setLogs(sanitizeApiResponse(data));
+            })
+            .catch(error => console.error('❌ Threats API error:', error));
+            
+        fetch(`/api/analytics/summary${cacheBuster}`)
+            .then(res => {
+                console.log('🔥 Analytics API response:', res.status);
+                return res.json();
+            })
+            .then(data => {
+                console.log('🔥 Analytics data:', data);
+                const formattedData = {
+                  by_type: Object.entries(data.by_type).map(([name, value]) => ({ name, value })),
+                  by_source: Object.entries(data.by_source).map(([name, value]) => ({ name, value }))
+                };
+                setAnalytics(formattedData);
+            })
+            .catch(error => console.error('❌ Analytics API error:', error));
+            
+        fetch(`/api/incidents${cacheBuster}`)
+            .then(res => {
+                console.log('🔥 Incidents API response:', res.status);
+                return res.json();
+            })
+            .then(data => {
+                console.log('🔥 Incidents data:', data?.length, 'items');
+                setIncidents(data);
+            })
+            .catch(error => console.error('❌ Incidents API error:', error));
+        
+        try {
+            const socket = new WebSocket(`wss://${window.location.hostname}/ws/threats`);
+            socket.onmessage = (event) => {
+              const newLog = JSON.parse(event.data);
+              setLogs((prev) => [newLog, ...prev]);
+            };
+            socket.onerror = (error) => console.error('❌ WebSocket error:', error);
+            return () => socket.close();
+        } catch (error) {
+            console.error('❌ WebSocket setup error:', error);
+        }
     }, []);
 
     const COLORS = ['#38bdf8', '#4ade80', '#facc15', '#fb923c', '#f87171'];
 
-    return (
+    console.log('🔥 Dashboard rendering, activeTab:', activeTab);
+
+    try {
+        return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
             <div className="max-w-7xl mx-auto px-6 py-8">
                 {/* Header with same styling as AI Incident Manager */}
@@ -239,7 +281,7 @@ export default function Dashboard() {
                                             <ResponsiveContainer width="100%" height={200}>
                                                 <PieChart>
                                                     <Pie 
-                                                        data={analytics.sources} 
+                                                        data={analytics.sources || []} 
                                                         cx="50%" 
                                                         cy="50%" 
                                                         outerRadius={80} 
@@ -247,7 +289,7 @@ export default function Dashboard() {
                                                         dataKey="value" 
                                                         label={({ name }) => name}
                                                     >
-                                                        {analytics.sources.map((entry, index) => (
+                                                        {(analytics.sources || []).map((entry, index) => (
                                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                         ))}
                                                     </Pie>
@@ -258,7 +300,7 @@ export default function Dashboard() {
                                         <div className="bg-slate-900/30 p-4 rounded-lg">
                                             <h3 className="text-slate-300 font-medium mb-2">Daily Threats</h3>
                                             <ResponsiveContainer width="100%" height={200}>
-                                                <BarChart data={analytics.daily}>
+                                                <BarChart data={analytics.daily || []}>
                                                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                                                     <XAxis dataKey="date" stroke="#9CA3AF" />
                                                     <YAxis stroke="#9CA3AF" />
@@ -376,15 +418,14 @@ export default function Dashboard() {
                                                     </td>
                                                 </tr>
                                             )}
-                                        </tbody>
+                                                        </tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            )}
-
+            )}            {/* Temporarily disable new tab content to test
             {activeTab === 'incidents' && (
                 <IncidentsManager />
             )}
@@ -396,6 +437,7 @@ export default function Dashboard() {
             {activeTab === 'ai-hunting' && (
                 <AIThreatHunting />
             )}
+            */}
 
             {activeTab === 'ai-incidents' && (
                 <AIIncidentManager />
@@ -403,4 +445,16 @@ export default function Dashboard() {
             </div>
         </div>
     );
+    } catch (error) {
+        console.error('❌ Dashboard render error:', error);
+        return (
+            <div className="min-h-screen bg-red-900 p-8">
+                <div className="text-white">
+                    <h1>Dashboard Error</h1>
+                    <p>Error: {error.message}</p>
+                    <pre>{error.stack}</pre>
+                </div>
+            </div>
+        );
+    }
 }

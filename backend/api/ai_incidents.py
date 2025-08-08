@@ -51,44 +51,40 @@ async def get_ai_provider_status():
             "message": f"❌ Quantum AI service unavailable: {str(e)}"
         }
 
-@router.post("/incidents/orchestrate")
+@router.post("/orchestrate")
 async def trigger_ai_incident_orchestration(
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     """
-    🤖 Trigger AI-driven incident orchestration
-    
-    This endpoint uses advanced AI to analyze threats and intelligently 
-    create security incidents based on industry best practices.
+    Trigger AI-driven incident orchestration.
+    This will analyze existing data and create AI-generated incidents.
     """
+    import time
+    start_time = time.time()
+    print(f"🔥 DEBUG: Orchestration endpoint started at {time.strftime('%H:%M:%S')}")
+    print(f"🔥 DEBUG: Current user: {current_user.get('email', 'unknown') if current_user else 'None'}")
+    
+    tenant_id = current_user.get('tenant_id', 1) if current_user else 1
+    print(f"� DEBUG: Using tenant_id: {tenant_id}")
+    
+    print(f"🔥 DEBUG: About to call run_ai_incident_orchestration")
+    auth_time = time.time()
+    print(f"🔥 DEBUG: Auth took {auth_time - start_time:.2f} seconds")
+    
     try:
-        logger.info(f"🚀 AI incident orchestration triggered by user {current_user.username}")
-        print(f"🚀 Starting orchestration for tenant {current_user.tenant_id}")
-        
-        # Run AI orchestration
-        result = await run_ai_incident_orchestration(db, current_user.tenant_id)
-        print(f"✅ Orchestration result: {result}")
-        
-        return {
-            "status": "success",
-            "message": "AI incident orchestration completed successfully",
-            "data": result,
-            "timestamp": datetime.utcnow().isoformat()
-        }
-        
+        result = await run_ai_incident_orchestration(db, tenant_id)
+        orchestration_time = time.time()
+        print(f"🔥 DEBUG: Orchestration took {orchestration_time - auth_time:.2f} seconds")
+        print(f"🔥 DEBUG: Total time: {orchestration_time - start_time:.2f} seconds")
+        print(f"🔥 DEBUG: Orchestration result: {result}")
+        return result
     except Exception as e:
-        error_msg = f"AI incident orchestration failed: {str(e)}"
-        logger.error(f"❌ {error_msg}")
-        print(f"❌ Exception details: {e}")
+        error_time = time.time()
+        print(f"🔥 DEBUG: Error occurred after {error_time - start_time:.2f} seconds: {e}")
         import traceback
         traceback.print_exc()
-        
-        raise HTTPException(
-            status_code=500, 
-            detail=error_msg
-        )
+        raise HTTPException(status_code=500, detail=f"Orchestration failed: {str(e)}")
 
 @router.get("/incidents/ai-enhanced")
 async def get_ai_enhanced_incidents(

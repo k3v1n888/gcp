@@ -17,8 +17,13 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://qai.quantum-ai.asia")
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 
+print(f"🔧 Auth module loaded - DEV_MODE: {DEV_MODE}")
+print(f"🔧 GOOGLE_CLIENT_ID present: {bool(GOOGLE_CLIENT_ID)}")
+print(f"🔧 Environment DEV_MODE value: {os.getenv('DEV_MODE', 'NOT_SET')}")
+
 # Only configure OAuth if not in dev mode and credentials are available
 if not DEV_MODE and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
+    print("🔒 Configuring Google OAuth for production")
     oauth.register(
         name='google',
         client_id=GOOGLE_CLIENT_ID,
@@ -26,6 +31,8 @@ if not DEV_MODE and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
         server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
         client_kwargs={'scope': 'openid email profile'}
     )
+else:
+    print("🔧 Skipping Google OAuth configuration (DEV_MODE or missing credentials)")
 
 @router.get('/api/auth/login')
 async def login(request: Request):

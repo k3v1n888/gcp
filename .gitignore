@@ -92,3 +92,12 @@ cyberdb.sqlite
 dev-workflow/
 sync-to-vm.sh
 vm-dev-manager.sh
+
+# =====================================
+# Production Authentication Protection
+# =====================================
+# These files should NEVER be in dev branch
+google-auth-config.json
+oauth-secrets.json
+production-auth.yaml
+.env.production

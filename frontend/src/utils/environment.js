@@ -1,14 +1,31 @@
 // Environment detection utility
 export const isDevelopment = () => {
-  // Check if we're running on the VM (development environment)
+  // Primary detection: Check React environment variables set in docker-compose
+  const reactDevMode = process.env.REACT_APP_DEV_MODE === 'true';
+  const reactBypassAuth = process.env.REACT_APP_BYPASS_AUTH === 'true';
+  
+  // Secondary detection: Check hostname (VM detection)
   const hostname = window.location.hostname;
-  const isDev = hostname === '192.168.64.13' || hostname === 'localhost';
+  const isVmHostname = hostname === '192.168.64.13' || hostname === 'localhost';
   
-  // Also check for dev mode parameter
+  // Tertiary detection: Check URL parameters
   const urlParams = new URLSearchParams(window.location.search);
-  const devMode = urlParams.get('dev_mode') === 'true';
+  const devModeParam = urlParams.get('dev_mode') === 'true';
   
-  return isDev || devMode || process.env.NODE_ENV === 'development';
+  // Development environment if any condition is true
+  const result = reactDevMode || reactBypassAuth || isVmHostname || devModeParam || process.env.NODE_ENV === 'development';
+  
+  console.log('🔍 Environment detection:', {
+    hostname,
+    reactDevMode,
+    reactBypassAuth,
+    isVmHostname,
+    devModeParam,
+    nodeEnv: process.env.NODE_ENV,
+    finalResult: result
+  });
+  
+  return result;
 };
 
 export const getApiBaseUrl = () => {

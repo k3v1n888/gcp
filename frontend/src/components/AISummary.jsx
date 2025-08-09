@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiBaseUrl } from '../utils/environment';
 
 export default function AISummary() {
   const [summary, setSummary] = useState('');
@@ -6,7 +7,8 @@ export default function AISummary() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('/api/correlation/summary')
+    const apiBaseUrl = getApiBaseUrl();
+    fetch(`${apiBaseUrl}/api/correlation/summary`)
       .then(res => {
         if (!res.ok) {
           throw new Error('Failed to fetch AI summary');

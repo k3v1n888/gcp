@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../context/UserContext';
+import { useDevUser } from '../context/DevUserContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
@@ -11,6 +12,7 @@ import ThreatsManager from '../components/ThreatsManager';
 import IncidentsManager from '../components/IncidentsManager';
 import AIThreatHunting from '../components/AIThreatHunting';
 import { sanitizeApiResponse, formatNumber } from '../utils/dataUtils';
+import { isDevelopment, getApiBaseUrl } from '../utils/environment';
 
 // Helper component for the IP Reputation progress bar
 const ReputationScore = ({ score }) => {
@@ -66,7 +68,8 @@ const ThreatHuntWidget = () => {
         setIsHunting(true);
         setHuntResults(null);
         try {
-            const response = await fetch('/api/hunting/run', { method: 'POST' });
+            const apiBaseUrl = getApiBaseUrl();
+            const response = await fetch(`${apiBaseUrl}/api/hunting/run`, { method: 'POST' });
             const data = await response.json();
             setHuntResults(data);
         } catch (error) {
@@ -96,7 +99,33 @@ const ThreatHuntWidget = () => {
 export default function Dashboard() {
     console.log('🔥 Dashboard component loading...');
     
-    const { user } = useContext(UserContext);
+    // Use appropriate context/hook based on environment
+    let user = null;
+    let devUser = null;
+    let prodUser = null;
+    
+    try {
+        if (isDevelopment()) {
+            const devContext = useDevUser();
+            devUser = devContext.user;
+            user = devUser;
+            console.log('🔧 Dashboard using DevUserContext, user:', user);
+        }
+    } catch (e) {
+        console.log('🔧 DevUserContext not available, falling back');
+    }
+    
+    try {
+        if (!isDevelopment()) {
+            const prodContext = useContext(UserContext);
+            prodUser = prodContext?.user;
+            user = prodUser;
+            console.log('� Dashboard using UserContext, user:', user);
+        }
+    } catch (e) {
+        console.log('🔒 UserContext not available');
+    }
+    
     const [logs, setLogs] = useState([]);
     const [analytics, setAnalytics] = useState(null);
     const [incidents, setIncidents] = useState([]);
@@ -107,6 +136,8 @@ export default function Dashboard() {
     useEffect(() => {
         console.log('🔥 Dashboard useEffect starting...');
         const cacheBuster = `?_=${new Date().getTime()}`;
+        const apiBaseUrl = getApiBaseUrl();
+        console.log('🔥 Using API base URL:', apiBaseUrl);
         
         // Add timeout to fetch calls
         const fetchWithTimeout = (url, options = {}, timeout = 30000) => {
@@ -118,7 +149,7 @@ export default function Dashboard() {
             ]);
         };
         
-        fetchWithTimeout(`/api/threats${cacheBuster}`, {}, 30000)
+        fetchWithTimeout(`${apiBaseUrl}/api/threats${cacheBuster}`, {}, 30000)
             .then(res => {
                 console.log('🔥 Threats API response:', res.status);
                 return res.json();
@@ -132,7 +163,7 @@ export default function Dashboard() {
                 setLogs([]); // Set empty array on timeout
             });
             
-        fetchWithTimeout(`/api/analytics/summary${cacheBuster}`, {}, 30000)
+        fetchWithTimeout(`${apiBaseUrl}/api/analytics/summary${cacheBuster}`, {}, 30000)
             .then(res => {
                 console.log('🔥 Analytics API response:', res.status);
                 return res.json();
@@ -152,7 +183,7 @@ export default function Dashboard() {
                 setAnalytics({ sources: [], daily: [], by_type: [], by_source: [] });
             });
             
-        fetchWithTimeout(`/api/incidents${cacheBuster}`, {}, 30000)
+        fetchWithTimeout(`${apiBaseUrl}/api/incidents${cacheBuster}`, {}, 30000)
             .then(res => {
                 console.log('🔥 Incidents API response:', res.status);
                 return res.json();
@@ -167,7 +198,13 @@ export default function Dashboard() {
             });
         
         try {
-            const socket = new WebSocket(`wss://${window.location.hostname}/ws/threats`);
+            // Fix WebSocket URL for development
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = isDevelopment() 
+                ? `ws://192.168.64.13:8000/ws/threats` 
+                : `${wsProtocol}//${window.location.hostname}/ws/threats`;
+            console.log('🔗 WebSocket URL:', wsUrl);
+            const socket = new WebSocket(wsUrl);
             socket.onmessage = (event) => {
               const newLog = JSON.parse(event.data);
               setLogs((prev) => [newLog, ...prev]);

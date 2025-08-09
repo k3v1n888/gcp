@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { UserContext } from '../context/UserContext';
+import { useDevUser } from '../context/DevUserContext';
+import { isDevelopment, getApiBaseUrl } from '../utils/environment';
 import { 
     MagnifyingGlassIcon,
     ShieldExclamationIcon,
@@ -18,7 +20,29 @@ import {
 } from '@heroicons/react/24/outline';
 
 const AIThreatHunting = () => {
-    const { user } = useContext(UserContext);
+    // Use appropriate context/hook based on environment
+    let user = null;
+    
+    try {
+        if (isDevelopment()) {
+            const devContext = useDevUser();
+            user = devContext.user;
+            console.log('🔧 AIThreatHunting using DevUserContext, user:', user);
+        }
+    } catch (e) {
+        console.log('🔧 DevUserContext not available in AIThreatHunting, falling back');
+    }
+    
+    try {
+        if (!isDevelopment()) {
+            const prodContext = useContext(UserContext);
+            user = prodContext?.user;
+            console.log('🔒 AIThreatHunting using UserContext, user:', user);
+        }
+    } catch (e) {
+        console.log('🔒 UserContext not available in AIThreatHunting');
+    }
+
     const [huntingJobs, setHuntingJobs] = useState([]);
     const [activeHunts, setActiveHunts] = useState([]);
     const [huntingResults, setHuntingResults] = useState([]);

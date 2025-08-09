@@ -122,16 +122,31 @@ SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
-    https_only=True,
-    same_site="none",
+    https_only=False,  # Allow HTTP in development
+    same_site="lax",   # More permissive for development
     max_age=86400
 )
+
+# Development-aware CORS configuration
+allowed_origins = [
+    "https://ai-cyber-fullstack-1020401092050.us-central1.run.app",
+    "https://qai.quantum-ai.asia"
+]
+
+# Add development origins if in development mode
+if os.getenv("DEV_MODE") == "true" or os.getenv("DISABLE_GOOGLE_AUTH") == "true":
+    dev_origins = [
+        "http://192.168.64.13:3000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://0.0.0.0:3000"
+    ]
+    allowed_origins.extend(dev_origins)
+    print("🔧 Development mode: Added dev origins to CORS:", dev_origins)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://ai-cyber-fullstack-1020401092050.us-central1.run.app",
-        "https://qai.quantum-ai.asia"
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -160,3 +175,11 @@ app.include_router(hunting_router)
 @app.get("/_fastapi_health")
 def fastapi_health():
     return {"status": "ok"}
+
+@app.get("/api/health")
+def api_health():
+    return {"status": "ok", "environment": "development" if os.getenv("DEV_MODE") == "true" else "production"}
+
+@app.get("/")
+def root():
+    return {"message": "Quantum AI Security Platform API", "status": "operational"}

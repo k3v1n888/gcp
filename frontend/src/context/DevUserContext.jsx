@@ -28,14 +28,9 @@ export const DevUserProvider = ({ children }) => {
         status: 'active'
       };
       
+      console.log('🔧 Development mode: Auto-login as dev user');
       setUser(devUser);
       setIsLoading(false);
-      
-      // Set session for backend compatibility
-      fetch('/api/auth/dev-login', {
-        method: 'GET',
-        credentials: 'include'
-      }).catch(err => console.log('Dev login setup:', err));
       
     } else {
       // Production behavior - check actual auth

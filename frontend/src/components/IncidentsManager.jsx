@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { UserContext } from '../context/UserContext';
+import { useDevUser } from '../context/DevUserContext';
+import { isDevelopment, getApiBaseUrl } from '../utils/environment';
 import { Link } from 'react-router-dom';
 import { 
     ExclamationTriangleIcon,
@@ -17,7 +19,29 @@ import {
 } from '@heroicons/react/24/outline';
 
 const IncidentsManager = () => {
-    const { user } = useContext(UserContext);
+    // Use appropriate context/hook based on environment
+    let user = null;
+    
+    try {
+        if (isDevelopment()) {
+            const devContext = useDevUser();
+            user = devContext.user;
+            console.log('🔧 IncidentsManager using DevUserContext, user:', user);
+        }
+    } catch (e) {
+        console.log('🔧 DevUserContext not available in IncidentsManager, falling back');
+    }
+    
+    try {
+        if (!isDevelopment()) {
+            const prodContext = useContext(UserContext);
+            user = prodContext?.user;
+            console.log('🔒 IncidentsManager using UserContext, user:', user);
+        }
+    } catch (e) {
+        console.log('🔒 UserContext not available in IncidentsManager');
+    }
+
     const [incidents, setIncidents] = useState([]);
     const [filteredIncidents, setFilteredIncidents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -94,7 +118,8 @@ const IncidentsManager = () => {
     const fetchIncidents = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/incidents', {
+            const apiBaseUrl = getApiBaseUrl();
+            const response = await fetch(`${apiBaseUrl}/api/incidents`, {
                 credentials: 'include'
             });
 

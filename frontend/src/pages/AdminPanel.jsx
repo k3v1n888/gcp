@@ -1,5 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../context/UserContext';
+import { useDevUser } from '../context/DevUserContext';
+import { isDevelopment, getApiBaseUrl } from '../utils/environment';
 
 const InviteUserForm = () => {
     const [email, setEmail] = useState('');
@@ -12,7 +14,7 @@ const InviteUserForm = () => {
         setMessage('');
         setError('');
 
-        const response = await fetch('/api/admin/invite', {
+        const response = await fetch(`${getApiBaseUrl()}/api/admin/invite`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, role }),
@@ -69,20 +71,42 @@ const InviteUserForm = () => {
 };
 
 export default function AdminPanel() {
-  const { user } = useContext(UserContext);
+  // Use appropriate context/hook based on environment
+  let user = null;
+  
+  try {
+      if (isDevelopment()) {
+          const devContext = useDevUser();
+          user = devContext.user;
+          console.log('🔧 AdminPanel using DevUserContext, user:', user);
+      }
+  } catch (e) {
+      console.log('🔧 DevUserContext not available in AdminPanel, falling back');
+  }
+  
+  try {
+      if (!isDevelopment()) {
+          const prodContext = useContext(UserContext);
+          user = prodContext?.user;
+          console.log('🔒 AdminPanel using UserContext, user:', user);
+      }
+  } catch (e) {
+      console.log('🔒 UserContext not available in AdminPanel');
+  }
+
   const [severity, setSeverity] = useState('critical');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
     if (user?.role !== 'admin') return;
-    fetch('/api/admin/settings')
+    fetch(`${getApiBaseUrl()}/api/admin/settings`)
       .then(res => res.json())
       .then(data => setSeverity(data.alert_severity))
       .catch(() => setMessage('Failed to load settings'));
   }, [user]);
 
   const handleSubmit = async () => {
-    const res = await fetch('/api/admin/settings', {
+    const res = await fetch(`${getApiBaseUrl()}/api/admin/settings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ alert_severity: severity }),

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { UserContext } from '../context/UserContext';
+import { useDevUser } from '../context/DevUserContext';
+import { isDevelopment, getApiBaseUrl } from '../utils/environment';
 import { 
   ShieldCheckIcon, 
   ExclamationTriangleIcon,
@@ -16,7 +18,29 @@ import {
  * Next-generation incident orchestration with industry-standard AI analysis
  */
 const AIIncidentManager = () => {
-  const { user } = useContext(UserContext);
+  // Use appropriate context/hook based on environment
+  let user = null;
+  
+  try {
+      if (isDevelopment()) {
+          const devContext = useDevUser();
+          user = devContext.user;
+          console.log('🔧 AIIncidentManager using DevUserContext, user:', user);
+      }
+  } catch (e) {
+      console.log('🔧 DevUserContext not available in AIIncidentManager, falling back');
+  }
+  
+  try {
+      if (!isDevelopment()) {
+          const prodContext = useContext(UserContext);
+          user = prodContext?.user;
+          console.log('🔒 AIIncidentManager using UserContext, user:', user);
+      }
+  } catch (e) {
+      console.log('🔒 UserContext not available in AIIncidentManager');
+  }
+
   const [incidents, setIncidents] = useState([]);
   const [orchestrationStatus, setOrchestrationStatus] = useState('idle');
   const [selectedIncident, setSelectedIncident] = useState(null);

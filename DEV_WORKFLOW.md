@@ -65,12 +65,20 @@ git checkout dev
 
 ### `sync-dev-to-vm.sh`
 - **Purpose**: Sync development changes to VM
-- **Features**: Excludes unnecessary files, fast rsync
-- **Usage**: `./sync-dev-to-vm.sh`
+- **Features**: Excludes unnecessary files, fast rsync, optional frontend restart
+- **Usage**: 
+  - Basic sync: `./sync-dev-to-vm.sh`
+  - With frontend restart: `./sync-dev-to-vm.sh --restart-frontend`
+
+### `sync-frontend.sh`
+- **Purpose**: Quick frontend-only updates with automatic restart
+- **Features**: Fast sync + automatic frontend container restart
+- **Usage**: `./sync-frontend.sh`
 
 ### `deploy-dev.sh`
 - **Purpose**: Full development deployment pipeline
-- **Actions**: Sync to VM → Build containers → Start services
+- **Actions**: Sync to VM → Build containers → Start services → Restart frontend
+- **Features**: Includes automatic frontend restart to clear React cache
 - **Usage**: `./deploy-dev.sh`
 
 ### `promote-to-prod.sh`
@@ -143,6 +151,16 @@ ssh kevin@192.168.64.13
 
 # Check VM services
 ssh kevin@192.168.64.13 "docker ps"
+```
+
+### Frontend Cache Issues
+The deployment scripts now automatically restart the frontend container to prevent React development server caching issues:
+
+```bash
+# If you notice stale React components, use:
+./sync-frontend.sh              # Quick frontend restart
+./sync-dev-to-vm.sh --restart-frontend  # Sync + restart
+./deploy-dev.sh                 # Full deployment (includes restart)
 ```
 
 ### Sync Issues

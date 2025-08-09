@@ -10,8 +10,65 @@ def get_current_user(request: Request):
     MODIFIED: Use session data to get the user's email, then fetch the full
     user object (including role and tenant) from the database.
     This ensures that role changes are reflected immediately.
+    ADDED: Development mode authentication bypass.
     """
     print("🔥 DEBUG: get_current_user called")
+    
+    # Development mode authentication bypass
+    DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
+    DISABLE_AUTH = os.getenv("DISABLE_GOOGLE_AUTH", "false").lower() == "true"
+    AUTO_LOGIN = os.getenv("AUTO_LOGIN", "false").lower() == "true"
+    
+    if DEV_MODE or DISABLE_AUTH or AUTO_LOGIN:
+        print("🔧 DEBUG: Development mode - bypassing authentication")
+        db = SessionLocal()
+        try:
+            # Get or create a development user
+            dev_user = db.query(User).filter(User.email == "dev@localhost.com").first()
+            if not dev_user:
+                print("🔧 DEBUG: Creating development user")
+                # Create development user
+                from backend.models import Tenant
+                tenant = db.query(Tenant).first()
+                if not tenant:
+                    tenant = Tenant(name="Development Tenant", company="DevCorp")
+                    db.add(tenant)
+                    db.commit()
+                    db.refresh(tenant)
+                
+                dev_user = User(
+                    email="dev@localhost.com",
+                    username="Developer",
+                    role="admin",
+                    tenant_id=tenant.id,
+                    status="active"
+                )
+                db.add(dev_user)
+                db.commit()
+                db.refresh(dev_user)
+                print("🔧 DEBUG: Development user created")
+            
+            print("🔧 DEBUG: Returning development user")
+            return dev_user
+        except Exception as e:
+            print(f"🔧 DEBUG: Error creating/getting dev user: {e}")
+            # Create a minimal user object for development
+            class DevUser:
+                def __init__(self):
+                    self.id = 1
+                    self.email = "dev@localhost.com"
+                    self.username = "Developer"
+                    self.role = "admin"
+                    self.tenant_id = 1
+                    self.status = "active"
+            return DevUser()
+        finally:
+            try:
+                db.close()
+            except:
+                pass
+    
+    # Production authentication
     session_user = request.session.get("user")
     if not session_user or not session_user.get("email"):
         print("🔥 DEBUG: No session user or email")

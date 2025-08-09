@@ -7,8 +7,16 @@ import DevApp from './DevApp';
 import ProdApp from './ProdApp';
 
 function App() {
-  // Use development app on VM, production app elsewhere
-  if (isDevelopment()) {
+  // Debug environment detection
+  console.log('🔍 Window location:', window.location);
+  console.log('🔍 Hostname:', window.location.hostname);
+  console.log('🔍 isDevelopment():', isDevelopment());
+  
+  // Force development app on VM for now
+  const hostname = window.location.hostname;
+  const isVM = hostname === '192.168.64.13';
+  
+  if (isVM || isDevelopment()) {
     console.log('🔧 Loading Development App (No Auth Required)');
     return <DevApp />;
   } else {

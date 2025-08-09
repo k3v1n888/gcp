@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { getApiBaseUrl } from '../utils/environment';
 
 export default function ThreatForecast() {
   const [forecast, setForecast] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/forecasting/24_hour')
+    const apiBaseUrl = getApiBaseUrl();
+    fetch(`${apiBaseUrl}/api/forecasting/24_hour`)
       .then(res => res.json())
       .then(data => {
         setForecast(data);

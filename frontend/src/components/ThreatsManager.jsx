@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { UserContext } from '../context/UserContext';
+import { useDevUser } from '../context/DevUserContext';
+import { isDevelopment, getApiBaseUrl } from '../utils/environment';
 import Chatbot from './Chatbot';
 import AnalystFeedback from './AnalystFeedback';
 import ModelExplanation from './ModelExplanation';
@@ -26,7 +28,28 @@ import {
  * Real-time threat monitoring with advanced AI analysis and correlation
  */
 const ThreatsManager = () => {
-  const { user } = useContext(UserContext);
+  // Use appropriate context/hook based on environment
+  let user = null;
+  
+  try {
+      if (isDevelopment()) {
+          const devContext = useDevUser();
+          user = devContext.user;
+          console.log('🔧 ThreatsManager using DevUserContext, user:', user);
+      }
+  } catch (e) {
+      console.log('🔧 DevUserContext not available in ThreatsManager, falling back');
+  }
+  
+  try {
+      if (!isDevelopment()) {
+          const prodContext = useContext(UserContext);
+          user = prodContext?.user;
+          console.log('🔒 ThreatsManager using UserContext, user:', user);
+      }
+  } catch (e) {
+      console.log('🔒 UserContext not available in ThreatsManager');
+  }
 
   // Add the same components from ThreatDetail.jsx
   const SeverityBadge = ({ severity }) => {

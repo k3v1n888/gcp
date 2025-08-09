@@ -4,7 +4,7 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy import create_engine
 import os
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@db:5432/cyberdb")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/cyberdb")
 Base = declarative_base()
 
 incident_threat_association = Table('incident_threat_association', Base.metadata,

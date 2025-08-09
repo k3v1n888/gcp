@@ -1,6 +1,6 @@
 import os
-from fastapi import APIRouter, Request, Depends
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Request, Depends, HTTPException
+from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from authlib.integrations.starlette_client import OAuth
 
@@ -15,22 +15,79 @@ oauth = OAuth()
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://qai.quantum-ai.asia")
+DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 
-oauth.register(
-    name='google',
-    client_id=GOOGLE_CLIENT_ID,
-    client_secret=GOOGLE_CLIENT_SECRET,
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_kwargs={'scope': 'openid email profile'}
-)
+# Only configure OAuth if not in dev mode and credentials are available
+if not DEV_MODE and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
+    oauth.register(
+        name='google',
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+        client_kwargs={'scope': 'openid email profile'}
+    )
 
 @router.get('/api/auth/login')
 async def login(request: Request):
+    if DEV_MODE:
+        # In development mode, redirect directly to dev login
+        return RedirectResponse(url="/api/auth/dev-login")
+    
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="OAuth not configured")
+    
     redirect_uri = f"{FRONTEND_URL}/api/auth/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
+@router.get('/api/auth/dev-login')
+async def dev_login(request: Request, db: Session = Depends(get_db)):
+    """Development mode login - creates/uses a default dev user"""
+    if not DEV_MODE:
+        raise HTTPException(status_code=403, detail="Dev login only available in development mode")
+    
+    # Create or get default dev user
+    email = "dev@localhost.com"
+    db_user = db.query(User).filter(User.email == email).first()
+    
+    if not db_user:
+        # Create default tenant if it doesn't exist
+        tenant = db.query(Tenant).filter(Tenant.name == "Development Tenant").first()
+        if not tenant:
+            tenant = Tenant(name="Development Tenant")
+            db.add(tenant)
+            db.commit()
+            db.refresh(tenant)
+        
+        # Create dev user
+        db_user = User(
+            username="Developer",
+            email=email,
+            role="admin",
+            status="active",
+            tenant_id=tenant.id
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+    
+    # Store user session
+    request.session['user'] = {
+        'id': db_user.id,
+        'email': db_user.email,
+        'username': db_user.username,
+        'role': db_user.role,
+        'tenant_id': db_user.tenant_id
+    }
+    
+    # Redirect to frontend
+    frontend_url = "http://192.168.64.13:3000" if DEV_MODE else FRONTEND_URL
+    return RedirectResponse(url=f"{frontend_url}/?dev_login=success")
+
 @router.get('/api/auth/callback')
 async def auth_callback(request: Request, db: Session = Depends(get_db)):
+    if DEV_MODE:
+        return RedirectResponse(url="/api/auth/dev-login")
+        
     try:
         token = await oauth.google.authorize_access_token(request)
         user_info = token.get('userinfo')

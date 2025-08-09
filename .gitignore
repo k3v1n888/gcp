@@ -66,3 +66,29 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# =====================================
+# Development Environment Files
+# =====================================
+# VM and Development specific files (keep out of main branch)
+docker-compose.vm.yml
+vm-*.sh
+*vm*.sh
+setup-*.sh
+dev-*.sh
+.env.dev
+.env.vm
+complete-vm-setup.sh
+simple-vm-setup.sh
+ultra-simple-setup.sh
+
+# Local AI Models and Data
+models/*.joblib
+models/*.pkl
+cyberdb.sqlite
+*.sqlite3
+
+# Development workflows
+dev-workflow/
+sync-to-vm.sh
+vm-dev-manager.sh

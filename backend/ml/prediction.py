@@ -6,13 +6,25 @@ import google.auth
 import google.auth.transport.requests
 from datetime import datetime, timezone
 
+# Import local model for development
+DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
+
+if DEV_MODE:
+    from .local_prediction import LocalSeverityPredictor
+
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "https://quantum-predictor-api-1020401092050.asia-southeast1.run.app")
+LOCAL_AI_SERVICE_URL = "http://localhost:8001"  # Local AI service URL
 
 class SeverityPredictor:
     def __init__(self):
-        self.auth_req = google.auth.transport.requests.Request()
-        self.target_audience = AI_SERVICE_URL
-        print("✅ Predictor initialized to call remote AI service.")
+        if DEV_MODE:
+            print("🔄 Initializing local ML predictor for development...")
+            self.local_predictor = LocalSeverityPredictor()
+            print("✅ Local ML predictor initialized")
+        else:
+            self.auth_req = google.auth.transport.requests.Request()
+            self.target_audience = AI_SERVICE_URL
+            print("✅ Predictor initialized to call remote AI service.")
 
     def _get_auth_token(self):
         try:
@@ -58,13 +70,45 @@ class SeverityPredictor:
             "ioc_risk_score": round((threat_log.get('ip_reputation_score', 0) or 0) / 100.0, 2)
         }
 
-    def predict(self, threat: str, source: str, ip_reputation_score: int, cve_id: str | None,
-                cvss_score: float = 0, criticality_score: float = 0, **kwargs) -> str:
+    def predict_severity(self, threat, source, ip_reputation_score=None, cve_id=None, cvss_score=None, criticality_score=None):
+        if DEV_MODE:
+            # Use local AI service in development
+            temp_log = {
+                "threat": threat,
+                "source": source,
+                "ip_reputation_score": ip_reputation_score or 50,
+                "cve_id": cve_id,
+                "cvss_score": cvss_score or 5.0,
+                "criticality_score": criticality_score or 0.5,
+                "ioc_risk_score": 0.5,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            
+            # First try local ML model
+            try:
+                result = self.local_predictor.predict_severity(temp_log)
+                return result.get("severity", "medium")
+            except Exception as e:
+                print(f"Local ML model failed, trying local AI service: {e}")
+                
+                # Fallback to local AI service
+                try:
+                    payload = self._prepare_payload(temp_log)
+                    response = requests.post(f"{LOCAL_AI_SERVICE_URL}/predict", json=payload, timeout=10)
+                    response.raise_for_status()
+                    result = response.json()
+                    prediction_map = {0: "low", 1: "medium", 2: "high", 3: "critical"}
+                    return result.get("severity", prediction_map.get(result.get('prediction', 1), "medium"))
+                except Exception as ai_error:
+                    print(f"Local AI service also failed: {ai_error}")
+                    return "medium"  # Final fallback
+        
+        # Use remote AI service in production
         token = self._get_auth_token()
         if not token:
             return "unknown"
 
-        headers = {'Authorization': f'Bearer {token}'}
+        headers = {"Authorization": f"Bearer {token}"}
         temp_log = {
             "threat": threat,
             "source": source,
@@ -86,6 +130,24 @@ class SeverityPredictor:
             return "unknown"
 
     def explain_prediction(self, threat_log: dict) -> dict | None:
+        if DEV_MODE:
+            # Use local model explanation in development
+            result = self.local_predictor.predict_severity(threat_log)
+            return {
+                "explanation": "Local ML model prediction based on threat patterns",
+                "confidence": result.get("confidence", 0.5),
+                "features_importance": {
+                    "threat_type": 0.3,
+                    "source": 0.2,
+                    "time_of_day": 0.15,
+                    "ip_reputation": 0.25,
+                    "admin_access": 0.1
+                },
+                "model_version": "local-1.0.0",
+                "probabilities": result.get("probabilities", {})
+            }
+        
+        # Use remote AI service in production
         token = self._get_auth_token()
         if not token:
             return None

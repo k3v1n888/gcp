@@ -1,0 +1,73 @@
+version: "3.8"
+
+services:
+  # Lightweight PostgreSQL for development
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: cyberdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data-dev:/var/lib/postgresql/data
+    # Optimized for low memory usage
+    command: >
+      postgres
+      -c shared_buffers=128MB
+      -c effective_cache_size=256MB
+      -c work_mem=4MB
+      -c max_connections=20
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+
+  # Redis for caching and sessions (lightweight)
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru --save ""
+
+  # Development backend service (optional - for full containerized dev)
+  backend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/cyberdb
+      - REDIS_URL=redis://redis:6379
+      - DEBUG=true
+      - USE_CUDA=false
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ./models:/app/models
+    depends_on:
+      - db
+      - redis
+    profiles:
+      - full-docker  # Only start with --profile full-docker
+
+  # Frontend development service (optional)
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - GENERATE_SOURCEMAP=false
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    profiles:
+      - full-docker  # Only start with --profile full-docker
+
+volumes:
+  db-data-dev:
+    driver: local

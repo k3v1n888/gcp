@@ -1,0 +1,34 @@
+# Development Dockerfile - Lightweight for local development
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY backend/requirements-dev.txt requirements-dev.txt
+
+# Install Python dependencies (CPU-only versions for lightweight setup)
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements-dev.txt
+
+# Copy backend code
+COPY backend/ ./backend/
+
+# Set Python path
+ENV PYTHONPATH=/app
+
+# Create models directory
+RUN mkdir -p /app/models
+
+# Expose port
+EXPOSE 8000
+
+# Development command with auto-reload
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

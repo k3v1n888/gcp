@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { UserContext } from '../contexts/UserContext';
+import { UserContext } from '../context/UserContext';
 import Chatbot from './Chatbot';
 import AnalystFeedback from './AnalystFeedback';
 import ModelExplanation from './ModelExplanation';
@@ -11,7 +11,14 @@ import {
   ShieldCheckIcon, 
   EyeIcon,
   ChatBubbleLeftRightIcon,
-  XMarkIcon
+  XMarkIcon,
+  ShieldExclamationIcon,
+  ArrowPathIcon,
+  ChartBarIcon,
+  BugAntIcon,
+  GlobeAltIcon,
+  ClockIcon,
+  CpuChipIcon
 } from '@heroicons/react/24/outline';
 
 /**

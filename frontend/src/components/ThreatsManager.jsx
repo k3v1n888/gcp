@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { UserContext } from '../context/UserContext';
+import { UserContext } from '../contexts/UserContext';
+import Chatbot from './Chatbot';
+import AnalystFeedback from './AnalystFeedback';
+import ModelExplanation from './ModelExplanation';
+import SoarActionLog from './SoarActionLog';
 import { 
-  ShieldExclamationIcon,
-  ExclamationTriangleIcon,
+  MagnifyingGlassIcon, 
+  ExclamationTriangleIcon, 
+  FireIcon, 
+  ShieldCheckIcon, 
   EyeIcon,
-  ClockIcon,
-  ChartBarIcon,
-  GlobeAltIcon,
-  CpuChipIcon,
-  BugAntIcon,
-  ArrowPathIcon,
-  FireIcon
-} from '@heroicons/react/24/solid';
+  ChatBubbleLeftRightIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
 
 /**
  * ⚠️ AI-Powered Threats Dashboard Component
@@ -19,6 +20,68 @@ import {
  */
 const ThreatsManager = () => {
   const { user } = useContext(UserContext);
+
+  // Add the same components from ThreatDetail.jsx
+  const SeverityBadge = ({ severity }) => {
+    const severityStyles = {
+      critical: 'bg-red-600 text-white',
+      high: 'bg-orange-500 text-white',
+      medium: 'bg-yellow-400 text-black',
+      low: 'bg-sky-500 text-white',
+      unknown: 'bg-slate-500 text-white',
+    };
+    const severityKey = typeof severity === 'string' ? severity.toLowerCase() : 'unknown';
+    return (
+      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${severityStyles[severityKey] || severityStyles.unknown}`}>
+        {severity.toUpperCase()}
+      </span>
+    );
+  };
+
+  const ReputationScore = ({ score }) => {
+    const numericScore = typeof score === 'number' ? score : 0;
+    const getScoreColor = () => {
+      if (numericScore > 75) return 'bg-red-600';
+      if (numericScore > 40) return 'bg-orange-500';
+      return 'bg-green-600';
+    };
+    return (
+      <div className="flex items-center">
+        <div className="w-full bg-slate-700 rounded-full h-2.5">
+          <div className={`${getScoreColor()} h-2.5 rounded-full`} style={{ width: `${numericScore}%` }} title={`MISP Score: ${numericScore}`}></div>
+        </div>
+        <span className="text-xs font-semibold ml-3 text-slate-300">{numericScore}</span>
+      </div>
+    );
+  };
+
+  const DetailCard = ({ title, children }) => (
+    <div className="widget-card p-6 mb-6">
+      <h2 className="text-xl font-semibold mb-4 text-sky-400">{title}</h2>
+      <div className="text-slate-300 leading-relaxed prose prose-invert max-w-none">{children}</div>
+    </div>
+  );
+
+  const TimelineItem = ({ log, isLast }) => {
+    const borderColor = isLast ? 'border-transparent' : 'border-slate-600';
+    return (
+      <div className="relative flex items-start pl-8">
+        <div className="absolute left-0 flex flex-col items-center h-full">
+          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center ring-4 ring-slate-800 z-10">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div className={`w-px flex-grow ${borderColor}`}></div>
+        </div>
+        <div className="pb-8 ml-4">
+          <p className="text-sm text-slate-400">{new Date(log.timestamp).toLocaleString()}</p>
+          <h3 className="font-semibold text-slate-200">{log.threat}</h3>
+          <p className="text-sm text-slate-500">Source: {log.source} | IP: {log.ip}</p>
+        </div>
+      </div>
+    );
+  };
   const [threats, setThreats] = useState([]);
   const [selectedThreat, setSelectedThreat] = useState(null);
   const [threatDetail, setThreatDetail] = useState(null);
@@ -27,6 +90,8 @@ const ThreatsManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSeverity, setFilterSeverity] = useState('all');
   const [filterSource, setFilterSource] = useState('all');
+  const [showAnalystFeedback, setShowAnalystFeedback] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
 
   // Real-time threat updates
   useEffect(() => {
@@ -100,6 +165,7 @@ const ThreatsManager = () => {
     }
   };
 
+  // AI Explain function - re-triggers AI analysis
   const getSeverityColor = (severity) => {
     const colors = {
       critical: 'text-red-400 bg-red-500/10 border-red-500/20',
@@ -431,148 +497,204 @@ const ThreatsManager = () => {
         {/* Threat Detail Modal */}
         {selectedThreat && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-800 border border-slate-700/50 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
-              <div className="p-6 border-b border-slate-700/50">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-white">Threat Analysis</h3>
+            <div className="bg-slate-900 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-slate-900 border-b border-slate-700 p-6 z-10">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-4 mb-2">
+                      <h1 className="text-3xl font-bold text-slate-100">{selectedThreat.threat}</h1>
+                      {selectedThreat.is_anomaly && (
+                        <span className="bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-400 text-sm font-semibold px-3 py-1 rounded-full">
+                          ANOMALY
+                        </span>
+                      )}
+                      {selectedThreat.source === 'UEBA Engine' && (
+                        <span className="bg-amber-500/20 text-amber-300 border border-amber-400 text-sm font-semibold px-3 py-1 rounded-full">
+                          INSIDER THREAT
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-slate-400 mb-4">
+                      Detected from {selectedThreat.source} at {new Date(selectedThreat.timestamp).toLocaleString()}
+                    </p>
+                  </div>
                   <button
                     onClick={() => {
                       setSelectedThreat(null);
                       setThreatDetail(null);
                     }}
-                    className="text-slate-400 hover:text-white transition-colors duration-200"
+                    className="text-slate-400 hover:text-white transition-colors p-2"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <XMarkIcon className="w-6 h-6" />
+                  </button>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <button
+                    onClick={() => setShowAnalystFeedback(!showAnalystFeedback)}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                  >
+                    <EyeIcon className="w-4 h-4 mr-2" />
+                    {showAnalystFeedback ? 'Hide' : 'Show'} Analyst Feedback
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowAIChat(!showAIChat)}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-200"
+                  >
+                    <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
+                    {showAIChat ? 'Hide' : 'Show'} AI Chat
                   </button>
                 </div>
               </div>
-              
-              <div className="p-6 space-y-6">
-                {loading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                    <span className="ml-3 text-slate-400">Loading threat details...</span>
-                  </div>
-                ) : !threatDetail ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="text-center">
-                      <div className="text-red-400 text-lg font-medium mb-2">Failed to Load Threat Details</div>
-                      <div className="text-slate-400">Unable to fetch threat analysis. Please try again.</div>
-                      <button
-                        onClick={() => fetchThreatDetail(selectedThreat.id)}
-                        className="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition-colors duration-200"
-                      >
-                        Retry Analysis
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                {/* Threat Overview */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h4 className="font-semibold text-white">Threat Details</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-slate-400 text-sm">Threat:</span>
-                        <p className="text-white">{selectedThreat.threat}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 text-sm">IP Address:</span>
-                        <p className="text-white font-mono">{selectedThreat.ip || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 text-sm">Source:</span>
-                        <p className="text-white">{selectedThreat.source}</p>
-                      </div>
-                      {threatDetail.timestamp && (
-                        <div>
-                          <span className="text-slate-400 text-sm">Detected:</span>
-                          <p className="text-white">{formatTimestamp(threatDetail.timestamp)}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h4 className="font-semibold text-white">Risk Assessment</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-slate-400 text-sm">Severity:</span>
-                        <span className={`ml-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getSeverityColor(selectedThreat.severity)}`}>
-                          {selectedThreat.severity}
-                        </span>
-                      </div>
-                      {selectedThreat.cvss_score && (
-                        <div>
-                          <span className="text-slate-400 text-sm">CVSS Score:</span>
-                          <span className="ml-2 text-white font-medium">{selectedThreat.cvss_score.toFixed(1)}</span>
-                        </div>
-                      )}
-                      {threatDetail.confidence_score && (
-                        <div>
-                          <span className="text-slate-400 text-sm">Confidence:</span>
-                          <span className="ml-2 text-white font-medium">{(threatDetail.confidence_score * 100).toFixed(1)}%</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center p-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
+                  <span className="ml-3 text-slate-300">Loading Analysis...</span>
                 </div>
+              ) : !threatDetail ? (
+                <div className="p-6 text-center text-slate-400">
+                  <div className="text-red-500">Error: Threat data could not be loaded.</div>
+                  <button
+                    onClick={() => fetchThreatDetail(selectedThreat.id)}
+                    className="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition-colors duration-200"
+                  >
+                    Retry Analysis
+                  </button>
+                </div>
+              ) : (
+                <div className="p-6">
+                  {/* Event Telemetry - matching ThreatDetail.jsx */}
+                  <DetailCard title="Event Telemetry">
+                    <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                      <div className="py-2">
+                        <dt className="font-semibold text-slate-400">Attacker IP</dt>
+                        <dd className="font-mono text-slate-200">{threatDetail.ip}</dd>
+                      </div>
+                      <div className="py-2">
+                        <dt className="font-semibold text-slate-400">IP Reputation Score (from MISP)</dt>
+                        <dd className="mt-1 w-40">
+                          <ReputationScore score={threatDetail.ip_reputation_score} />
+                        </dd>
+                      </div>
+                      <div className="py-2">
+                        <dt className="font-semibold text-slate-400">AI-Assigned Severity</dt>
+                        <dd className="mt-1">
+                          <SeverityBadge severity={threatDetail.severity} />
+                        </dd>
+                      </div>
+                      <div className="py-2">
+                        <dt className="font-semibold text-slate-400">Associated CVE</dt>
+                        <dd className="font-mono text-slate-200">
+                          {threatDetail.cve_id ? (
+                            <a 
+                              href={`https://cve.mitre.org/cgi-bin/cvename.cgi?name=${threatDetail.cve_id}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-blue-400 hover:underline"
+                            >
+                              {threatDetail.cve_id}
+                            </a>
+                          ) : (
+                            'N/A'
+                          )}
+                        </dd>
+                      </div>
+                    </dl>
+                  </DetailCard>
 
-                {/* AI Analysis */}
-                {threatDetail.analysis && (
-                  <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4">
-                    <h4 className="font-semibold text-white mb-3">AI Threat Analysis</h4>
-                    <p className="text-slate-300">{threatDetail.analysis}</p>
-                  </div>
-                )}
+                  {/* Attack Timeline - matching ThreatDetail.jsx */}
+                  {threatDetail.timeline_threats && threatDetail.timeline_threats.length > 1 && (
+                    <DetailCard title="Attack Timeline">
+                      <div>
+                        {threatDetail.timeline_threats.map((log, index, array) => (
+                          <TimelineItem key={log.id} log={log} isLast={index === array.length - 1} />
+                        ))}
+                      </div>
+                    </DetailCard>
+                  )}
 
-                {/* SHAP Values */}
-                {threatDetail.shap_values && threatDetail.shap_values.length > 0 && (
-                  <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4">
-                    <h4 className="font-semibold text-white mb-3">Feature Importance</h4>
-                    <div className="space-y-2">
-                      {threatDetail.shap_values.map((shap, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <span className="text-slate-300 text-sm">{shap.feature}</span>
-                          <div className="flex items-center">
-                            <div className={`w-20 h-2 rounded-full mr-2 ${shap.value > 0 ? 'bg-red-400' : 'bg-blue-400'}`} style={{opacity: Math.abs(shap.value)}} />
-                            <span className={`text-sm font-mono ${shap.value > 0 ? 'text-red-400' : 'text-blue-400'}`}>
-                              {shap.value > 0 ? '+' : ''}{shap.value.toFixed(3)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  {/* MISP Summary - matching ThreatDetail.jsx */}
+                  {threatDetail.misp_summary && (
+                    <DetailCard title="Quantum Intel (MISP) Summary">
+                      <p className="italic text-slate-200">{threatDetail.misp_summary}</p>
+                    </DetailCard>
+                  )}
 
-                {/* AI Recommendations */}
-                {threatDetail.recommendations && threatDetail.recommendations.length > 0 && (
-                  <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4">
-                    <h4 className="font-semibold text-white mb-3">AI Recommendations</h4>
-                    <div className="space-y-3">
-                      {threatDetail.recommendations.map((rec, index) => (
-                        <div key={index} className="bg-slate-800/50 rounded-lg p-3">
-                          <p className="text-slate-300">{rec.explanation}</p>
-                          <div className="mt-2">
-                            <span className="text-slate-400 text-sm">Impact: </span>
-                            <span className="text-white text-sm">{rec.impact}</span>
-                          </div>
-                          <div className="mt-1">
-                            <span className="text-slate-400 text-sm">Mitigation: </span>
-                            <span className="text-white text-sm">{rec.mitigation}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                  </div>
-                )}
-              </div>
+                  {/* Correlated Threat Analysis - matching ThreatDetail.jsx */}
+                  {threatDetail.correlation && (
+                    <DetailCard title="Correlated Threat Analysis">
+                      <h3 className="font-bold text-lg mb-2">{threatDetail.correlation.title}</h3>
+                      <p className="mb-2">{threatDetail.correlation.summary}</p>
+                      <div className="text-sm">
+                        <span className="font-semibold">Associated CVE: </span>
+                        <span className="font-mono">{threatDetail.correlation.cve_id || 'N/A'}</span>
+                      </div>
+                    </DetailCard>
+                  )}
+
+                  {/* AI Analysis - matching ThreatDetail.jsx */}
+                  {threatDetail.recommendations ? (
+                    <>
+                      <DetailCard title="Quantum AI Analysis: Threat Explanation">
+                        <p>{threatDetail.recommendations.explanation}</p>
+                      </DetailCard>
+                      <DetailCard title="Quantum AI Analysis: Potential Impact">
+                        <p>{threatDetail.recommendations.impact}</p>
+                      </DetailCard>
+                      <DetailCard title="Quantum AI Analysis: Mitigation Protocols">
+                        <ul className="list-disc list-inside space-y-2">
+                          {threatDetail.recommendations.mitigation.map((step, index) => (
+                            <li key={index}>{step}</li>
+                          ))}
+                        </ul>
+                      </DetailCard>
+                    </>
+                  ) : (
+                    <DetailCard title="AI Analysis">
+                      <p>Could not generate AI recommendations for this threat.</p>
+                    </DetailCard>
+                  )}
+
+                  {/* Explainable AI (XAI) Analysis - matching ThreatDetail.jsx */}
+                  <DetailCard title="Explainable AI (XAI) Analysis">
+                    <ModelExplanation 
+                      explanation={threatDetail.xai_explanation}
+                      threatId={selectedThreat.id}
+                      existingFeedback={threatDetail.analyst_feedback}
+                    />
+                  </DetailCard>
+
+                  {/* Automated Response Log - matching ThreatDetail.jsx */}
+                  <DetailCard title="Automated Response Log">
+                    <SoarActionLog actions={threatDetail.soar_actions} />
+                  </DetailCard>
+
+                  {/* AI Chat - matching ThreatDetail.jsx */}
+                  {showAIChat && (
+                    <DetailCard title="Quantum AI Bot">
+                      <Chatbot threatContext={threatDetail} />
+                    </DetailCard>
+                  )}
+
+                  {/* Analyst Feedback Form */}
+                  {showAnalystFeedback && threatDetail.xai_explanation && (
+                    <DetailCard title="Analyst Feedback & Model Update">
+                      <AnalystFeedback
+                        explanation={threatDetail.xai_explanation}
+                        threatId={selectedThreat.id}
+                        existingFeedback={threatDetail.analyst_feedback}
+                        onFeedbackSubmitted={() => {
+                          setShowAnalystFeedback(false);
+                          fetchThreatDetail(selectedThreat.id);
+                        }}
+                      />
+                    </DetailCard>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

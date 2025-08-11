@@ -9,6 +9,7 @@ import AdminPanel from './pages/AdminPanel';
 import ThreatDetail from './pages/ThreatDetail';
 import IncidentDetail from './pages/IncidentDetail';
 import DebugPage from './pages/DebugPage';
+import DataConnectorManager from './pages/DataConnectorManager';
 
 // Simple dev layout without complex dependencies
 const SimpleDevLayout = ({ children }) => (
@@ -20,6 +21,7 @@ const SimpleDevLayout = ({ children }) => (
       </div>
       <nav className="flex-grow p-2">
         <Link to="/dashboard" className="block py-2.5 px-4 rounded hover:bg-slate-800 mb-2">Dashboard</Link>
+        <Link to="/connectors" className="block py-2.5 px-4 rounded hover:bg-slate-800 mb-2">🔌 Data Connectors</Link>
         <Link to="/admin" className="block py-2.5 px-4 rounded hover:bg-slate-800 mb-2">Admin Panel</Link>
         <Link to="/debug" className="block py-2.5 px-4 rounded hover:bg-slate-800">Debug</Link>
       </nav>
@@ -39,6 +41,7 @@ function DevApp() {
         <Route path="/" element={<SimpleDevLayout><Dashboard /></SimpleDevLayout>} />
         <Route path="/debug" element={<SimpleDevLayout><DebugPage /></SimpleDevLayout>} />
         <Route path="/dashboard" element={<SimpleDevLayout><Dashboard /></SimpleDevLayout>} />
+        <Route path="/connectors" element={<SimpleDevLayout><DataConnectorManager /></SimpleDevLayout>} />
         <Route path="/admin" element={<SimpleDevLayout><AdminPanel /></SimpleDevLayout>} />
         <Route path="/threats/:id" element={<SimpleDevLayout><ThreatDetail /></SimpleDevLayout>} />
         <Route path="/incidents/:id" element={<SimpleDevLayout><IncidentDetail /></SimpleDevLayout>} />

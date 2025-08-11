@@ -26,6 +26,9 @@ from backend.routers.chat import router as chat_router
 from backend.routers.webhooks import router as webhook_router
 from backend.api.graph import router as graph_router
 from backend.api.hunting import router as hunting_router
+from backend.api.health import router as health_router  # 🏥 System Health Monitoring
+from backend.api.incident_aggregation import router as incident_aggregation_router  # 🔗 AI Incident Aggregation
+from backend.connectors.api import router as connectors_router  # 🔌 Universal Data Connector API
 
 # --- Import project components ---
 from backend.models import Base, engine
@@ -40,6 +43,7 @@ from backend.wazuh_service import fetch_and_save_wazuh_alerts
 from backend.threatmapper_service import fetch_and_save_threatmapper_vulns
 from backend.incident_service import correlate_logs_into_incidents
 from backend.ai_scheduler import start_ai_incident_scheduler, stop_ai_incident_scheduler  # AI orchestrator
+from backend.connectors.scheduler import start_connector_scheduler, stop_connector_scheduler  # 🔌 Universal Data Connector Scheduler
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -89,6 +93,13 @@ async def lifespan(app: FastAPI):
         except Exception as scheduler_error:
             print(f"⚠️ AI Scheduler initialization failed: {scheduler_error}")
         
+        # 🔌 Start Universal Data Connector Scheduler
+        try:
+            start_connector_scheduler()
+            print("🔌 Universal Data Connector Scheduler started")
+        except Exception as connector_error:
+            print(f"⚠️ Connector Scheduler initialization failed: {connector_error}")
+        
         # Start the periodic data ingestion
         asyncio.create_task(periodic_data_ingestion())
         print("✅ Services initialized")
@@ -112,6 +123,13 @@ async def lifespan(app: FastAPI):
         print("🤖 AI Incident Scheduler stopped")
     except Exception as e:
         print(f"⚠️ Error stopping AI scheduler: {e}")
+    
+    # Stop Universal Data Connector Scheduler
+    try:
+        stop_connector_scheduler()
+        print("🔌 Universal Data Connector Scheduler stopped")
+    except Exception as e:
+        print(f"⚠️ Error stopping connector scheduler: {e}")
     
     if hasattr(app.state, 'graph_service'):
         app.state.graph_service.close()
@@ -171,6 +189,9 @@ app.include_router(chat_router)
 app.include_router(webhook_router)
 app.include_router(graph_router)
 app.include_router(hunting_router)
+app.include_router(health_router)  # 🏥 System Health Monitoring
+app.include_router(incident_aggregation_router)  # 🔗 AI Incident Aggregation
+app.include_router(connectors_router)  # 🔌 Universal Data Connector System
 
 @app.get("/_fastapi_health")
 def fastapi_health():

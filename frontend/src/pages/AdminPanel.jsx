@@ -1,7 +1,14 @@
 import { useContext, useEffect, useState } from 'react';
+import { 
+  UserGroupIcon, 
+  CogIcon, 
+  HeartIcon,
+  CircleStackIcon
+} from '@heroicons/react/24/outline';
 import { UserContext } from '../context/UserContext';
 import { useDevUser } from '../context/DevUserContext';
 import { isDevelopment, getApiBaseUrl } from '../utils/environment';
+import HealthDashboard from './HealthDashboard';
 
 const InviteUserForm = () => {
     const [email, setEmail] = useState('');
@@ -20,41 +27,40 @@ const InviteUserForm = () => {
             body: JSON.stringify({ email, role }),
         });
 
-        const data = await response.json();
         if (response.ok) {
-            setMessage(data.message);
+            setMessage('Invitation sent successfully!');
             setEmail('');
+            setRole('viewer');
         } else {
-            setError(data.detail || 'Failed to send invitation.');
+            const errorData = await response.json();
+            setError(errorData.detail || 'Failed to send invitation');
         }
     };
 
     return (
         <div className="mt-8">
-            <h2 className="text-xl font-semibold mb-4 text-sky-400">Invite New User</h2>
+            <h3 className="text-lg font-semibold mb-4 text-sky-400">Invite New User</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-slate-300">User Email</label>
+                    <label className="block text-sm font-medium text-slate-300">Email</label>
                     <input
                         type="email"
-                        id="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="mt-1 block w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+                        className="mt-1 block w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-md focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                     />
                 </div>
                 <div>
-                    <label htmlFor="role" className="block text-sm font-medium text-slate-300">Assign Role</label>
+                    <label className="block text-sm font-medium text-slate-300">Role</label>
                     <select
-                        id="role"
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
-                        className="mt-1 block w-full pl-3 pr-10 py-2 bg-slate-800 border border-slate-600 rounded-md focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+                        className="mt-1 block w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-md focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                     >
-                        <option>viewer</option>
-                        <option>analyst</option>
-                        <option>admin</option>
+                        <option value="viewer">Viewer</option>
+                        <option value="analyst">Analyst</option>
+                        <option value="admin">Admin</option>
                     </select>
                 </div>
                 <button
@@ -74,36 +80,21 @@ export default function AdminPanel() {
   // Use appropriate context/hook based on environment
   let user = null;
   
+  const [activeTab, setActiveTab] = useState('health');
+  const [severity, setSeverity] = useState('critical');
+  const [message, setMessage] = useState('');
+  
   try {
       if (isDevelopment()) {
           const devContext = useDevUser();
           user = devContext.user;
-          console.log('🔧 AdminPanel using DevUserContext, user:', user);
-      }
-  } catch (e) {
-      console.log('🔧 DevUserContext not available in AdminPanel, falling back');
-  }
-  
-  try {
-      if (!isDevelopment()) {
+      } else {
           const prodContext = useContext(UserContext);
-          user = prodContext?.user;
-          console.log('🔒 AdminPanel using UserContext, user:', user);
+          user = prodContext.user;
       }
-  } catch (e) {
-      console.log('🔒 UserContext not available in AdminPanel');
+  } catch (error) {
+      console.error('Error getting user context:', error);
   }
-
-  const [severity, setSeverity] = useState('critical');
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    if (user?.role !== 'admin') return;
-    fetch(`${getApiBaseUrl()}/api/admin/settings`)
-      .then(res => res.json())
-      .then(data => setSeverity(data.alert_severity))
-      .catch(() => setMessage('Failed to load settings'));
-  }, [user]);
 
   const handleSubmit = async () => {
     const res = await fetch(`${getApiBaseUrl()}/api/admin/settings`, {
@@ -119,32 +110,128 @@ export default function AdminPanel() {
     return <p className="text-red-500 p-6">Unauthorized access. Only admins can access this panel.</p>;
   }
 
-  return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6 text-slate-100">Admin Panel</h1>
-      
-      <div className="widget-card p-6">
-        <h2 className="text-xl font-semibold mb-4 text-sky-400">System Settings</h2>
-        <div className="space-y-4">
-            <div>
-                <label className="block text-sm font-medium text-slate-300">Alert Severity Threshold</label>
-                <select value={severity} onChange={(e) => setSeverity(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 bg-slate-800 border border-slate-600 rounded-md focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+  const tabs = [
+    {
+      id: 'health',
+      name: 'System Health',
+      icon: HeartIcon,
+      description: 'Monitor system health and status'
+    },
+    {
+      id: 'connectors',
+      name: 'Data Connectors',
+      icon: CircleStackIcon,
+      description: 'Manage data connectors and sources'
+    },
+    {
+      id: 'settings',
+      name: 'System Settings',
+      icon: CogIcon,
+      description: 'Configure system settings'
+    },
+    {
+      id: 'users',
+      name: 'User Management',
+      icon: UserGroupIcon,
+      description: 'Manage users and permissions'
+    }
+  ];
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'health':
+        return <HealthDashboard />;
+        
+      case 'connectors':
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-4 text-slate-100">Data Connectors</h2>
+            <p className="text-slate-300 mb-4">Manage and monitor your data connector integrations.</p>
+            <div className="bg-slate-800 rounded-lg p-4">
+              <p className="text-slate-300">Connector management interface coming soon...</p>
+              <p className="text-sm text-slate-400 mt-2">
+                Current connectors are managed via the main dashboard.
+              </p>
+            </div>
+          </div>
+        );
+        
+      case 'settings':
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-4 text-slate-100">System Settings</h2>
+            <div className="widget-card p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300">Alert Severity Threshold</label>
+                  <select 
+                    value={severity} 
+                    onChange={(e) => setSeverity(e.target.value)} 
+                    className="mt-1 block w-full pl-3 pr-10 py-2 bg-slate-800 border border-slate-600 rounded-md focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+                  >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
                     <option value="critical">Critical</option>
-                </select>
+                  </select>
+                </div>
+                <button
+                  onClick={handleSubmit}
+                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
+                >
+                  Save Settings
+                </button>
+                {message && <p className="mt-2 text-green-400">{message}</p>}
+              </div>
             </div>
-            <button
-                onClick={handleSubmit}
-                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
-            >
-                Save Settings
-            </button>
-            {message && <p className="mt-2 text-green-400">{message}</p>}
-        </div>
+          </div>
+        );
+        
+      case 'users':
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-4 text-slate-100">User Management</h2>
+            <div className="widget-card p-6">
+              <InviteUserForm />
+            </div>
+          </div>
+        );
+        
+      default:
+        return <div>Select a tab</div>;
+    }
+  };
 
-        <InviteUserForm />
+  return (
+    <div className="min-h-screen bg-slate-900">
+      {/* Tab Navigation */}
+      <div className="border-b border-slate-700">
+        <nav className="px-6 py-4">
+          <div className="flex space-x-8">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 py-2 px-4 rounded-md transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-sky-600 text-white'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="font-medium">{tab.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      <div className="flex-1">
+        {renderTabContent()}
       </div>
     </div>
   );

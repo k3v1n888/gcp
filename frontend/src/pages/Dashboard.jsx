@@ -7,9 +7,8 @@ import { ChartBarIcon } from '@heroicons/react/24/outline';
 import AISummary from '../components/AISummary';
 import ThreatForecast from '../components/ThreatForecast';
 import SecurityOutlook from '../components/SecurityOutlook';
-import AIIncidentManager from '../components/AIIncidentManager';
 import ThreatsManager from '../components/ThreatsManager';
-import IncidentsManager from '../components/IncidentsManager';
+import UnifiedIncidentManager from '../components/UnifiedIncidentManager';
 import AIThreatHunting from '../components/AIThreatHunting';
 import { sanitizeApiResponse, formatNumber } from '../utils/dataUtils';
 import { isDevelopment, getApiBaseUrl } from '../utils/environment';
@@ -289,17 +288,6 @@ export default function Dashboard() {
                         <span>🧠</span>
                         <span>AI Hunting</span>
                     </button>
-                    <button
-                        onClick={() => setActiveTab('ai-incidents')}
-                        className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                            activeTab === 'ai-incidents'
-                                ? 'border-purple-500 text-purple-400'
-                                : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-300'
-                        }`}
-                    >
-                        <span>🤖</span>
-                        <span>AI Incident Orchestrator</span>
-                    </button>
                 </nav>
             </div>
 
@@ -370,7 +358,7 @@ export default function Dashboard() {
             )}
 
             {activeTab === 'incidents' && (
-                <IncidentsManager />
+                <UnifiedIncidentManager />
             )}
 
             {activeTab === 'threats' && (
@@ -379,10 +367,6 @@ export default function Dashboard() {
 
             {activeTab === 'ai-hunting' && (
                 <AIThreatHunting />
-            )}
-
-            {activeTab === 'ai-incidents' && (
-                <AIIncidentManager />
             )}
             </div>
         </div>

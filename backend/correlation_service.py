@@ -212,29 +212,74 @@ def correlate_and_enrich_threats(db: Session, tenant_id: int):
 
 # --- Executive Summary ---
 def generate_holistic_summary(db: Session, tenant_id: int) -> str:
+    """
+    Generate executive summary using local AI analysis or intelligent data aggregation
+    """
     correlate_and_enrich_threats(db, tenant_id)
     critical_logs = db.query(models.ThreatLog).filter_by(severity='critical', tenant_id=tenant_id).limit(5).all()
     correlated_threats = db.query(models.CorrelatedThreat).filter_by(tenant_id=tenant_id).order_by(models.CorrelatedThreat.risk_score.desc()).limit(3).all()
-    prompt = "You are a cybersecurity analyst. Based on the following data, provide a high-level executive summary for a non-technical manager.\n\n"
-    prompt += "== Top Correlated Attack Patterns ==\n"
-    for threat in correlated_threats:
-        prompt += f"- {threat.title} (Risk Score: {threat.risk_score}, CVE: {threat.cve_id or 'N/A'})\n"
-    prompt += "\n== Recent Critical Events ==\n"
-    for log in critical_logs:
-        prompt += f"- {log.threat} from {log.source} (IP: {log.ip})\n"
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    if not openai.api_key:
-        return "OpenAI API key not configured. Cannot generate summary."
+    
+    # Get overall threat statistics
+    total_threats = db.query(models.ThreatLog).filter_by(tenant_id=tenant_id).count()
+    high_severity_count = db.query(models.ThreatLog).filter(
+        models.ThreatLog.tenant_id == tenant_id,
+        models.ThreatLog.severity.in_(['high', 'critical'])
+    ).count()
+    
+    # Generate intelligent summary using our local data analysis
+    summary = "🔒 Executive Security Summary\n\n"
+    
+    if correlated_threats:
+        summary += f"📊 THREAT LANDSCAPE: {len(correlated_threats)} active attack patterns detected with {high_severity_count} high-priority incidents out of {total_threats} total threats.\n\n"
+        
+        summary += "🎯 TOP SECURITY CONCERNS:\n"
+        for i, threat in enumerate(correlated_threats, 1):
+            risk_level = "🔴 CRITICAL" if threat.risk_score >= 80 else "🟠 HIGH" if threat.risk_score >= 60 else "🟡 MEDIUM"
+            cve_info = f" (CVE: {threat.cve_id})" if threat.cve_id else ""
+            summary += f"{i}. {threat.title.replace('Attack Pattern: ', '')} - {risk_level} Risk Score: {threat.risk_score}{cve_info}\n"
+        
+        summary += "\n"
+    else:
+        summary += f"📊 THREAT LANDSCAPE: {total_threats} threats monitored with {high_severity_count} requiring immediate attention.\n\n"
+    
+    if critical_logs:
+        summary += "⚠️ IMMEDIATE ACTION REQUIRED:\n"
+        for log in critical_logs:
+            source_icon = "🛡️" if "siem" in log.source.lower() else "🔍" if "xdr" in log.source.lower() else "🌐"
+            summary += f"• {source_icon} {log.threat} detected from {log.source} (Source IP: {log.ip})\n"
+        summary += "\n"
+    
+    # Add AI-powered risk assessment using our local predictor
     try:
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-            max_tokens=150
-        )
-        return response.choices[0].message.content.strip()
+        # Use our local AI to assess overall security posture
+        avg_severity_score = sum(
+            predictor.predict(
+                threat=log.threat or "unknown",
+                source=log.source or "unknown", 
+                ip_reputation_score=getattr(log, 'ip_reputation_score', 0) or 0,
+                cve_id=getattr(log, 'cve_id', None),
+                cvss_score=getattr(log, 'cvss_score', 0.0) or 0.0,
+                criticality_score=getattr(log, 'criticality_score', 0) or 0
+            ) for log in critical_logs[:3]
+        ) / max(len(critical_logs[:3]), 1) if critical_logs else 0.5
+        
+        risk_status = "🔴 HIGH RISK" if avg_severity_score >= 0.8 else "🟠 ELEVATED" if avg_severity_score >= 0.6 else "🟡 MODERATE" if avg_severity_score >= 0.4 else "🟢 LOW RISK"
+        
+        summary += f"🤖 AI RISK ASSESSMENT: Current security posture is {risk_status} with average threat severity of {avg_severity_score:.2f}\n\n"
+        
     except Exception as e:
-        return f"Failed to generate AI summary: {e}"
+        logger.warning(f"Local AI assessment unavailable: {e}")
+        summary += "🤖 AI RISK ASSESSMENT: Security monitoring active, detailed analysis in progress\n\n"
+    
+    summary += "📋 RECOMMENDATIONS:\n"
+    if high_severity_count > 0:
+        summary += f"• Prioritize investigation of {high_severity_count} high-severity incidents\n"
+    if correlated_threats:
+        summary += f"• Review {len(correlated_threats)} identified attack patterns for coordinated response\n"
+    summary += "• Maintain continuous monitoring and incident response readiness\n"
+    summary += "• Consider implementing additional security controls based on current threat landscape"
+    
+    return summary
 
 # --- AI Remediation Plan ---
 def generate_threat_remediation_plan(threat_log: models.ThreatLog) -> dict | None:

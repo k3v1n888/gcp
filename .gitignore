@@ -101,3 +101,18 @@ google-auth-config.json
 oauth-secrets.json
 production-auth.yaml
 .env.production
+
+# Development environment files (keep credentials secure)
+.env.ai
+.env.dev
+.env.development
+.env.local
+*.local
+vm_credentials.txt
+
+# Test files (temporary/development only)
+simple_main.py
+test_api.py
+test_forecaster.py
+test_quantum_ai_integration.py
+CHANGES_SUMMARY.md

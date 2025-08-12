@@ -1,0 +1,11 @@
+
+vendor: "AWS"
+product: "CloudTrail"
+event_type: "cloudtrail"
+fields:
+  timestamp: "$.eventTime"
+  user: "$.userIdentity.userName"
+  src_ip: "$.sourceIPAddress"
+  http_method: "$.requestParameters.httpMethod"
+  url: "$.requestParameters.requestURL"
+  eventName: "$.eventName"

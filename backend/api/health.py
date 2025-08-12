@@ -101,14 +101,18 @@ async def get_docker_health(current_user: dict = Depends(require_admin)):
 async def get_api_health(current_user: dict = Depends(require_admin)):
     """Test health of various API endpoints"""
     
-    base_url = "http://localhost:8000"
+    # Get base URL from environment, fallback to container networking
+    base_url = os.getenv("BACKEND_BASE_URL", "http://backend:8000")
+    # Get AI service URL from environment
+    ai_service_url = os.getenv("AI_SERVICE_URL", "http://ai-service:8001")
+    
     endpoints_to_check = [
         {"name": "Main API", "url": f"{base_url}/api/health"},
         {"name": "FastAPI Health", "url": f"{base_url}/_fastapi_health"},
         {"name": "Threats API", "url": f"{base_url}/api/threats"},
         {"name": "Incidents API", "url": f"{base_url}/api/incidents"},
         {"name": "Connectors API", "url": f"{base_url}/api/connectors/status"},
-        {"name": "AI Service", "url": "http://localhost:8001/health"},
+        {"name": "AI Service", "url": f"{ai_service_url}/health"},
     ]
     
     endpoints = []
@@ -199,8 +203,9 @@ async def get_ai_model_health(current_user: dict = Depends(require_admin)):
     try:
         # Check AI service
         import aiohttp
+        ai_service_url = os.getenv("AI_SERVICE_URL", "http://ai-service:8001")
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
-            async with session.get("http://localhost:8001/health") as response:
+            async with session.get(f"{ai_service_url}/health") as response:
                 if response.status == 200:
                     ai_service_status = "online"
                 else:
@@ -212,7 +217,7 @@ async def get_ai_model_health(current_user: dict = Depends(require_admin)):
         "name": "AI Service",
         "type": "Flask Service",
         "status": ai_service_status,
-        "endpoint": "http://localhost:8001"
+        "endpoint": ai_service_url
     })
     
     # Check if correlation service is working

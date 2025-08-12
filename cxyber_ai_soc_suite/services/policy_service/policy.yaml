@@ -1,0 +1,24 @@
+
+defaults:
+  notify_channel: "slack:#soc"
+  ticket_system: "jira"
+  require_approval: ["contain","block"]
+
+rules:
+  - when: {severity: "critical"}
+    plan:
+      - {action: "notify", channel: "slack:#exec-bridge", priority: "p1"}
+      - {action: "ticket", system: "jira", template: "critical-incident"}
+      - {action: "contain", type: "block-ip", target: "fw:edge01", approval: "required"}
+  - when: {severity: "high"}
+    plan:
+      - {action: "notify", channel: "slack:#soc", priority: "p1"}
+      - {action: "ticket", system: "jira", template: "high-incident"}
+      - {action: "contain", type: "block-ip", target: "fw:edge01", approval: "required"}
+  - when: {severity: "medium"}
+    plan:
+      - {action: "notify", channel: "slack:#soc", priority: "p2"}
+      - {action: "ticket", system: "jira", template: "investigate"}
+  - when: {severity: "low"}
+    plan:
+      - {action: "ticket", system: "jira", template: "monitor"}

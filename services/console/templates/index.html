@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>CXyber Console</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+  <header>
+    <h1>CXyber Console</h1>
+    <nav><a href="/">Mappings</a> | <a href="/propose">Approve New Mapping</a></nav>
+  </header>
+  <main>
+    <h2>Available Mappings</h2>
+    {% if mappings %}
+      <ul>
+        {% for m in mappings %}
+          <li>{{ m }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No mappings found. Add one via <a href="/propose">Approve New Mapping</a>.</p>
+    {% endif %}
+  </main>
+</body>
+</html>

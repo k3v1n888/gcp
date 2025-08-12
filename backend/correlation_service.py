@@ -189,7 +189,7 @@ def correlate_and_enrich_threats(db: Session, tenant_id: int):
         criticality_score = calculate_criticality_score(highest_risk_score, cvss_score)
         logger.info(f"[AI INPUT] threat='{threat_desc}', ip_score={highest_risk_score}, cvss_score={cvss_score}, criticality_score={criticality_score}, cve_id={cve_id}")
 
-        predicted_severity = predictor.predict(
+        predicted_severity = predictor.predict_severity(
             threat=threat_desc,
             source="correlation",
             ip_reputation_score=highest_risk_score,
@@ -253,7 +253,7 @@ def generate_holistic_summary(db: Session, tenant_id: int) -> str:
     try:
         # Use our local AI to assess overall security posture
         avg_severity_score = sum(
-            predictor.predict(
+            predictor.predict_severity(
                 threat=log.threat or "unknown",
                 source=log.source or "unknown", 
                 ip_reputation_score=getattr(log, 'ip_reputation_score', 0) or 0,

@@ -19,6 +19,8 @@ from .generic_connector import GenericConnector
 from .. import models, database
 from ..ml.prediction import SeverityPredictor
 from ..ai_incident_orchestrator import AIIncidentOrchestrator
+from ..ai_orchestrator import ai_orchestrator
+from ..ai_data_processor import ai_data_processor
 
 logger = logging.getLogger(__name__)
 
@@ -127,45 +129,91 @@ class ConnectorManager:
     
     def analyze_threats_with_ai(self, threats: List[StandardizedThreat]) -> List[Dict[str, Any]]:
         """
-        Analyze threats using your existing AI model (simplified)
+        Analyze threats using the advanced AI pipeline
         """
         analyzed_threats = []
         
-        logger.info(f"Analyzing {len(threats)} threats with AI...")
+        logger.info(f"Analyzing {len(threats)} threats with advanced AI pipeline...")
         
         for threat in threats:
             try:
-                # Use your existing AI predictor with correct method name
-                ai_severity = self.ai_predictor.predict_severity(
-                    threat=threat.title,
-                    source=threat.source,
-                    ip_reputation_score=getattr(threat, 'ip_reputation_score', 0),
-                    cve_id=threat.cve_ids[0] if threat.cve_ids else None,
-                    cvss_score=getattr(threat, 'cvss_score', 0.0),
-                    criticality_score=threat.impact_score
-                )
+                # Convert threat to raw data format for AI processing
+                raw_data = {
+                    'title': threat.title,
+                    'description': threat.description,
+                    'severity': threat.severity.value,
+                    'source': threat.source,
+                    'source_ip': threat.source_ip,
+                    'destination_ip': threat.destination_ip,
+                    'cve_ids': threat.cve_ids,
+                    'confidence_score': threat.confidence_score,
+                    'impact_score': threat.impact_score,
+                    'timestamp': threat.timestamp.isoformat(),
+                    'additional_data': threat.additional_data
+                }
+                
+                # Process through advanced AI orchestrator
+                ai_result = ai_orchestrator.process_threat_intelligently(raw_data, threat.source)
+                
+                # Extract AI analysis
+                ai_severity = ai_result.get('severity', threat.severity.value)
+                ai_confidence = ai_result.get('confidence', threat.confidence_score)
+                ai_analysis = ai_result.get('ai_analysis', {})
                 
                 analyzed_threat = {
                     'threat': threat,
                     'ai_severity': ai_severity,
-                    'explanation': None,  # Skip explanation for now
+                    'ai_confidence': ai_confidence,
+                    'ai_analysis': ai_analysis,
+                    'decision_id': ai_result.get('decision_id'),
+                    'actions_taken': ai_result.get('actions_taken', []),
                     'analysis_timestamp': datetime.utcnow()
                 }
                 
                 analyzed_threats.append(analyzed_threat)
-                logger.info(f"Analyzed threat: {threat.title} -> {ai_severity}")
+                logger.info(f"Advanced AI analysis complete for: {threat.title} -> {ai_severity} (confidence: {ai_confidence:.2f})")
                 
             except Exception as e:
-                logger.error(f"Failed to analyze threat with AI: {e}")
-                # Add threat without AI analysis
-                analyzed_threats.append({
-                    'threat': threat,
-                    'ai_severity': 'medium',
-                    'explanation': None,
-                    'analysis_timestamp': datetime.utcnow()
-                })
+                logger.warning(f"Advanced AI analysis failed for {threat.title}, falling back to basic analysis: {e}")
+                
+                # Fallback to basic AI analysis
+                try:
+                    ai_severity = self.ai_predictor.predict_severity(
+                        threat=threat.title,
+                        source=threat.source,
+                        ip_reputation_score=getattr(threat, 'ip_reputation_score', 0),
+                        cve_id=threat.cve_ids[0] if threat.cve_ids else None,
+                        cvss_score=getattr(threat, 'cvss_score', 0.0),
+                        criticality_score=threat.impact_score
+                    )
+                    
+                    analyzed_threat = {
+                        'threat': threat,
+                        'ai_severity': ai_severity,
+                        'ai_confidence': threat.confidence_score,
+                        'ai_analysis': {'fallback': True, 'basic_analysis': True},
+                        'decision_id': None,
+                        'actions_taken': [],
+                        'analysis_timestamp': datetime.utcnow()
+                    }
+                    
+                    analyzed_threats.append(analyzed_threat)
+                    logger.info(f"Basic AI analysis: {threat.title} -> {ai_severity}")
+                    
+                except Exception as fallback_error:
+                    logger.error(f"Both advanced and basic AI analysis failed: {fallback_error}")
+                    # Add threat without AI analysis
+                    analyzed_threats.append({
+                        'threat': threat,
+                        'ai_severity': 'medium',
+                        'ai_confidence': 0.5,
+                        'ai_analysis': {'error': True, 'no_analysis': True},
+                        'decision_id': None,
+                        'actions_taken': [],
+                        'analysis_timestamp': datetime.utcnow()
+                    })
         
-        logger.info(f"Completed analysis of {len(analyzed_threats)} threats")
+        logger.info(f"Completed advanced AI analysis of {len(analyzed_threats)} threats")
         return analyzed_threats
     
     def store_threats(self, analyzed_threats: List[Dict[str, Any]], db: Session, tenant_id: int = 1):

@@ -1,0 +1,13 @@
+
+vendor: "Wazuh"
+product: "Wazuh"
+event_type: "edr"
+fields:
+  timestamp: "$.timestamp"
+  severity: "$.rule.level"
+  src_ip: "$.agent.ip"
+  host: "$.agent.name"
+  rule_name: "$.rule.description"
+  rule_id: "$.rule.id"
+  bytes_in: "$.data.bytes_in"
+  bytes_out: "$.data.bytes_out"

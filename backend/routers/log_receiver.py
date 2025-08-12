@@ -40,7 +40,7 @@ async def log_threat_endpoint(request: Request, threat: ThreatCreate, db: Sessio
     cvss_score = get_cvss_score(cve_id)
     criticality_score = calculate_criticality_score(ip_score, cvss_score)
     logger.info(f"[AI INPUT DEBUG] threat='{threat.threat}', source='{threat.source}', ip_score={ip_score}, cve_id='{cve_id}', cvss_score={cvss_score}, criticality_score={criticality_score}")
-    predicted_severity = predictor.predict(
+    predicted_severity = predictor.predict_severity(
         threat=threat.threat,
         source=threat.source,
         ip_reputation_score=ip_score,

@@ -28,7 +28,9 @@ from backend.api.graph import router as graph_router
 from backend.api.hunting import router as hunting_router
 from backend.api.health import router as health_router  # 🏥 System Health Monitoring
 from backend.api.incident_aggregation import router as incident_aggregation_router  # 🔗 AI Incident Aggregation
+from backend.api.admin_ai_testing import router as admin_ai_testing_router  # 🧪 AI Model Testing Admin Interface
 from backend.connectors.api import router as connectors_router  # 🔌 Universal Data Connector API
+from backend.routers.ai_routes import router as ai_routes_router  # 🤖 AI System Management API
 
 # --- Import project components ---
 from backend.models import Base, engine
@@ -43,6 +45,7 @@ from backend.wazuh_service import fetch_and_save_wazuh_alerts
 from backend.threatmapper_service import fetch_and_save_threatmapper_vulns
 from backend.incident_service import correlate_logs_into_incidents
 from backend.ai_scheduler import start_ai_incident_scheduler, stop_ai_incident_scheduler  # AI orchestrator
+from backend.ai_orchestrator import ai_orchestrator  # 🤖 AI System Orchestrator
 from backend.connectors.scheduler import start_connector_scheduler, stop_connector_scheduler  # 🔌 Universal Data Connector Scheduler
 
 # Create tables
@@ -100,6 +103,13 @@ async def lifespan(app: FastAPI):
         except Exception as connector_error:
             print(f"⚠️ Connector Scheduler initialization failed: {connector_error}")
         
+        # 🤖 Start AI Orchestrator
+        try:
+            ai_orchestrator.start_orchestration()
+            print("🤖 AI Orchestration System started")
+        except Exception as orchestrator_error:
+            print(f"⚠️ AI Orchestrator initialization failed: {orchestrator_error}")
+        
         # Start the periodic data ingestion
         asyncio.create_task(periodic_data_ingestion())
         print("✅ Services initialized")
@@ -130,6 +140,13 @@ async def lifespan(app: FastAPI):
         print("🔌 Universal Data Connector Scheduler stopped")
     except Exception as e:
         print(f"⚠️ Error stopping connector scheduler: {e}")
+    
+    # Stop AI Orchestrator
+    try:
+        ai_orchestrator.stop_orchestration()
+        print("🤖 AI Orchestration System stopped")
+    except Exception as e:
+        print(f"⚠️ Error stopping AI orchestrator: {e}")
     
     if hasattr(app.state, 'graph_service'):
         app.state.graph_service.close()
@@ -191,7 +208,9 @@ app.include_router(graph_router)
 app.include_router(hunting_router)
 app.include_router(health_router)  # 🏥 System Health Monitoring
 app.include_router(incident_aggregation_router)  # 🔗 AI Incident Aggregation
+app.include_router(admin_ai_testing_router)  # 🧪 AI Model Testing Admin Interface
 app.include_router(connectors_router)  # 🔌 Universal Data Connector System
+app.include_router(ai_routes_router)  # 🤖 AI System Management API
 
 @app.get("/_fastapi_health")
 def fastapi_health():

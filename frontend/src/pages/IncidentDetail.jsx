@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { getApiBaseUrl } from '../utils/environment';
 
 // Helper component for the color-coded severity badges
 const SeverityBadge = ({ severity }) => {
@@ -48,7 +49,8 @@ export default function IncidentDetail() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/incidents/${id}`)
+    const apiBaseUrl = getApiBaseUrl();
+    fetch(`${apiBaseUrl}/api/incidents/${id}`)
       .then(res => res.ok ? res.json() : Promise.reject('Failed to load incident details'))
       .then(data => setIncident(data))
       .catch(console.error)

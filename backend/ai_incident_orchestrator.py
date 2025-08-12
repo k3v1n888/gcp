@@ -238,7 +238,7 @@ class AIIncidentOrchestrator:
                 }
                 
                 # Get AI analysis from your existing service
-                severity_prediction = self.predictor.predict(
+                severity_prediction = self.predictor.predict_severity(
                     threat=threat_dict["threat"],
                     source=threat_dict["source"], 
                     ip_reputation_score=threat_dict["ip_reputation_score"],

@@ -3,6 +3,7 @@ AI-Powered Incident Aggregation Service
 Analyzes threats and creates comprehensive incident reports
 """
 
+import os
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
@@ -108,8 +109,9 @@ class AIIncidentAggregator:
         try:
             # Use local AI service for analysis
             import requests
+            ai_service_url = os.getenv("AI_SERVICE_URL", "http://ai-service:8001")
             response = requests.post(
-                "http://localhost:8001/analyze",
+                f"{ai_service_url}/analyze",
                 json={"prompt": prompt},
                 timeout=30
             )

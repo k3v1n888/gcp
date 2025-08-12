@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-08-11T14:12:00Z",
+  "rule": {
+    "level": 12,
+    "description": "SQLi attempt",
+    "id": "1001"
+  },
+  "agent": {
+    "ip": "1.2.3.4",
+    "name": "web-01"
+  },
+  "data": {
+    "bytes_in": 50000,
+    "bytes_out": 10000
+  }
+}

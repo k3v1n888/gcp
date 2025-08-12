@@ -97,6 +97,7 @@ class SecurityIncident(Base):
     severity = Column(String)
     start_time = Column(DateTime(timezone=True))
     end_time = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
     tenant_id = Column(Integer, ForeignKey("tenants.id"))
     threat_logs = relationship("ThreatLog", secondary=incident_threat_association, back_populates="incidents")
 

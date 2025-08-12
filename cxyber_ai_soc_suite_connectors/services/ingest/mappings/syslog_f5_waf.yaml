@@ -1,0 +1,6 @@
+
+vendor: "F5"
+product: "Advanced WAF"
+event_type: "waf"
+syslog:
+  pattern: '(?P<timestamp>\w+\s+\d+\s+[\d:]+)\s+(?P<host>[^ ]+)\s+waf: src=(?P<src_ip>[^ ]+) method=(?P<http_method>[^ ]+) url="(?P<url>[^"]+)" bytes_in=(?P<bytes_in>\d+) bytes_out=(?P<bytes_out>\d+)'

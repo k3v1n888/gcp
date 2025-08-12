@@ -13,7 +13,7 @@ if DEV_MODE:
     from .local_prediction import LocalSeverityPredictor
 
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "https://quantum-predictor-api-1020401092050.asia-southeast1.run.app")
-LOCAL_AI_SERVICE_URL = "http://localhost:8001"  # Local AI service URL
+LOCAL_AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://ai-service:8001")  # Use container name in dev
 
 class SeverityPredictor:
     def __init__(self):

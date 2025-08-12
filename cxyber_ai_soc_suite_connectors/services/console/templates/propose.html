@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Approve Mapping</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+  <header>
+    <h1>Approve Mapping</h1>
+    <nav><a href="/">Mappings</a></nav>
+  </header>
+  <main>
+    <form method="post" action="/approve">
+      <label>Name (file base name, no extension)</label>
+      <input type="text" name="name" placeholder="custom_login" required/>
+      <label>YAML</label>
+      <textarea name="yaml_text" rows="16" placeholder="vendor: 'Custom'
+product: 'App'
+event_type: app
+fields:
+  timestamp: '$.when'
+  user: '$.actor.name'"></textarea>
+      <button type="submit">Save Mapping</button>
+    </form>
+  </main>
+</body>
+</html>

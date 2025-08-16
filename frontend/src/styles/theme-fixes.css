@@ -1,0 +1,944 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
+/* Sentient AI SOC - Enhanced Readable Theme */
+/* Based on successful patterns from Incidents and Threats pages */
+
+/* Global theme foundation */
+* {
+  color-scheme: dark !important;
+}
+
+/* Base application styling - matching working incidents/threats pages */
+body, html, #root {
+  background: #0f172a !important; /* slate-900 */
+  color: #f1f5f9 !important; /* slate-100 */
+  font-weight: 400 !important;
+  line-height: 1.6 !important;
+}
+
+/* Fix white backgrounds - SIMPLIFIED APPROACH */
+.bg-white:not([class*="bg-red"]):not([class*="bg-orange"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-sky"]):not([class*="bg-purple"]) {
+  background: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important; /* slate-100 */
+}
+
+div[class*="bg-white"]:not([class*="bg-red"]):not([class*="bg-orange"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-sky"]):not([class*="bg-purple"]) {
+  background: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important; /* slate-100 */
+}
+
+/* Card component specific fixes */
+div.bg-white.shadow-lg,
+div.bg-white.shadow,
+.bg-white.rounded-lg,
+.bg-white.border {
+  background: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important; /* slate-100 */
+  border-color: #334155 !important; /* slate-700 */
+}
+
+/* Fix bg-gray-50 cards in health dashboard - restore inner containers */
+.bg-gray-50.p-4.rounded-lg,
+.bg-gray-50,
+div.bg-gray-50 {
+  background: #334155 !important; /* slate-700 - slightly lighter than main cards */
+  color: #f1f5f9 !important; /* slate-100 */
+  border: 1px solid #475569 !important; /* slate-600 - visible inner border */
+}
+
+/* Restore inner container styling for better visual hierarchy */
+.bg-gray-100,
+.bg-slate-100 {
+  background: #374151 !important; /* gray-700 - inner container color */
+  color: #f1f5f9 !important; /* slate-100 */
+  border: 1px solid #4b5563 !important; /* gray-600 - subtle border */
+}
+
+/* Light backgrounds for inner elements */
+.bg-gray-200,
+.bg-slate-200 {
+  background: #4b5563 !important; /* gray-600 - for nested elements */
+  color: #f1f5f9 !important;
+}
+
+/* Additional white background fixes for common patterns */
+[style*="background-color: white"],
+[style*="background-color: #fff"],
+[style*="background-color: #ffffff"],
+[style*="background: white"],
+[style*="background: #fff"],
+[style*="background: #ffffff"] {
+  background: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important; /* slate-100 */
+}
+
+.bg-gray-800,
+.bg-slate-800 {
+  background-color: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important;
+}
+
+.bg-gray-900,
+.bg-slate-900 {
+  background-color: #0f172a !important; /* slate-900 */
+  color: #f1f5f9 !important;
+}
+
+.bg-gray-700,
+.bg-slate-700 {
+  background-color: #334155 !important; /* slate-700 */
+  color: #f1f5f9 !important;
+}
+
+.bg-gray-600,
+.bg-slate-600 {
+  background-color: #475569 !important; /* slate-600 */
+  color: #f1f5f9 !important;
+}
+
+/* Text colors - matching working patterns from incidents/threats */
+.text-gray-900,
+.text-slate-900,
+.text-black {
+  color: #f1f5f9 !important; /* slate-100 */
+}
+
+.text-gray-800,
+.text-slate-800 {
+  color: #f1f5f9 !important; /* slate-100 */
+}
+
+.text-gray-700,
+.text-slate-700 {
+  color: #e2e8f0 !important; /* slate-200 */
+}
+
+.text-gray-600,
+.text-slate-600 {
+  color: #cbd5e1 !important; /* slate-300 */
+}
+
+.text-gray-500,
+.text-slate-500 {
+  color: #94a3b8 !important; /* slate-400 */
+}
+
+.text-gray-400,
+.text-slate-400 {
+  color: #64748b !important; /* slate-500 - visible secondary text */
+}
+
+.text-white {
+  color: #f8fafc !important; /* slate-50 */
+}
+
+.text-gray-100,
+.text-slate-100 {
+  color: #f1f5f9 !important; /* slate-100 */
+}
+
+.text-gray-200,
+.text-slate-200 {
+  color: #e2e8f0 !important; /* slate-200 */
+}
+
+.text-gray-300,
+.text-slate-300 {
+  color: #cbd5e1 !important; /* slate-300 */
+}
+
+/* Form elements - matching incidents/threats styling */
+input, 
+textarea, 
+select {
+  background: #334155 !important; /* slate-700 */
+  border: 1px solid #475569 !important; /* slate-600 */
+  color: #f1f5f9 !important; /* slate-100 */
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important; /* slate-400 */
+}
+
+/* Buttons - preserve existing button styling and colors */
+/* Fix button overlays - preserve original button colors */
+button.bg-blue-600,
+button.bg-purple-600,
+button.bg-green-600,
+button.bg-red-600,
+button.bg-orange-600,
+button.bg-indigo-600 {
+  /* Keep original button colors - don't override severity colors */
+  color: white !important;
+  /* Remove background override to let severity colors show */
+}
+
+/* Preserve accent colors */
+.text-blue-400,
+.text-blue-500,
+.text-blue-600 {
+  color: #60a5fa !important; /* Keep blue accents */
+}
+
+.text-purple-400,
+.text-purple-500,
+.text-purple-600 {
+  color: #a855f7 !important; /* Keep purple accents */
+}
+
+.text-green-400,
+.text-green-500,
+.text-green-600 {
+  color: #34d399 !important; /* Keep green accents */
+}
+
+.text-orange-400,
+.text-orange-500,
+.text-orange-600 {
+  color: #fb923c !important; /* Keep orange accents */
+}
+
+.text-red-400,
+.text-red-500,
+.text-red-600 {
+  color: #f87171 !important; /* Keep red accents */
+}
+
+/* PRESERVE SEVERITY-BASED BACKGROUND COLORS */
+/* Critical severity - red backgrounds */
+.bg-red-600,
+.bg-red-500,
+span.bg-red-600,
+span.bg-red-500 {
+  background-color: #dc2626 !important; /* red-600 */
+  color: white !important;
+}
+
+/* High severity - orange backgrounds */
+.bg-orange-500,
+.bg-orange-400,
+span.bg-orange-500,
+span.bg-orange-400 {
+  background-color: #f97316 !important; /* orange-500 */
+  color: white !important;
+}
+
+/* Medium severity - yellow backgrounds */
+.bg-yellow-400,
+.bg-yellow-500,
+span.bg-yellow-400,
+span.bg-yellow-500 {
+  background-color: #facc15 !important; /* yellow-400 */
+  color: black !important;
+}
+
+/* Low severity - blue/sky backgrounds */
+.bg-sky-500,
+.bg-sky-400,
+.bg-blue-500,
+span.bg-sky-500,
+span.bg-sky-400,
+span.bg-blue-500 {
+  background-color: #0ea5e9 !important; /* sky-500 */
+  color: white !important;
+}
+
+/* SPECIFIC OVERRIDES FOR SEVERITY BADGES - HIGH SPECIFICITY */
+/* Target severity badges specifically in the incidents table */
+span[class*="bg-red-600"],
+.bg-red-600.text-white,
+.bg-red-600.border-red-500 {
+  background-color: #dc2626 !important; /* red-600 */
+  color: white !important;
+  border-color: #b91c1c !important; /* red-700 */
+}
+
+span[class*="bg-orange-500"],
+.bg-orange-500.text-white,
+.bg-orange-500.border-orange-400 {
+  background-color: #f97316 !important; /* orange-500 */
+  color: white !important;
+  border-color: #ea580c !important; /* orange-600 */
+}
+
+span[class*="bg-yellow-400"],
+.bg-yellow-400.text-black,
+.bg-yellow-400.border-yellow-300 {
+  background-color: #facc15 !important; /* yellow-400 */
+  color: black !important;
+  border-color: #eab308 !important; /* yellow-500 */
+}
+
+span[class*="bg-sky-500"],
+.bg-sky-500.text-white,
+.bg-sky-500.border-sky-400 {
+  background-color: #0ea5e9 !important; /* sky-500 */
+  color: white !important;
+  border-color: #0284c7 !important; /* sky-600 */
+}
+
+/* ULTIMATE OVERRIDE - Target exact badge patterns */
+/* Incidents table specific severity badges */
+table span.bg-red-600,
+table span.bg-orange-500,
+table span.bg-yellow-400,
+table span.bg-sky-500,
+tbody span.bg-red-600,
+tbody span.bg-orange-500,
+tbody span.bg-yellow-400,
+tbody span.bg-sky-500,
+tr span.bg-red-600,
+tr span.bg-orange-500,
+tr span.bg-yellow-400,
+tr span.bg-sky-500 {
+  /* Force severity colors in table context */
+}
+
+/* Critical incidents */
+table span.bg-red-600,
+tbody span.bg-red-600,
+tr span.bg-red-600 {
+  background-color: #dc2626 !important; /* red-600 */
+  color: white !important;
+  border-color: #b91c1c !important;
+}
+
+/* High severity incidents */
+table span.bg-orange-500,
+tbody span.bg-orange-500,
+tr span.bg-orange-500 {
+  background-color: #f97316 !important; /* orange-500 */
+  color: white !important;
+  border-color: #ea580c !important;
+}
+
+/* Green status/success backgrounds */
+.bg-green-600,
+.bg-green-500,
+span.bg-green-600,
+span.bg-green-500 {
+  background-color: #16a34a !important; /* green-600 */
+  color: white !important;
+}
+
+/* PRESERVE ALL BUTTON COLORS */
+/* Blue buttons - chat, info, etc */
+button.bg-blue-600,
+.bg-blue-600,
+.bg-blue-500 {
+  background-color: #2563eb !important; /* blue-600 */
+  color: white !important;
+}
+
+/* Purple/Indigo buttons */
+button.bg-purple-600,
+button.bg-indigo-600,
+.bg-purple-600,
+.bg-indigo-600 {
+  background-color: #9333ea !important; /* purple-600 */
+  color: white !important;
+}
+
+/* Orange/Amber buttons - like "Request Approval" */
+button.bg-orange-500,
+button.bg-amber-500,
+.bg-orange-500,
+.bg-amber-500,
+.bg-yellow-600 {
+  background-color: #f59e0b !important; /* amber-500 */
+  color: white !important;
+}
+
+/* PRESERVE STATUS BADGE COLORS */
+/* More specific color preservation - ensure severity and status badges work */
+.bg-red-600 {
+  background-color: #dc2626 !important; /* red-600 */
+  color: white !important;
+}
+
+.bg-orange-500 {
+  background-color: #f97316 !important; /* orange-500 */
+  color: white !important;
+}
+
+.bg-yellow-400 {
+  background-color: #facc15 !important; /* yellow-400 */
+  color: black !important;
+}
+
+.bg-green-600 {
+  background-color: #16a34a !important; /* green-600 */
+  color: white !important;
+}
+
+.bg-blue-600 {
+  background-color: #2563eb !important; /* blue-600 */
+  color: white !important;
+}
+
+.bg-sky-500 {
+  background-color: #0ea5e9 !important; /* sky-500 */
+  color: white !important;
+}
+
+.bg-slate-600 {
+  background-color: #475569 !important; /* slate-600 */
+  color: white !important;
+}
+
+.bg-purple-600 {
+  background-color: #9333ea !important; /* purple-600 */
+  color: white !important;
+}
+
+.bg-amber-500 {
+  background-color: #f59e0b !important; /* amber-500 */
+  color: white !important;
+}
+
+/* Background gradients and hints - preserve visual appeal */
+.bg-gradient-to-r,
+.bg-gradient-to-l,
+.bg-gradient-to-t,
+.bg-gradient-to-b {
+  /* Don't override gradients */
+  color: inherit;
+}
+
+/* Preserve purple hints and accent backgrounds */
+.bg-purple-50,
+.bg-purple-100 {
+  background: #312e81 !important; /* Dark purple hint */
+  color: #e0e7ff !important;
+}
+
+the .bg-blue-50,
+.bg-blue-100 {
+  background: #1e3a8a !important; /* Dark blue hint */
+  color: #dbeafe !important;
+}
+
+.bg-green-50,
+.bg-green-100 {
+  background: #14532d !important; /* Dark green hint */
+  color: #dcfce7 !important;
+}
+
+/* Tables - exactly like incidents/threats table style */
+table {
+  background: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important;
+}
+
+thead {
+  background: #0f172a !important; /* slate-900 */
+  color: #f1f5f9 !important;
+}
+
+tbody tr {
+  background: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important;
+  border-bottom: 1px solid #334155 !important; /* slate-700 */
+}
+
+tbody tr:hover {
+  background: #334155 !important; /* slate-700 */
+}
+
+th, td {
+  color: #f1f5f9 !important;
+  border-color: #334155 !important; /* slate-700 */
+}
+
+/* Card styling for AI Models, Health Check, Connectors - match incidents cards */
+.border,
+.border-gray-200,
+.border-gray-300,
+.border-white {
+  background: #1e293b !important; /* slate-800 */
+  border: 1px solid #334155 !important; /* slate-700 - visible borders */
+  color: #f1f5f9 !important;
+}
+
+.shadow,
+.shadow-sm,
+.shadow-lg,
+.shadow-md {
+  background: #1e293b !important; /* slate-800 */
+  border: 1px solid #334155 !important; /* slate-700 - add borders to shadow elements */
+  color: #f1f5f9 !important;
+}
+
+/* Modal and dropdown styling */
+.modal,
+.dropdown,
+[role="dialog"],
+[role="menu"] {
+  background: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important;
+  border: 1px solid #334155 !important; /* slate-700 */
+}
+
+/* Common component patterns with rounded corners */
+.rounded.shadow,
+.rounded-lg.shadow,
+.rounded-md.shadow,
+.rounded.border,
+.rounded-lg.border,
+.rounded-md.border,
+.rounded.bg-white,
+.rounded-lg.bg-white,
+.rounded-md.bg-white {
+  background: #1e293b !important; /* slate-800 */
+  border: 1px solid #334155 !important; /* slate-700 - visible borders */
+  color: #f1f5f9 !important;
+}
+
+/* Targeted fixes for remaining white backgrounds - exclude ALL colored backgrounds */
+div[class*="bg-white"]:not([class*="bg-red"]):not([class*="bg-orange"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-sky"]):not([class*="bg-purple"]):not([class*="bg-indigo"]):not([class*="bg-amber"]),
+section[class*="bg-white"]:not([class*="bg-red"]):not([class*="bg-orange"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-sky"]):not([class*="bg-purple"]):not([class*="bg-indigo"]):not([class*="bg-amber"]),
+*[class*="background-white"] {
+  background: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important;
+}
+
+/* Universal white background override - EXCLUDE severity and button colors */
+*[class*="bg-white"]:not([class*="bg-red"]):not([class*="bg-orange"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-sky"]):not([class*="bg-purple"]):not([class*="bg-indigo"]),
+*[style*="background: white"]:not([class*="bg-red"]):not([class*="bg-orange"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-sky"]),
+*[style*="background-color: white"]:not([class*="bg-red"]):not([class*="bg-orange"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-sky"]),
+*[style*="background: #fff"]:not([class*="bg-red"]):not([class*="bg-orange"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-sky"]),
+*[style*="background-color: #fff"]:not([class*="bg-red"]):not([class*="bg-orange"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-sky"]),
+*[style*="background: #ffffff"]:not([class*="bg-red"]):not([class*="bg-orange"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-sky"]),
+*[style*="background-color: #ffffff"]:not([class*="bg-red"]):not([class*="bg-orange"]):not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-sky"]) {
+  background: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important;
+}
+
+/* Specific fixes for dashboard cards and widgets */
+.p-4.bg-white,
+.p-6.bg-white,
+.p-8.bg-white,
+.px-4.bg-white,
+.px-6.bg-white,
+.py-4.bg-white,
+.py-6.bg-white,
+div[class*="p-"].bg-white,
+div[class*="px-"].bg-white,
+div[class*="py-"].bg-white {
+  background: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important;
+}
+
+/* Health dashboard specific fixes */
+div[class*="System Overview"],
+div[class*="Docker"],
+div[class*="API Health"] {
+  background: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important;
+}
+
+/* FINAL OVERRIDE - SEVERITY COLORS MUST WORK */
+/* These rules come last to ensure they override everything */
+span.px-2.py-1.text-xs.font-semibold.rounded.border.bg-red-600 {
+  background-color: #dc2626 !important;
+  color: white !important;
+  border-color: #b91c1c !important;
+}
+
+span.px-2.py-1.text-xs.font-semibold.rounded.border.bg-orange-500 {
+  background-color: #f97316 !important;
+  color: white !important;
+  border-color: #ea580c !important;
+}
+
+span.px-2.py-1.text-xs.font-semibold.rounded.border.bg-yellow-400 {
+  background-color: #facc15 !important;
+  color: black !important;
+  border-color: #eab308 !important;
+}
+
+span.px-2.py-1.text-xs.font-semibold.rounded.border.bg-sky-500 {
+  background-color: #0ea5e9 !important;
+  color: white !important;
+  border-color: #0284c7 !important;
+}
+
+/* THREATS TABLE SPECIFIC FIXES */
+/* ThreatsManager uses different badge structure - px-2.5 py-1 rounded-full */
+span.px-2\.5.py-1.rounded-full.text-xs.font-bold.bg-red-600 {
+  background-color: #dc2626 !important;
+  color: white !important;
+}
+
+span.px-2\.5.py-1.rounded-full.text-xs.font-bold.bg-orange-500 {
+  background-color: #f97316 !important;
+  color: white !important;
+}
+
+span.px-2\.5.py-1.rounded-full.text-xs.font-bold.bg-yellow-400 {
+  background-color: #facc15 !important;
+  color: black !important;
+}
+
+span.px-2\.5.py-1.rounded-full.text-xs.font-bold.bg-sky-500 {
+  background-color: #0ea5e9 !important;
+  color: white !important;
+}
+
+/* STATUS BADGE FIXES - for RESOLVED, IN PROGRESS, etc */
+/* Status badges in incidents table - these use SPAN with INLINE-FLEX not DIV */
+span.inline-flex.items-center.px-2.py-1.text-xs.font-semibold.rounded.border.bg-green-600 {
+  background-color: #16a34a !important; /* green-600 for resolved */
+  color: white !important;
+  border-color: #15803d !important; /* green-700 for border */
+}
+
+span.inline-flex.items-center.px-2.py-1.text-xs.font-semibold.rounded.border.bg-red-600 {
+  background-color: #dc2626 !important; /* red-600 for open */
+  color: white !important;
+  border-color: #b91c1c !important; /* red-700 for border */
+}
+
+span.inline-flex.items-center.px-2.py-1.text-xs.font-semibold.rounded.border.bg-orange-500 {
+  background-color: #f97316 !important; /* orange-500 for in-progress */
+  color: white !important;
+  border-color: #ea580c !important; /* orange-600 for border */
+}
+
+span.inline-flex.items-center.px-2.py-1.text-xs.font-semibold.rounded.border.bg-slate-600 {
+  background-color: #475569 !important; /* slate-600 for closed */
+  color: white !important;
+  border-color: #334155 !important; /* slate-700 for border */
+}
+
+/* STATUS BADGES - Wildcard approach for inline-flex spans */
+span.inline-flex.items-center.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-green-600"] {
+  background-color: #16a34a !important; /* green-600 for resolved */
+  color: white !important;
+  border-color: #15803d !important; /* green-700 for border */
+}
+
+span.inline-flex.items-center.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-red-600"] {
+  background-color: #dc2626 !important; /* red-600 for open */
+  color: white !important;
+  border-color: #b91c1c !important; /* red-700 for border */
+}
+
+span.inline-flex.items-center.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-orange-500"] {
+  background-color: #f97316 !important; /* orange-500 for in-progress */
+  color: white !important;
+  border-color: #ea580c !important; /* orange-600 for border */
+}
+
+span.inline-flex.items-center.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-slate-600"] {
+  background-color: #475569 !important; /* slate-600 for closed */
+  color: white !important;
+  border-color: #334155 !important; /* slate-700 for border */
+}
+
+/* STATUS BADGES - More specific targeting for status badges */
+/* Target all status badge patterns */
+div.flex.items-center.space-x-1.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-green-600"] {
+  background-color: #16a34a !important; /* green-600 for resolved */
+  color: white !important;
+  border-color: #15803d !important; /* green-700 for border */
+}
+
+div.flex.items-center.space-x-1.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-red-600"] {
+  background-color: #dc2626 !important; /* red-600 for open */
+  color: white !important;
+  border-color: #b91c1c !important; /* red-700 for border */
+}
+
+div.flex.items-center.space-x-1.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-orange-500"] {
+  background-color: #f97316 !important; /* orange-500 for in-progress */
+  color: white !important;
+  border-color: #ea580c !important; /* orange-600 for border */
+}
+
+div.flex.items-center.space-x-1.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-slate-600"] {
+  background-color: #475569 !important; /* slate-600 for closed */
+  color: white !important;
+  border-color: #334155 !important; /* slate-700 for border */
+}
+
+/* UNIVERSAL STATUS BADGE OVERRIDES - HIGHEST PRIORITY */
+/* These are the most comprehensive rules to catch any status badge */
+div[class*="flex"][class*="items-center"][class*="space-x-1"][class*="px-2"][class*="py-1"][class*="bg-green-600"] {
+  background-color: #16a34a !important; /* Force green for resolved */
+  color: white !important;
+  border-color: #15803d !important;
+}
+
+div[class*="flex"][class*="items-center"][class*="space-x-1"][class*="px-2"][class*="py-1"][class*="bg-red-600"] {
+  background-color: #dc2626 !important; /* Force red for open */
+  color: white !important;
+  border-color: #b91c1c !important;
+}
+
+div[class*="flex"][class*="items-center"][class*="space-x-1"][class*="px-2"][class*="py-1"][class*="bg-orange-500"] {
+  background-color: #f97316 !important; /* Force orange for in-progress */
+  color: white !important;
+  border-color: #ea580c !important;
+}
+
+div[class*="flex"][class*="items-center"][class*="space-x-1"][class*="px-2"][class*="py-1"][class*="bg-slate-600"] {
+  background-color: #475569 !important; /* Force slate for closed */
+  color: white !important;
+  border-color: #334155 !important;
+}
+
+/* TABLE CONTEXT STATUS BADGES */
+table div[class*="bg-green-600"],
+tbody div[class*="bg-green-600"],
+tr div[class*="bg-green-600"] {
+  background-color: #16a34a !important; /* green-600 for resolved in tables */
+  color: white !important;
+  border-color: #15803d !important;
+}
+
+table div[class*="bg-red-600"],
+tbody div[class*="bg-red-600"],
+tr div[class*="bg-red-600"] {
+  background-color: #dc2626 !important; /* red-600 for open in tables */
+  color: white !important;
+  border-color: #b91c1c !important;
+}
+
+/* UNIVERSAL BADGE COLOR ENFORCEMENT */
+/* This will catch any badge regardless of structure */
+*[class*="bg-red-600"] {
+  background-color: #dc2626 !important;
+  color: white !important;
+}
+
+*[class*="bg-orange-500"] {
+  background-color: #f97316 !important;
+  color: white !important;
+}
+
+*[class*="bg-yellow-400"] {
+  background-color: #facc15 !important;
+  color: black !important;
+}
+
+*[class*="bg-green-600"] {
+  background-color: #16a34a !important;
+  color: white !important;
+}
+
+*[class*="bg-sky-500"] {
+  background-color: #0ea5e9 !important;
+  color: white !important;
+}
+
+*[class*="bg-blue-600"] {
+  background-color: #2563eb !important;
+  color: white !important;
+}
+
+*[class*="bg-purple-600"] {
+  background-color: #9333ea !important;
+  color: white !important;
+}
+
+/* PRESERVE THREAT SEVERITY ICON COLORS */
+/* These ensure the colored threat icons remain visible */
+.text-red-500 {
+  color: #ef4444 !important; /* red-500 for critical threats */
+}
+
+.text-orange-500 {
+  color: #f97316 !important; /* orange-500 for high severity */
+}
+
+.text-yellow-500 {
+  color: #eab308 !important; /* yellow-500 for medium severity */
+}
+
+.text-sky-500 {
+  color: #0ea5e9 !important; /* sky-500 for low severity */
+}
+
+.text-slate-400 {
+  color: #94a3b8 !important; /* slate-400 for unknown severity */
+}
+
+/* INCIDENTS BADGE FIX - Target the exact structure used by IncidentsManager */
+/* IncidentsManager uses: px-2 py-1 text-xs font-semibold rounded border */
+span.px-2.py-1.text-xs.font-semibold.rounded.border.bg-red-600.text-white.border-red-500 {
+  background-color: #dc2626 !important;
+  color: white !important;
+  border-color: #b91c1c !important;
+}
+
+span.px-2.py-1.text-xs.font-semibold.rounded.border.bg-orange-500.text-white.border-orange-400 {
+  background-color: #f97316 !important;
+  color: white !important;
+  border-color: #ea580c !important;
+}
+
+span.px-2.py-1.text-xs.font-semibold.rounded.border.bg-yellow-400.text-black.border-yellow-300 {
+  background-color: #facc15 !important;
+  color: black !important;
+  border-color: #eab308 !important;
+}
+
+span.px-2.py-1.text-xs.font-semibold.rounded.border.bg-sky-500.text-white.border-sky-400 {
+  background-color: #0ea5e9 !important;
+  color: white !important;
+  border-color: #0284c7 !important;
+}
+
+span.px-2.py-1.text-xs.font-semibold.rounded.border.bg-slate-500.text-white.border-slate-400 {
+  background-color: #64748b !important;
+  color: white !important;
+  border-color: #475569 !important;
+}
+
+/* INCIDENTS TABLE SPECIFIC - More targeted approach */
+/* Target incidents table severity badges with table context */
+table span.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-red"] {
+  background-color: #dc2626 !important;
+  color: white !important;
+  border-color: #b91c1c !important;
+}
+
+table span.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-orange"] {
+  background-color: #f97316 !important;
+  color: white !important;
+  border-color: #ea580c !important;
+}
+
+table span.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-yellow"] {
+  background-color: #facc15 !important;
+  color: black !important;
+  border-color: #eab308 !important;
+}
+
+table span.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-sky"] {
+  background-color: #0ea5e9 !important;
+  color: white !important;
+  border-color: #0284c7 !important;
+}
+
+table span.px-2.py-1.text-xs.font-semibold.rounded.border[class*="bg-slate"] {
+  background-color: #64748b !important;
+  color: white !important;
+  border-color: #475569 !important;
+}
+
+/* AI THREAT HUNTING PAGE SPECIFIC FIXES */
+/* Template category tags and badges */
+.bg-blue-100,
+.bg-indigo-100,
+.bg-purple-100,
+.bg-pink-100 {
+  background: #1e3a8a !important; /* Dark blue for template tags */
+  color: #dbeafe !important;
+}
+
+.bg-green-100,
+.bg-emerald-100 {
+  background: #14532d !important; /* Dark green for template tags */
+  color: #dcfce7 !important;
+}
+
+.bg-orange-100,
+.bg-amber-100,
+.bg-yellow-100 {
+  background: #92400e !important; /* Dark orange/amber for template tags */
+  color: #fef3c7 !important;
+}
+
+.bg-red-100,
+.bg-rose-100 {
+  background: #7f1d1d !important; /* Dark red for template tags */
+  color: #fecaca !important;
+}
+
+.bg-gray-100:not(.border):not(.shadow) {
+  background: #374151 !important; /* Dark gray for other template elements */
+  color: #f1f5f9 !important;
+}
+
+/* Template tag text colors */
+.text-blue-700,
+.text-indigo-700,
+.text-purple-700,
+.text-blue-600,
+.text-indigo-600,
+.text-purple-600 {
+  color: #93c5fd !important; /* Light blue for dark backgrounds */
+}
+
+.text-green-700,
+.text-emerald-700,
+.text-green-600,
+.text-emerald-600 {
+  color: #86efac !important; /* Light green for dark backgrounds */
+}
+
+.text-orange-700,
+.text-amber-700,
+.text-yellow-700,
+.text-orange-600,
+.text-amber-600,
+.text-yellow-600 {
+  color: #fde68a !important; /* Light amber for dark backgrounds */
+}
+
+.text-red-700,
+.text-rose-700,
+.text-red-600,
+.text-rose-600 {
+  color: #fca5a5 !important; /* Light red for dark backgrounds */
+}
+
+/* Hunt query textarea and code blocks */
+textarea[placeholder*="threat hunting"],
+textarea[placeholder*="query"],
+.font-mono,
+code,
+pre {
+  background: #1f2937 !important; /* gray-800 - darker for code */
+  color: #f1f5f9 !important; /* slate-100 */
+  border: 1px solid #374151 !important; /* gray-700 */
+}
+
+/* Progress bars and status indicators */
+.bg-green-200 {
+  background: #059669 !important; /* Green for progress bars */
+}
+
+.bg-blue-200 {
+  background: #0ea5e9 !important; /* Blue for progress bars */
+}
+
+/* Hunt result cards and containers */
+.bg-gray-50.rounded-lg,
+.bg-white.rounded-lg.shadow-sm,
+.bg-white.border.rounded-lg {
+  background: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important;
+  border-color: #334155 !important; /* slate-700 */
+}
+
+/* Badge and pill styling for hunt templates */
+span.px-2.py-1.text-xs.rounded-full,
+span.px-3.py-1.text-sm.rounded-full,
+.inline-flex.items-center.px-2.py-1.rounded-full.text-xs,
+.inline-flex.items-center.px-3.py-1.rounded-full.text-sm {
+  /* Let individual color rules handle the backgrounds */
+  font-weight: 500 !important;
+}

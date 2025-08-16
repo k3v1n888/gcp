@@ -1,14 +1,29 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
+
+
 import { useContext, useEffect, useState } from 'react';
 import { 
   UserGroupIcon, 
   CogIcon, 
   HeartIcon,
-  CircleStackIcon
+  CircleStackIcon,
+  CpuChipIcon
 } from '@heroicons/react/24/outline';
 import { UserContext } from '../context/UserContext';
 import { useDevUser } from '../context/DevUserContext';
 import { isDevelopment, getApiBaseUrl } from '../utils/environment';
 import HealthDashboard from './HealthDashboard';
+import SentientAIModelsDashboard from '../components/admin/AIModelTestingDashboard';
 
 const InviteUserForm = () => {
     const [email, setEmail] = useState('');
@@ -118,6 +133,12 @@ export default function AdminPanel() {
       description: 'Monitor system health and status'
     },
     {
+      id: 'ai-models',
+      name: 'AI Models',
+      icon: CpuChipIcon,
+      description: 'Sentient AI SOC Multi-Model Management'
+    },
+    {
       id: 'connectors',
       name: 'Data Connectors',
       icon: CircleStackIcon,
@@ -142,11 +163,13 @@ export default function AdminPanel() {
       case 'health':
         return <HealthDashboard />;
         
+      case 'ai-models':
+        return <SentientAIModelsDashboard />;
+        
       case 'connectors':
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold mb-4 text-slate-100">Data Connectors</h2>
-            <p className="text-slate-300 mb-4">Manage and monitor your data connector integrations.</p>
             <div className="bg-slate-800 rounded-lg p-4">
               <p className="text-slate-300">Connector management interface coming soon...</p>
               <p className="text-sm text-slate-400 mt-2">

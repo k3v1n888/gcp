@@ -1,3 +1,17 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -40,38 +54,4 @@ def get_analytics_summary(
         "total": total,
         "by_type": dict(by_type),
         "by_source": dict(by_source),
-    }
-
-@router.get("/api/analytics/incidents-summary")
-def get_incidents_summary(
-    current_user: schemas.User = Depends(get_current_user),
-    db: Session = Depends(database.get_db)
-):
-    """Get summary of incidents for dashboard analytics"""
-    tenant_id = current_user.tenant_id
-
-    # Get total incidents
-    total_incidents = db.query(models.SecurityIncident).filter(
-        models.SecurityIncident.tenant_id == tenant_id
-    ).count()
-
-    # Get incidents by severity
-    by_severity = (
-        db.query(models.SecurityIncident.severity, func.count(models.SecurityIncident.severity).label('count'))
-        .filter(models.SecurityIncident.tenant_id == tenant_id)
-        .group_by(models.SecurityIncident.severity)
-        .all()
-    )
-
-    # Get recent incidents (last 24 hours)
-    from datetime import datetime, timedelta
-    recent_incidents = db.query(models.SecurityIncident).filter(
-        models.SecurityIncident.tenant_id == tenant_id,
-        models.SecurityIncident.created_at >= datetime.utcnow() - timedelta(hours=24)
-    ).count()
-
-    return {
-        "total": total_incidents,
-        "by_severity": dict(by_severity),
-        "recent_24h": recent_incidents,
     }

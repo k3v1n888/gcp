@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
+/*
+ * Author: Kevin Zachary
+ * Copyright: Sentient Spire
+ */
+
 import React, { useState, useEffect, useContext } from 'react';
 import { UserContext } from '../context/UserContext';
 import { useDevUser } from '../context/DevUserContext';
@@ -24,8 +40,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 /**
- * ⚠️ AI-Powered Threats Dashboard Component
- * Real-time threat monitoring with advanced AI analysis and correlation
+ * ⚠️ Sentient AI-Powered Threats Dashboard Component
+ * Real-time threat monitoring with advanced Sentient AI analysis and correlation
  */
 const ThreatsManager = () => {
   // Use appropriate context/hook based on environment
@@ -122,6 +138,10 @@ const ThreatsManager = () => {
   const [filterSource, setFilterSource] = useState('all');
   const [showAnalystFeedback, setShowAnalystFeedback] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
+  const [responsePlan, setResponsePlan] = useState(null);
+  const [threatExplanation, setThreatExplanation] = useState(null);
+  const [loadingResponsePlan, setLoadingResponsePlan] = useState(false);
+  const [loadingExplanation, setLoadingExplanation] = useState(false);
 
   // Real-time threat updates
   useEffect(() => {
@@ -138,13 +158,13 @@ const ThreatsManager = () => {
   const fetchThreats = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/threats', {
+      const response = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001'}/api/threats`, {
         credentials: 'include'
       });
       
       if (response.ok) {
         const data = await response.json();
-        setThreats(data);
+        setThreats(data.threats || []);
       } else {
         console.error('Failed to fetch threats');
       }
@@ -158,13 +178,13 @@ const ThreatsManager = () => {
   const refreshThreats = async () => {
     setRefreshing(true);
     try {
-      const response = await fetch('/api/threats', {
+      const response = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001'}/api/threats`, {
         credentials: 'include'
       });
       
       if (response.ok) {
         const data = await response.json();
-        setThreats(data);
+        setThreats(data.threats || []);
       }
     } catch (error) {
       console.error('Error refreshing threats:', error);
@@ -178,7 +198,7 @@ const ThreatsManager = () => {
     setThreatDetail(null); // Clear previous data
     
     try {
-      const response = await fetch(`/api/threats/${threatId}`, {
+      const response = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001'}/api/threats/${threatId}`, {
         credentials: 'include'
       });
       
@@ -208,11 +228,11 @@ const ThreatsManager = () => {
 
   const getSeverityIcon = (severity) => {
     switch(severity?.toLowerCase()) {
-      case 'critical': return <FireIcon className="w-5 h-5" />;
-      case 'high': return <ExclamationTriangleIcon className="w-5 h-5" />;
-      case 'medium': return <ShieldExclamationIcon className="w-5 h-5" />;
-      case 'low': return <EyeIcon className="w-5 h-5" />;
-      default: return <ShieldExclamationIcon className="w-5 h-5" />;
+      case 'critical': return <FireIcon className="w-5 h-5 text-red-500" />;
+      case 'high': return <ExclamationTriangleIcon className="w-5 h-5 text-orange-500" />;
+      case 'medium': return <ShieldExclamationIcon className="w-5 h-5 text-yellow-500" />;
+      case 'low': return <EyeIcon className="w-5 h-5 text-sky-500" />;
+      default: return <ShieldExclamationIcon className="w-5 h-5 text-slate-400" />;
     }
   };
 
@@ -281,8 +301,8 @@ const ThreatsManager = () => {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
                   Threats Dashboard
                 </h1>
-                <p className="text-slate-400 mt-1">
-                  Real-time threat monitoring with advanced AI correlation
+                <p className="text-slate-400 text-sm">
+                  Real-time threat monitoring with advanced Sentient AI correlation
                 </p>
               </div>
             </div>
@@ -346,7 +366,7 @@ const ThreatsManager = () => {
           <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-400 text-sm">AI Anomalies</p>
+                <p className="text-slate-400 text-sm">Sentient AI Anomalies</p>
                 <p className="text-3xl font-bold text-purple-400 mt-1">{stats.anomalies}</p>
               </div>
               <BugAntIcon className="w-12 h-12 text-purple-400" />
@@ -417,7 +437,7 @@ const ThreatsManager = () => {
               Recent Threats ({filteredThreats.length})
             </h2>
             <p className="text-slate-400 text-sm mt-1">
-              Click on any threat for detailed analysis and AI recommendations
+              Click on any threat for detailed analysis and Sentient AI recommendations
             </p>
           </div>
           
@@ -462,16 +482,14 @@ const ThreatsManager = () => {
                             </p>
                             {threat.is_anomaly && (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30 mt-1">
-                                AI Anomaly
+                                Sentient AI Anomaly
                               </span>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="py-4 px-6">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getSeverityColor(threat.severity)}`}>
-                          {threat.severity || 'Medium'}
-                        </span>
+                        <SeverityBadge severity={threat.severity || 'Medium'} />
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex items-center space-x-2">
@@ -508,6 +526,8 @@ const ThreatsManager = () => {
                         <button
                           onClick={() => {
                             setSelectedThreat(threat);
+                            setResponsePlan(null);
+                            setThreatExplanation(null);
                             fetchThreatDetail(threat.id);
                           }}
                           className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition-colors duration-200"
@@ -552,6 +572,8 @@ const ThreatsManager = () => {
                     onClick={() => {
                       setSelectedThreat(null);
                       setThreatDetail(null);
+                      setResponsePlan(null);
+                      setThreatExplanation(null);
                     }}
                     className="text-slate-400 hover:text-white transition-colors p-2"
                   >
@@ -574,7 +596,7 @@ const ThreatsManager = () => {
                     className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-200"
                   >
                     <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
-                    {showAIChat ? 'Hide' : 'Show'} AI Chat
+                    {showAIChat ? 'Hide' : 'Show'} Sentient AI Chat
                   </button>
                 </div>
               </div>
@@ -665,16 +687,16 @@ const ThreatsManager = () => {
                     </DetailCard>
                   )}
 
-                  {/* AI Analysis - matching ThreatDetail.jsx */}
+                  {/* Sentient AI Analysis - matching ThreatDetail.jsx */}
                   {threatDetail.recommendations ? (
                     <>
-                      <DetailCard title="Quantum AI Analysis: Threat Explanation">
+                      <DetailCard title="Quantum Sentient AI Analysis: Threat Explanation">
                         <p>{threatDetail.recommendations.explanation}</p>
                       </DetailCard>
-                      <DetailCard title="Quantum AI Analysis: Potential Impact">
+                      <DetailCard title="Quantum Sentient AI Analysis: Potential Impact">
                         <p>{threatDetail.recommendations.impact}</p>
                       </DetailCard>
-                      <DetailCard title="Quantum AI Analysis: Mitigation Protocols">
+                      <DetailCard title="Quantum Sentient AI Analysis: Mitigation Protocols">
                         <ul className="list-disc list-inside space-y-2">
                           {threatDetail.recommendations.mitigation.map((step, index) => (
                             <li key={index}>{step}</li>
@@ -683,28 +705,252 @@ const ThreatsManager = () => {
                       </DetailCard>
                     </>
                   ) : (
-                    <DetailCard title="AI Analysis">
-                      <p>Could not generate AI recommendations for this threat.</p>
+                    <DetailCard title="Sentient AI Analysis">
+                      <p>Could not generate Sentient AI recommendations for this threat.</p>
                     </DetailCard>
                   )}
 
-                  {/* Explainable AI (XAI) Analysis - matching ThreatDetail.jsx */}
+                  {/* Explainable AI (XAI) Analysis with integrated feedback */}
                   <DetailCard title="Explainable AI (XAI) Analysis">
-                    <ModelExplanation 
-                      explanation={threatDetail.xai_explanation}
-                      threatId={selectedThreat.id}
-                      existingFeedback={threatDetail.analyst_feedback}
-                    />
+                    <div className="space-y-4">
+                      <ModelExplanation 
+                        explanation={threatDetail.xai_explanation}
+                        threatId={selectedThreat.id}
+                        existingFeedback={threatDetail.analyst_feedback}
+                      />
+                      
+                      {/* Threat Explanation Display within XAI section */}
+                      {threatExplanation && (
+                        <div className="bg-slate-800 rounded-lg p-4 border border-slate-600 mt-4">
+                          <h4 className="font-semibold text-slate-100 mb-3 flex items-center">
+                            <BugAntIcon className="w-5 h-5 mr-2 text-blue-400" />
+                            Sentient AI Threat Explanation
+                          </h4>
+                          <div className="space-y-3">
+                            <div>
+                              <h5 className="font-medium text-slate-200 mb-2">What is this threat?</h5>
+                              <p className="text-sm text-slate-300">{threatExplanation.explanation?.what_is_it}</p>
+                            </div>
+                            <div>
+                              <h5 className="font-medium text-slate-200 mb-2">How was it detected?</h5>
+                              <p className="text-sm text-slate-300">{threatExplanation.explanation?.how_detected}</p>
+                            </div>
+                            <div>
+                              <h5 className="font-medium text-slate-200 mb-2">Why is it dangerous?</h5>
+                              <p className="text-sm text-slate-300">{threatExplanation.explanation?.why_dangerous}</p>
+                            </div>
+                            <div>
+                              <h5 className="font-medium text-slate-200 mb-2">Impact Assessment:</h5>
+                              <div className="grid grid-cols-3 gap-4 text-sm">
+                                <div className="text-center p-2 bg-slate-700 rounded">
+                                  <div className="font-medium text-slate-200">Confidentiality</div>
+                                  <div className={`${threatExplanation.explanation?.impact_assessment?.confidentiality === 'High' ? 'text-red-400' : 'text-yellow-400'}`}>
+                                    {threatExplanation.explanation?.impact_assessment?.confidentiality}
+                                  </div>
+                                </div>
+                                <div className="text-center p-2 bg-slate-700 rounded">
+                                  <div className="font-medium text-slate-200">Integrity</div>
+                                  <div className={`${threatExplanation.explanation?.impact_assessment?.integrity === 'High' ? 'text-red-400' : 'text-yellow-400'}`}>
+                                    {threatExplanation.explanation?.impact_assessment?.integrity}
+                                  </div>
+                                </div>
+                                <div className="text-center p-2 bg-slate-700 rounded">
+                                  <div className="font-medium text-slate-200">Availability</div>
+                                  <div className={`${threatExplanation.explanation?.impact_assessment?.availability === 'High' ? 'text-red-400' : 'text-yellow-400'}`}>
+                                    {threatExplanation.explanation?.impact_assessment?.availability}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Analyst Feedback for Explanation */}
+                          <div className="border-t border-slate-600 pt-4 mt-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <h5 className="font-medium text-slate-200">Analyst Feedback on Explanation</h5>
+                              <button
+                                onClick={() => setShowAnalystFeedback(!showAnalystFeedback)}
+                                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                              >
+                                {showAnalystFeedback ? 'Hide Feedback' : 'Add Feedback'}
+                              </button>
+                            </div>
+                            {showAnalystFeedback && (
+                              <div className="bg-slate-700 rounded-lg p-3">
+                                <textarea
+                                  placeholder="Provide feedback on the Sentient AI explanation accuracy..."
+                                  className="w-full h-20 bg-slate-600 text-slate-100 rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <div className="flex justify-end mt-2">
+                                  <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">
+                                    Submit Feedback
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <button 
+                        onClick={async () => {
+                          setLoadingExplanation(true);
+                          try {
+                            const response = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001'}/api/threats/${selectedThreat.id}/explain`);
+                            const data = await response.json();
+                            setThreatExplanation(data);
+                          } catch (error) {
+                            console.error('Error fetching explanation:', error);
+                          } finally {
+                            setLoadingExplanation(false);
+                          }
+                        }}
+                        disabled={loadingExplanation}
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-200 bg-slate-700 rounded-lg hover:bg-slate-600 disabled:bg-slate-700/50 transition-colors duration-200"
+                      >
+                        {loadingExplanation ? (
+                          <ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <BugAntIcon className="w-4 h-4 mr-2" />
+                        )}
+                        {loadingExplanation ? 'Loading...' : 'Explain Threat'}
+                      </button>
+                    </div>
                   </DetailCard>
 
-                  {/* Automated Response Log - matching ThreatDetail.jsx */}
-                  <DetailCard title="Automated Response Log">
-                    <SoarActionLog actions={threatDetail.soar_actions} />
+                  {/* Sentient AI Response Orchestrator - Replacing Automated Response Log */}
+                  <DetailCard title="🤖 Sentient AI Response Orchestrator">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-2">
+                          <CpuChipIcon className="w-5 h-5 text-green-400" />
+                          <span className="text-sm text-slate-300">AI-Powered Response Recommendations</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                          <span className="text-xs text-green-400">ACTIVE</span>
+                        </div>
+                      </div>
+                      
+                      {threatDetail.ai_analysis?.recommended_actions ? (
+                        <div className="space-y-3">
+                          <div className="bg-slate-800 rounded-lg p-4 border border-slate-600">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-semibold text-slate-100">Recommended Response Actions</h4>
+                              <div className="text-xs text-slate-400">
+                                Confidence: {Math.round((threatDetail.ai_analysis.confidence_score || 0.89) * 100)}%
+                              </div>
+                            </div>
+                            <ul className="space-y-2">
+                              {threatDetail.ai_analysis.recommended_actions.map((action, index) => (
+                                <li key={index} className="flex items-start space-x-3">
+                                  <div className="flex-shrink-0 w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center mt-0.5">
+                                    <span className="text-xs font-semibold text-blue-400">{index + 1}</span>
+                                  </div>
+                                  <span className="text-slate-200 text-sm">{action}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-2">
+                            <button 
+                              onClick={async () => {
+                                setLoadingResponsePlan(true);
+                                try {
+                                  const response = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001'}/api/threats/${selectedThreat.id}/response-plan`);
+                                  const data = await response.json();
+                                  setResponsePlan(data);
+                                } catch (error) {
+                                  console.error('Error fetching response plan:', error);
+                                } finally {
+                                  setLoadingResponsePlan(false);
+                                }
+                              }}
+                              disabled={loadingResponsePlan}
+                              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-green-600/50 transition-colors duration-200"
+                            >
+                              {loadingResponsePlan ? (
+                                <ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" />
+                              ) : (
+                                <ShieldCheckIcon className="w-4 h-4 mr-2" />
+                              )}
+                              {loadingResponsePlan ? 'Loading...' : 'Get Full Response Plan'}
+                            </button>
+                            
+                            <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200">
+                              <FireIcon className="w-4 h-4 mr-2" />
+                              Execute Response
+                            </button>
+                            
+                            <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-200 bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors duration-200">
+                              <ExclamationTriangleIcon className="w-4 h-4 mr-2" />
+                              Request Approval
+                            </button>
+                          </div>
+                          
+                          {/* Response Plan Display */}
+                          {responsePlan && (
+                            <div className="bg-slate-800 rounded-lg p-4 border border-slate-600 mt-4">
+                              <h4 className="font-semibold text-slate-100 mb-3 flex items-center">
+                                <ShieldCheckIcon className="w-5 h-5 mr-2 text-green-400" />
+                                Complete Response Plan
+                              </h4>
+                              <div className="space-y-4">
+                                <div>
+                                  <h5 className="font-medium text-slate-200 mb-2">Immediate Actions (0-1 hours):</h5>
+                                  <ul className="list-disc list-inside space-y-1 text-sm text-slate-300 ml-4">
+                                    {responsePlan.response_plan?.immediate_actions?.map((action, index) => (
+                                      <li key={index}>{action}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                                <div>
+                                  <h5 className="font-medium text-slate-200 mb-2">Investigation Steps:</h5>
+                                  <ul className="list-disc list-inside space-y-1 text-sm text-slate-300 ml-4">
+                                    {responsePlan.response_plan?.investigation_steps?.map((step, index) => (
+                                      <li key={index}>{step}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                                <div>
+                                  <h5 className="font-medium text-slate-200 mb-2">Recovery Actions:</h5>
+                                  <ul className="list-disc list-inside space-y-1 text-sm text-slate-300 ml-4">
+                                    {responsePlan.response_plan?.recovery_actions?.map((action, index) => (
+                                      <li key={index}>{action}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                            <div className="flex items-start space-x-2">
+                              <ExclamationTriangleIcon className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                              <div className="text-sm">
+                                <div className="text-amber-300 font-medium mb-1">Human Oversight Required</div>
+                                <div className="text-amber-200/80">
+                                  These Sentient AI recommendations require analyst approval before execution. 
+                                  Review suggested actions carefully and verify against your organization's security policies.
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-slate-400">
+                          <CpuChipIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p>Sentient AI Response Orchestrator is analyzing this threat...</p>
+                          <p className="text-sm mt-2">Generating response recommendations based on threat patterns and organizational policies.</p>
+                        </div>
+                      )}
+                    </div>
                   </DetailCard>
 
-                  {/* AI Chat - matching ThreatDetail.jsx */}
+                  {/* Sentient AI Chat - matching ThreatDetail.jsx */}
                   {showAIChat && (
-                    <DetailCard title="Quantum AI Bot">
+                    <DetailCard title="Sentient AI Bot">
                       <Chatbot threatContext={threatDetail} />
                     </DetailCard>
                   )}

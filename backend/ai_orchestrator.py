@@ -1,9 +1,22 @@
 """
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
+"""
 AI Model Management and Orchestration System
 Manages all AI models and coordinates their interactions
 """
 
-import os
 import asyncio
 import logging
 from typing import Dict, Any, List, Optional
@@ -56,16 +69,11 @@ class AIOrchestrator:
         self.decision_history = []
         self.is_running = False
         self.monitoring_thread = None
-        
-        # Use environment variables for AI service URLs
-        ai_service_base = os.getenv("AI_SERVICE_URL", "http://ai-service:8001")
-        backend_base = os.getenv("BACKEND_URL", "http://localhost:8000")
-        
         self.model_endpoints = {
-            "data_intelligence": f"{backend_base}/ingest_auto",
-            "threat_scoring": f"{ai_service_base}/threat/score".replace(":8001", ":8001"), 
-            "policy_decision": f"{ai_service_base}/policy/decide".replace(":8001", ":8002"),
-            "incident_correlation": f"{backend_base}/api/incidents/aggregate-threats"
+            "data_intelligence": "http://localhost:8000/ingest_auto",
+            "threat_scoring": "http://localhost:8001/threat/score", 
+            "policy_decision": "http://localhost:8002/policy/decide",
+            "incident_correlation": "http://localhost:8000/api/incidents/aggregate-threats"
         }
         
     def start_orchestration(self):

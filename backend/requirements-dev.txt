@@ -1,3 +1,14 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
 # Lightweight Development Requirements
 # Core FastAPI dependencies
 fastapi>=0.109.0
@@ -23,10 +34,7 @@ joblib
 statsmodels
 
 # CPU-only PyTorch (much smaller than CUDA version)
---index-url https://download.pytorch.org/whl/cpu
-torch==2.0.1+cpu
-torchvision==0.15.2+cpu
-torchaudio==2.0.2+cpu
+# NOTE: PyTorch packages will be installed separately due to index conflicts
 
 # Lightweight transformers (without CUDA dependencies)
 transformers==4.31.0

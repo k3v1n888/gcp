@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
+/*
+ * Author: Kevin Zachary
+ * Copyright: Sentient Spire
+ */
+
+
+
 // Development-specific User Context with auto-login
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { isDevelopment } from '../utils/environment';

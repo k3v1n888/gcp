@@ -1,3 +1,14 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
 # ai-service/main.py - Local AI Prediction Service for Development
 
 from flask import Flask, request, jsonify
@@ -120,6 +131,12 @@ def load_artifacts_local():
         if artifacts.get("model"):
             X_scaled = artifacts["preprocessor"].transform(X_dummy)
             artifacts["model"].fit(X_scaled, y_dummy)
+            logger.info("✅ Fallback model fitted successfully")
+        
+        # Create dummy X_train for SHAP if missing
+        if not artifacts.get("X_train"):
+            artifacts["X_train"] = X_scaled[:100]  # Use first 100 samples for SHAP
+            logger.info("✅ Created X_train for SHAP explainer")
         
         logger.info("✅ Fallback models trained and ready")
     elif loaded_count < len(files):
@@ -156,9 +173,14 @@ def load_artifacts_local():
     # Create explainer if we have the necessary components
     if X_train is not None and model is not None:
         try:
-            X_train_sample = shap.sample(X_train, min(100, X_train.shape[0]))
-            explainer = shap.KernelExplainer(model.predict_proba, X_train_sample)
-            logger.info("✅ SHAP explainer created")
+            # Check if model is fitted by testing if it has the required attributes
+            if hasattr(model, 'estimators_') or hasattr(model, 'coef_') or hasattr(model, 'classes_'):
+                X_train_sample = shap.sample(X_train, min(100, X_train.shape[0]))
+                explainer = shap.KernelExplainer(model.predict_proba, X_train_sample)
+                logger.info("✅ SHAP explainer created")
+            else:
+                logger.warning("⚠️ Model not fitted, cannot create SHAP explainer")
+                explainer = None
         except Exception as e:
             logger.warning(f"⚠️ Could not create SHAP explainer: {e}")
             explainer = None
@@ -225,11 +247,17 @@ def predict_fn(df, model, preprocessor, column_names, anomaly_filter=None):
     
     if model is not None:
         prediction = model.predict(X)[0]
-        proba = model.predict_proba(X)[0].tolist()
+        if hasattr(model, 'predict_proba'):
+            proba = model.predict_proba(X)[0]
+            confidence = float(max(proba))
+        else:
+            proba = None
+            confidence = 0.6  # Default confidence for non-probabilistic models
     else:
         # Fallback prediction
         prediction = 1  # Default to "medium" threat
-        proba = [0.2, 0.4, 0.3, 0.1]  # Default probabilities
+        proba = None
+        confidence = 0.6
     
     # Safely get these values with defaults
     cvss = float(df["cvss_score"].values[0]) if "cvss_score" in df.columns else 5.0
@@ -239,7 +267,7 @@ def predict_fn(df, model, preprocessor, column_names, anomaly_filter=None):
     
     return {
         "prediction": int(prediction),
-        "confidence": proba,
+        "confidence": confidence,
         "anomaly_score": float(anomaly_score),
         "severity": severity
     }
@@ -247,25 +275,36 @@ def predict_fn(df, model, preprocessor, column_names, anomaly_filter=None):
 # Initialize the model when the app starts
 try:
     logger.info("🚀 Initializing AI service...")
-    artifacts = load_artifacts_local()
-    
-    # Assign to global variables
-    model = artifacts.get("model")
-    preprocessor = artifacts.get("preprocessor") 
-    X_train = artifacts.get("X_train")
-    column_names = artifacts.get("column_names")
-    baseline_shap = artifacts.get("baseline_shap")
-    iso = artifacts.get("isolation_forest")
+    model, preprocessor, X_train, column_names, baseline_shap, iso, explainer = load_artifacts_local()
     
     logger.info("✅ AI service initialized and ready!")
     
 except Exception as e:
     logger.error(f"❌ Critical error during initialization: {e}")
     logger.info("🔄 Service will continue with fallback predictions only")
+    # Set fallback values
+    model = None
+    preprocessor = None
+    X_train = None
+    column_names = ["technique_id", "asset_type", "login_hour", "is_admin", "is_remote_session"]
+    baseline_shap = None
+    iso = None
+    explainer = None
 
 @app.route("/")
-def health():
+def root():
     return jsonify({"status": "Local Quantum AI Predictive Security Engine is running"}), 200
+
+@app.route("/health")
+def health():
+    return jsonify({
+        "status": "healthy",
+        "service": "Local AI Prediction Service", 
+        "model_loaded": model is not None,
+        "preprocessor_loaded": preprocessor is not None,
+        "explainer_available": explainer is not None,
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }), 200
 
 @app.route("/debug", methods=["GET"])
 def debug():
@@ -282,7 +321,20 @@ def predict():
         data = request.get_json()
         logger.info("📥 /predict payload received")
         
-        df = pd.DataFrame([data])
+        # Extract features from the request
+        if 'features' in data and isinstance(data['features'], list):
+            # Convert feature list to DataFrame with numeric columns
+            features_list = data['features']
+            features_dict = {f'feature_{i}': features_list[i] for i in range(len(features_list))}
+            # Also include other fields from the request
+            for key, value in data.items():
+                if key != 'features':
+                    features_dict[key] = value
+            features = features_dict
+        else:
+            features = data
+        
+        df = pd.DataFrame([features])
         
         # Filter column_names to exclude timestamp first
         model_columns = [col for col in (column_names or []) if col != 'timestamp']
@@ -300,21 +352,78 @@ def predict():
             anomaly_filter=iso
         )
         
-        # Add timestamp for API compatibility
-        result["timestamp"] = datetime.utcnow().isoformat() + "Z"
-        result["source"] = "local_ai_service"
+        logger.info(f"🔧 predict_fn result: {result}")
+        logger.info(f"🔧 result type: {type(result)}")
         
-        return jsonify(result), 200
+        # Handle the case where predict_fn returns a list instead of dict
+        if isinstance(result, list):
+            # If it's a list, convert to expected format
+            result = {
+                "prediction": result[0] if len(result) > 0 else 1,
+                "confidence": result[1] if len(result) > 1 else 0.6,
+                "anomaly_score": result[2] if len(result) > 2 else 0.0,
+                "severity": result[3] if len(result) > 3 else "medium"
+            }
+        
+        # Map prediction to severity levels (0=low, 1=medium, 2=high, 3=critical)
+        severity_map = {0: "low", 1: "medium", 2: "high", 3: "critical"}
+        prediction = result.get("prediction", 1)
+        severity = severity_map.get(prediction, result.get("severity", "medium"))
+        
+        # Extract confidence - handle both float and list formats
+        confidence_scores = result.get("confidence", 0.6)
+        if isinstance(confidence_scores, (list, tuple)):
+            confidence = max(confidence_scores)
+        else:
+            confidence = float(confidence_scores)
+        
+        # Generate findings based on prediction and features
+        findings = []
+        if prediction >= 2:  # high or critical
+            if features.get("cvss_score", 0) > 7:
+                findings.append("High CVSS Score")
+            if features.get("ioc_risk_score", 0) > 80:
+                findings.append("IoC Match")
+            if result.get("anomaly_score", 0) < -0.5:
+                findings.append("Anomaly Detected")
+        if not findings:
+            findings = ["AI-Classification"]
+        
+        # Generate SHAP explanations (simplified for now)
+        shap_values = {}
+        if features.get("cvss_score") is not None:
+            shap_values["cvss_score"] = min(0.4, float(features.get("cvss_score", 0)) / 25.0)
+        if features.get("criticality_score") is not None:
+            shap_values["criticality_score"] = float(features.get("criticality_score", 0))
+        if features.get("ioc_risk_score") is not None:
+            shap_values["ioc_risk_score"] = min(0.3, float(features.get("ioc_risk_score", 0)) / 300.0)
+        
+        # Return format expected by threat_service model loader
+        response = {
+            "severity": severity,
+            "confidence": confidence,
+            "findings": findings,
+            "shap": shap_values,
+            # Keep additional fields for compatibility
+            "prediction": int(prediction),
+            "anomaly_score": result.get("anomaly_score", 0.0),
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "source": "cxyber_ai_model"
+        }
+        
+        return jsonify(response), 200
     except Exception as e:
         logger.error(f"❌ Error in /predict: {e}")
-        # Return a fallback prediction
+        # Return a fallback prediction in expected format
         return jsonify({
-            "prediction": 1,
-            "confidence": [0.2, 0.4, 0.3, 0.1],
-            "anomaly_score": 0.0,
             "severity": "medium",
+            "confidence": 0.6,
+            "findings": ["Fallback-Classification"],
+            "shap": {"fallback": 0.6},
+            "prediction": 1,
+            "anomaly_score": 0.0,
             "timestamp": datetime.utcnow().isoformat() + "Z",
-            "source": "local_ai_service_fallback",
+            "source": "cxyber_ai_model_fallback",
             "error": str(e)
         }), 200
 
@@ -324,16 +433,72 @@ def explain():
         data = request.get_json()
         logger.info("📥 /explain payload received")
         
-        # Return a simple explanation for development
+        if explainer is None:
+            logger.warning("⚠️ SHAP explainer not available")
+            return jsonify({
+                "explanation": "SHAP explainer not available - using fallback explanation",
+                "features": data,
+                "model_version": "local-dev-1.0",
+                "source": "local_ai_service_fallback",
+                "shap_available": False
+            }), 200
+        
+        # Create DataFrame from input data
+        df = pd.DataFrame([data])
+        model_columns = [col for col in (column_names or []) if col != 'timestamp']
+        
+        # Add missing columns with default values
+        for col in model_columns:
+            if col not in df.columns:
+                df[col] = 0
+        
+        # Transform the data
+        if preprocessor is not None:
+            # Add timestamp for preprocessing if needed
+            if 'timestamp' not in df.columns:
+                df['timestamp'] = '2025-01-01T00:00:00Z'
+            
+            X = preprocessor.transform(df)
+        else:
+            # Fallback transformation
+            X = df[model_columns].values
+        
+        # Get SHAP explanation
+        shap_values = explainer.shap_values(X)
+        
+        # Get feature importance (absolute mean of SHAP values)
+        feature_importance = {}
+        if isinstance(shap_values, list):  # Multi-class
+            # Use the SHAP values for the predicted class
+            prediction = model.predict(X)[0]
+            shap_vals = shap_values[prediction][0]
+        else:  # Binary or single output
+            shap_vals = shap_values[0]
+        
+        # Map SHAP values to feature names
+        for i, feature in enumerate(model_columns[:len(shap_vals)]):
+            feature_importance[feature] = float(shap_vals[i])
+        
         return jsonify({
-            "explanation": "Local AI model explanation",
+            "explanation": "SHAP-based feature explanation",
+            "feature_importance": feature_importance,
             "features": data,
             "model_version": "local-dev-1.0",
-            "source": "local_ai_service"
+            "source": "local_ai_service",
+            "shap_available": True,
+            "prediction": int(model.predict(X)[0]) if model else None
         }), 200
+        
     except Exception as e:
         logger.error(f"❌ Error in /explain: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "explanation": f"Error generating explanation: {str(e)}",
+            "features": data,
+            "model_version": "local-dev-1.0",
+            "source": "local_ai_service_error",
+            "shap_available": False,
+            "error": str(e)
+        }), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8001)), debug=True)

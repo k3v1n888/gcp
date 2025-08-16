@@ -1,17 +1,17 @@
-# 🤖 Quantum AI Integration Guide
+# 🤖 Sentient AI Integration Guide
 
 ## Overview
-Your AI incident orchestration system has been successfully upgraded to use your **Quantum AI service** instead of GPT-4. The system now leverages your existing AI infrastructure at `quantum-predictor-api-1020401092050.asia-southeast1.run.app` for intelligent threat analysis and incident correlation.
+Your AI incident orchestration system has been successfully upgraded to use your **Sentient AI service** instead of GPT-4. The system now leverages your existing AI infrastructure at `quantum-predictor-api-1020401092050.asia-southeast1.run.app` for intelligent threat analysis and incident correlation.
 
 ## ✅ What's Been Implemented
 
 ### 1. AI Provider Architecture
 - **Multi-provider system** supporting multiple AI services with intelligent fallback
-- **Quantum AI as primary provider** - Your AI service is the preferred choice
+- **Sentient AI as primary provider** - Your AI service is the preferred choice
 - **Flexible configuration** - Easy to switch between providers via environment variables
 - **Graceful degradation** - Falls back to rule-based analysis if AI is unavailable
 
-### 2. Quantum AI Integration
+### 2. Sentient AI Integration
 - **Direct integration** with your existing AI prediction and explanation endpoints
 - **Industry standard analysis** - Maintains MITRE ATT&CK, NIST, and SANS compliance
 - **Enhanced correlation** - Uses your AI's prediction capabilities for incident grouping
@@ -30,7 +30,7 @@ Your AI incident orchestration system has been successfully upgraded to use your
 │                    AI Incident Orchestrator                     │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐    ┌─────────────────────────────────────┐  │
-│  │ AI Provider     │    │        Quantum AI Provider         │  │
+│  │ AI Provider     │    │        Sentient AI Provider         │  │
 │  │ Manager         │───▶│                                     │  │
 │  │                 │    │ • Your AI Service                   │  │
 │  │ • Provider      │    │ • quantum-predictor-api-*           │  │
@@ -54,10 +54,10 @@ Your AI incident orchestration system has been successfully upgraded to use your
 
 ### Environment Variables (.env.ai)
 ```bash
-# Primary AI provider (your Quantum AI service)
+# Primary AI provider (your Sentient AI service)
 AI_PROVIDER=quantum_ai
 
-# Quantum AI Service Configuration  
+# Sentient AI Service Configuration  
 AI_SERVICE_URL=https://quantum-predictor-api-1020401092050.asia-southeast1.run.app
 
 # Analysis parameters
@@ -77,7 +77,7 @@ ENABLE_REAL_TIME_ANALYSIS=true
 
 ### 1. Threat Analysis Flow
 ```
-Threats → Quantum AI Analysis → Incident Groups → Security Incidents
+Threats → Sentient AI Analysis → Incident Groups → Security Incidents
     ↓              ↓                    ↓              ↓
 [Raw Data]  [AI Correlation]   [Validated Groups]  [Formal Incidents]
 ```
@@ -90,7 +90,7 @@ Threats → Quantum AI Analysis → Incident Groups → Security Incidents
 
 ### 3. Data Flow
 1. **Threat Collection** - System gathers threats from various sources
-2. **AI Preparation** - Converts threats to Quantum AI format
+2. **AI Preparation** - Converts threats to Sentient AI format
 3. **Analysis Request** - Calls your AI service with threat data
 4. **Response Processing** - Validates and enhances AI results
 5. **Incident Creation** - Generates formal security incidents
@@ -130,7 +130,7 @@ curl -X GET "http://localhost:8000/api/incidents/ai-status"
   "provider_type": "quantum_ai", 
   "provider_healthy": true,
   "service_url": "https://quantum-predictor-api-1020401092050.asia-southeast1.run.app",
-  "message": "✅ Quantum_Ai AI Provider ready"
+  "message": "✅ Sentient_Ai AI Provider ready"
 }
 ```
 
@@ -144,14 +144,14 @@ gcloud auth application-default login
 ```
 
 ### Service Availability
-Check if your Quantum AI service is running:
+Check if your Sentient AI service is running:
 ```bash
 curl -H "Authorization: Bearer $(gcloud auth print-access-token)" \
      https://quantum-predictor-api-1020401092050.asia-southeast1.run.app/health
 ```
 
 ### Fallback Mode
-If Quantum AI is unavailable, the system automatically uses rule-based analysis:
+If Sentient AI is unavailable, the system automatically uses rule-based analysis:
 - Groups threats by IP address
 - Applies time-window correlation
 - Maintains incident creation capability
@@ -159,13 +159,13 @@ If Quantum AI is unavailable, the system automatically uses rule-based analysis:
 ## 📈 Monitoring
 
 ### Logs to Watch
-- **AI Provider initialization**: Look for "✅ Quantum AI Provider initialized"
-- **Analysis requests**: "🎯 Quantum AI analyzing X threats"
+- **AI Provider initialization**: Look for "✅ Sentient AI Provider initialized"
+- **Analysis requests**: "🎯 Sentient AI analyzing X threats"
 - **Fallback activation**: "🔄 Using fallback rule-based correlation"
 - **Health checks**: Provider availability status
 
 ### Metrics Available
-- Quantum AI response times
+- Sentient AI response times
 - Analysis success/failure rates
 - Incident group quality scores
 - Fallback usage frequency
@@ -186,7 +186,7 @@ If Quantum AI is unavailable, the system automatically uses rule-based analysis:
 ## 🎉 Summary
 
 Your AI incident orchestration system now:
-- ✅ **Uses your Quantum AI service exclusively**
+- ✅ **Uses your Sentient AI service exclusively**
 - ✅ **Removes dependency on GPT-4/OpenAI**
 - ✅ **Maintains industry standard compliance**
 - ✅ **Provides intelligent threat correlation**

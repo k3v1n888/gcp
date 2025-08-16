@@ -1,3 +1,17 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
 import os
 import asyncio
 from contextlib import asynccontextmanager
@@ -28,9 +42,9 @@ from backend.api.graph import router as graph_router
 from backend.api.hunting import router as hunting_router
 from backend.api.health import router as health_router  # 🏥 System Health Monitoring
 from backend.api.incident_aggregation import router as incident_aggregation_router  # 🔗 AI Incident Aggregation
-from backend.api.admin_ai_testing import router as admin_ai_testing_router  # 🧪 AI Model Testing Admin Interface
 from backend.connectors.api import router as connectors_router  # 🔌 Universal Data Connector API
 from backend.routers.ai_routes import router as ai_routes_router  # 🤖 AI System Management API
+# from backend.api.orchestrator import router as orchestrator_router  # 🎭 AI Orchestration Control API
 
 # --- Import project components ---
 from backend.models import Base, engine
@@ -70,7 +84,7 @@ async def periodic_data_ingestion():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    print("🚀 Starting Quantum AI Threat Detection System...")
+    print("🚀 Starting Sentient AI Threat Detection System...")
     
     try:
         # Initialize services with safe error handling
@@ -92,7 +106,7 @@ async def lifespan(app: FastAPI):
         # 🚀 Start AI Incident Orchestration Scheduler
         try:
             start_ai_incident_scheduler()
-            print("🤖 AI Incident Orchestration Scheduler started (using Quantum AI)")
+            print("🤖 AI Incident Orchestration Scheduler started (using Sentient AI)")
         except Exception as scheduler_error:
             print(f"⚠️ AI Scheduler initialization failed: {scheduler_error}")
         
@@ -105,7 +119,7 @@ async def lifespan(app: FastAPI):
         
         # 🤖 Start AI Orchestrator
         try:
-            ai_orchestrator.start_orchestration()
+            ai_orchestrator.start()
             print("🤖 AI Orchestration System started")
         except Exception as orchestrator_error:
             print(f"⚠️ AI Orchestrator initialization failed: {orchestrator_error}")
@@ -143,7 +157,7 @@ async def lifespan(app: FastAPI):
     
     # Stop AI Orchestrator
     try:
-        ai_orchestrator.stop_orchestration()
+        ai_orchestrator.stop()
         print("🤖 AI Orchestration System stopped")
     except Exception as e:
         print(f"⚠️ Error stopping AI orchestrator: {e}")
@@ -208,9 +222,9 @@ app.include_router(graph_router)
 app.include_router(hunting_router)
 app.include_router(health_router)  # 🏥 System Health Monitoring
 app.include_router(incident_aggregation_router)  # 🔗 AI Incident Aggregation
-app.include_router(admin_ai_testing_router)  # 🧪 AI Model Testing Admin Interface
 app.include_router(connectors_router)  # 🔌 Universal Data Connector System
 app.include_router(ai_routes_router)  # 🤖 AI System Management API
+# app.include_router(orchestrator_router)  # 🎭 AI Orchestration Control API
 
 @app.get("/_fastapi_health")
 def fastapi_health():
@@ -222,4 +236,4 @@ def api_health():
 
 @app.get("/")
 def root():
-    return {"message": "Quantum AI Security Platform API", "status": "operational"}
+    return {"message": "Sentient AI Security Platform API", "status": "operational"}

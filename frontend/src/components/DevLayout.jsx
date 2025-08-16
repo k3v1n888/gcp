@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
+/*
+ * Author: Kevin Zachary
+ * Copyright: Sentient Spire
+ */
+
+
+
 // Development-aware Layout component
 import React, { useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
@@ -22,7 +40,7 @@ export default function DevLayout({ children }) {
       {/* Sidebar Navigation */}
       <div className={`w-64 bg-gray-900 flex-col absolute inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 z-30 transition-transform duration-300 ease-in-out`}>
         <div className="p-4 border-b border-slate-700">
-          <h1 className="text-xl font-bold text-sky-400">Quantum AI</h1>
+          <h1 className="text-xl font-bold text-sky-400">Sentient AI</h1>
           <p className="text-sm text-slate-400">Welcome, {user?.username}</p>
           {isDevelopment() && (
             <p className="text-xs text-yellow-400 mt-1">🔧 Development Mode</p>

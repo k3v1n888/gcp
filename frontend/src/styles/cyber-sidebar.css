@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
+/* CXyber AI SOC - Sidebar Styles */
+
+.cyber-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  z-index: 1000;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.cyber-sidebar.collapsed {
+  width: 4rem;
+}
+
+.cyber-sidebar.expanded {
+  width: 16rem;
+}
+
+.cyber-layout {
+  min-height: 100vh;
+}
+
+/* Futuristic glow effects */
+.cyber-sidebar .bg-blue-600 {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+/* Smooth transitions */
+.cyber-sidebar * {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Scrollbar styling for sidebar */
+.cyber-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cyber-sidebar::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.cyber-sidebar::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 2px;
+}
+
+.cyber-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Gradient background for header logo */
+.cyber-sidebar .bg-gradient-to-br {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+}
+
+/* Hover effects for navigation items */
+.cyber-sidebar nav a:hover {
+  transform: translateX(2px);
+}
+
+.cyber-sidebar nav a.active {
+  transform: translateX(4px);
+  border-left: 3px solid #60a5fa;
+}
+
+/* Badge animations */
+.cyber-sidebar .animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .cyber-sidebar.expanded {
+    width: 100vw;
+  }
+}

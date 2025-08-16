@@ -1,5 +1,5 @@
 
-# CXyber AI-SOC Suite (Monorepo)
+# Sentient AI-SOC Suite (Monorepo)
 
 This is a **plug-and-play** scaffold to integrate your own AI model across three layers:
 1) **Ingest** (AI Router + Auto-Mapper) → CanonicalEvent + FeatureVector

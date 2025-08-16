@@ -1,3 +1,14 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
 # backend/ai_providers.py
 """
 AI Provider Architecture for Incident Orchestration
@@ -17,7 +28,7 @@ from enum import Enum
 logger = logging.getLogger(__name__)
 
 class AIProvider(Enum):
-    QUANTUM_AI = "quantum_ai"  # Your existing AI service
+    SENTIENT_AI = "sentient_ai"  # Your existing AI service
     OPENAI = "openai"          # Fallback to OpenAI if needed
     LOCAL = "local"            # For local models
     
@@ -43,22 +54,22 @@ class BaseAIProvider(ABC):
         """Check if the AI provider is available"""
         pass
 
-class QuantumAIProvider(BaseAIProvider):
-    """Your custom Quantum AI service provider"""
+class SentientAIProvider(BaseAIProvider):
+    """Your custom Sentient AI service provider"""
     
     def __init__(self):
-        self.ai_service_url = os.getenv("AI_SERVICE_URL", "https://quantum-predictor-api-1020401092050.asia-southeast1.run.app")
+        self.ai_service_url = os.getenv("AI_SERVICE_URL", "https://sentient-predictor-api-1020401092050.asia-southeast1.run.app")
         self.auth_req = google.auth.transport.requests.Request()
-        logger.info(f"✅ Quantum AI Provider initialized: {self.ai_service_url}")
+        logger.info(f"✅ Sentient AI Provider initialized: {self.ai_service_url}")
     
     def _get_auth_token(self) -> Optional[str]:
-        """Get authentication token for Quantum AI service"""
+        """Get authentication token for Sentient AI service"""
         try:
             creds, _ = google.auth.default()
             creds.refresh(self.auth_req)
             return creds.token
         except Exception as e:
-            logger.error(f"❌ Could not generate auth token for Quantum AI service: {e}")
+            logger.error(f"❌ Could not generate auth token for Sentient AI service: {e}")
             return None
     
     def _prepare_threat_analysis_payload(self, threats: List[Dict], context: Dict) -> Dict:
@@ -142,7 +153,7 @@ class QuantumAIProvider(BaseAIProvider):
     
     def analyze_threats_for_incidents(self, threats: List[Dict], context: Dict = None) -> Dict:
         """
-        Use Quantum AI service to analyze threats for incident correlation
+        Use Sentient AI service to analyze threats for incident correlation
         """
         if not threats:
             return {"groups": [], "analysis_summary": "No threats to analyze"}
@@ -151,7 +162,7 @@ class QuantumAIProvider(BaseAIProvider):
         token = self._get_auth_token()
         
         if not token:
-            logger.error("❌ No authentication token available for Quantum AI")
+            logger.error("❌ No authentication token available for Sentient AI")
             return self._fallback_analysis(threats, context)
         
         headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
@@ -168,8 +179,8 @@ class QuantumAIProvider(BaseAIProvider):
             
             if response.status_code == 200:
                 result = response.json()
-                logger.info("✅ Quantum AI incident correlation successful")
-                return self._format_quantum_response(result, threats)
+                logger.info("✅ Sentient AI incident correlation successful")
+                return self._format_sentient_response(result, threats)
             
             elif response.status_code == 404:
                 # Endpoint doesn't exist, try individual predictions
@@ -177,14 +188,14 @@ class QuantumAIProvider(BaseAIProvider):
                 return self._correlate_via_predictions(threats, headers, context)
             
             else:
-                logger.warning(f"⚠️ Quantum AI returned status {response.status_code}: {response.text}")
+                logger.warning(f"⚠️ Sentient AI returned status {response.status_code}: {response.text}")
                 return self._fallback_analysis(threats, context)
                 
         except requests.exceptions.Timeout:
-            logger.error("⏰ Quantum AI service timeout")
+            logger.error("⏰ Sentient AI service timeout")
             return self._fallback_analysis(threats, context)
         except Exception as e:
-            logger.error(f"❌ Error calling Quantum AI service: {e}")
+            logger.error(f"❌ Error calling Sentient AI service: {e}")
             return self._fallback_analysis(threats, context)
     
     def _correlate_via_predictions(self, threats: List[Dict], headers: Dict, context: Dict) -> Dict:
@@ -295,8 +306,8 @@ class QuantumAIProvider(BaseAIProvider):
         
         return {
             "groups": groups,
-            "analysis_summary": f"Quantum AI analyzed {len(analyses)} threats and created {len(groups)} incident groups",
-            "provider": "quantum_ai",
+            "analysis_summary": f"Sentient AI analyzed {len(analyses)} threats and created {len(groups)} incident groups",
+            "provider": "sentient_ai",
             "correlation_method": "prediction_based"
         }
     
@@ -312,14 +323,14 @@ class QuantumAIProvider(BaseAIProvider):
             mitre_techniques.add(self._extract_mitre_technique(threat.get('threat', '')))
         
         return {
-            "group_id": f"QAI-INC-{group_id:04d}",
+            "group_id": f"SAI-INC-{group_id:04d}",
             "incident_worthy": True,
             "confidence_level": 0.85,
             "incident_category": "Security Incident",
             "attack_phase": "Multiple Phases",
             "severity": severity,
             "title": title,
-            "description": f"Quantum AI identified {len(analyses)} correlated threats requiring incident response",
+            "description": f"Sentient AI identified {len(analyses)} correlated threats requiring incident response",
             "threat_ids": threat_ids,
             "key_indicators": list(set(key_indicators))[:10],  # Top 10 unique indicators
             "recommended_actions": [
@@ -331,25 +342,25 @@ class QuantumAIProvider(BaseAIProvider):
             "business_impact": "medium" if severity == "medium" else "high",
             "mitre_techniques": list(mitre_techniques),
             "estimated_risk_score": min(9.0, len(analyses) * 1.5),
-            "ai_provider": "quantum_ai"
+            "ai_provider": "sentient_ai"
         }
     
-    def _format_quantum_response(self, result: Dict, threats: List[Dict]) -> Dict:
-        """Format response from Quantum AI service"""
-        # If Quantum AI returns structured incident data, use it
+    def _format_sentient_response(self, result: Dict, threats: List[Dict]) -> Dict:
+        """Format response from Sentient AI service"""
+        # If Sentient AI returns structured incident data, use it
         if 'incidents' in result or 'groups' in result:
             return result
         
         # Otherwise format the response
         return {
             "groups": result.get('groups', []),
-            "analysis_summary": result.get('summary', 'Quantum AI analysis completed'),
-            "provider": "quantum_ai",
-            "correlation_method": "quantum_ai_direct"
+            "analysis_summary": result.get('summary', 'Sentient AI analysis completed'),
+            "provider": "sentient_ai",
+            "correlation_method": "sentient_ai_direct"
         }
     
     def _fallback_analysis(self, threats: List[Dict], context: Dict) -> Dict:
-        """Fallback analysis when Quantum AI is unavailable"""
+        """Fallback analysis when Sentient AI is unavailable"""
         logger.info("🔄 Using fallback correlation analysis")
         
         # Simple rule-based correlation
@@ -403,7 +414,7 @@ class QuantumAIProvider(BaseAIProvider):
         }
     
     def is_available(self) -> bool:
-        """Check if Quantum AI service is available"""
+        """Check if Sentient AI service is available"""
         try:
             token = self._get_auth_token()
             if not token:
@@ -448,11 +459,11 @@ class AIProviderManager:
     def _initialize_providers(self):
         """Initialize all available AI providers"""
         
-        # Always try Quantum AI first (your preferred provider)
+        # Always try Sentient AI first (your preferred provider)
         try:
-            self.providers[AIProvider.QUANTUM_AI] = QuantumAIProvider()
+            self.providers[AIProvider.SENTIENT_AI] = SentientAIProvider()
         except Exception as e:
-            logger.warning(f"⚠️ Could not initialize Quantum AI provider: {e}")
+            logger.warning(f"⚠️ Could not initialize Sentient AI provider: {e}")
         
         # OpenAI as fallback
         try:
@@ -463,12 +474,12 @@ class AIProviderManager:
     def get_preferred_provider(self) -> Optional[BaseAIProvider]:
         """Get the preferred AI provider"""
         # Check environment variable for preference
-        preferred = os.getenv("AI_PROVIDER", "quantum_ai").lower()
+        preferred = os.getenv("AI_PROVIDER", "sentient_ai").lower()
         
-        if preferred == "quantum_ai" and AIProvider.QUANTUM_AI in self.providers:
-            if self.providers[AIProvider.QUANTUM_AI].is_available():
-                logger.info("🎯 Using Quantum AI as preferred provider")
-                return self.providers[AIProvider.QUANTUM_AI]
+        if preferred == "sentient_ai" and AIProvider.SENTIENT_AI in self.providers:
+            if self.providers[AIProvider.SENTIENT_AI].is_available():
+                logger.info("🎯 Using Sentient AI as preferred provider")
+                return self.providers[AIProvider.SENTIENT_AI]
         
         if preferred == "openai" and AIProvider.OPENAI in self.providers:
             if self.providers[AIProvider.OPENAI].is_available():

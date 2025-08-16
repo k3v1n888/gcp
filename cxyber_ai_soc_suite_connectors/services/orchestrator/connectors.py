@@ -1,3 +1,17 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
 import os, json, base64, requests
 from typing import Dict, Any, List
 
@@ -22,7 +36,7 @@ def notify_teams(text: str):
     card = {
       "@type": "MessageCard",
       "@context": "http://schema.org/extensions",
-      "summary": "CXyber Notification",
+      "summary": "Sentient Notification",
       "text": text
     }
     r = requests.post(TEAMS_WEBHOOK_URL, json=card, timeout=10)

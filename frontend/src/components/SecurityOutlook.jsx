@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
+/*
+ * Author: Kevin Zachary
+ * Copyright: Sentient Spire
+ */
+
+
+
 import React, { useState, useEffect } from 'react';
 
 export default function SecurityOutlook() {
@@ -7,7 +25,7 @@ export default function SecurityOutlook() {
 
   useEffect(() => {
     const fetchForecast = () => {
-      fetch('/api/forecasting/24_hour')
+      fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001'}/api/forecasting/24_hour`)
         .then(res => res.json())
         .then(data => {
           setForecast(data);

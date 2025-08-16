@@ -1,0 +1,16 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# PyTorch CPU-only packages
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.0.1+cpu
+torchvision==0.15.2+cpu
+torchaudio==2.0.2+cpu

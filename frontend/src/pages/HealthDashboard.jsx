@@ -1,3 +1,14 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
 /**
  * System Health Dashboard Component
  * Monitors Docker containers, API endpoints, connectors, and AI models
@@ -32,6 +43,9 @@ const HealthDashboard = () => {
     try {
       const baseUrl = getApiBaseUrl();
       
+      // Use port 8000 for health endpoints (ingest service) as it has Docker API access
+      const healthBaseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
+      
       // Fetch all health endpoints
       const [
         dockerHealth,
@@ -40,11 +54,11 @@ const HealthDashboard = () => {
         aiHealth,
         systemHealth
       ] = await Promise.all([
-        fetch(`${baseUrl}/api/admin/health/docker`).then(r => r.json()).catch(() => ({ status: 'error', containers: [] })),
-        fetch(`${baseUrl}/api/admin/health/apis`).then(r => r.json()).catch(() => ({ status: 'error', endpoints: [] })),
+        fetch(`${healthBaseUrl}/api/admin/health/docker`).then(r => r.json()).catch(() => ({ status: 'error', containers: [] })),
+        fetch(`${healthBaseUrl}/api/admin/health/apis`).then(r => r.json()).catch(() => ({ status: 'error', endpoints: [] })),
         fetch(`${baseUrl}/api/connectors/status`).then(r => r.json()).catch(() => ({ status: 'error', connectors: [] })),
-        fetch(`${baseUrl}/api/admin/health/ai-models`).then(r => r.json()).catch(() => ({ status: 'error', models: [] })),
-        fetch(`${baseUrl}/api/admin/health/system`).then(r => r.json()).catch(() => ({ status: 'error', metrics: {} }))
+        fetch(`${healthBaseUrl}/api/admin/health/ai-models`).then(r => r.json()).catch(() => ({ status: 'error', models: [] })),
+        fetch(`${healthBaseUrl}/api/admin/health/system`).then(r => r.json()).catch(() => ({ status: 'error', metrics: {} }))
       ]);
 
       setHealthData({
@@ -261,31 +275,126 @@ const HealthDashboard = () => {
         </div>
       </Card>
 
-      {/* AI Models */}
+      {/* Sentient AI Models - Multi-Model Architecture */}
       <Card className="p-6">
         <div className="flex items-center space-x-3 mb-4">
           <CpuChipIcon className="h-6 w-6 text-orange-600" />
-          <h2 className="text-xl font-semibold">AI Models</h2>
+          <h2 className="text-xl font-semibold">Sentient AI SOC Multi-Model Architecture</h2>
           {getStatusBadge(healthData.aiModels.status)}
         </div>
-        <div className="space-y-3">
+        
+        {healthData.aiModels.architecture && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+            <div className="text-sm font-medium text-blue-800">Architecture: {healthData.aiModels.architecture}</div>
+            <div className="text-xs text-blue-600 mt-1">Pipeline: {healthData.aiModels.pipeline}</div>
+            <div className="text-xs text-blue-600">
+              Status: {healthData.aiModels.healthy_count || 0}/{healthData.aiModels.total_count || 0} models healthy
+            </div>
+          </div>
+        )}
+        
+        <div className="space-y-4">
           {healthData.aiModels.models.map((model, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                {getStatusIcon(model.status)}
-                <div>
-                  <div className="font-medium">{model.name}</div>
-                  <div className="text-sm text-gray-500">{model.type}</div>
+            <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  {getStatusIcon(model.status)}
+                  <div>
+                    <div className="font-medium text-lg">{model.name}</div>
+                    <div className="text-sm text-gray-500">{model.type}</div>
+                    {model.description && (
+                      <div className="text-xs text-gray-400 mt-1">{model.description}</div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm">{getStatusBadge(model.status)}</div>
+                  {model.port && (
+                    <div className="text-xs text-gray-500 mt-1">Port: {model.port}</div>
+                  )}
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-sm">{getStatusBadge(model.status)}</div>
-                {model.accuracy && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    Accuracy: {model.accuracy}%
+              
+              {/* Model Details */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                {model.endpoint && (
+                  <div className="bg-gray-50 p-2 rounded">
+                    <div className="text-xs text-gray-500">Endpoint</div>
+                    <div className="text-xs font-mono">{model.endpoint}</div>
+                  </div>
+                )}
+                {model.container && (
+                  <div className="bg-gray-50 p-2 rounded">
+                    <div className="text-xs text-gray-500">Container</div>
+                    <div className="text-xs font-mono">{model.container}</div>
+                  </div>
+                )}
+                {model.version && (
+                  <div className="bg-gray-50 p-2 rounded">
+                    <div className="text-xs text-gray-500">Version</div>
+                    <div className="text-xs">{model.version}</div>
+                  </div>
+                )}
+                {model.uptime && (
+                  <div className="bg-gray-50 p-2 rounded">
+                    <div className="text-xs text-gray-500">Uptime</div>
+                    <div className="text-xs">{model.uptime}</div>
                   </div>
                 )}
               </div>
+              
+              {/* Special details for Model C (Your Trained AI) */}
+              {model.name?.includes('Quantum AI Predictive Security Engine') && (
+                <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                  <div className="text-sm font-medium text-purple-800 mb-2">🤖 Your Trained AI Model Status</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {model.model_loaded !== undefined && (
+                      <div className="flex items-center space-x-1">
+                        {model.model_loaded ? 
+                          <CheckCircleIcon className="h-4 w-4 text-green-500" /> : 
+                          <XCircleIcon className="h-4 w-4 text-red-500" />
+                        }
+                        <span className="text-xs">Model Loaded</span>
+                      </div>
+                    )}
+                    {model.preprocessor_loaded !== undefined && (
+                      <div className="flex items-center space-x-1">
+                        {model.preprocessor_loaded ? 
+                          <CheckCircleIcon className="h-4 w-4 text-green-500" /> : 
+                          <XCircleIcon className="h-4 w-4 text-red-500" />
+                        }
+                        <span className="text-xs">Preprocessor</span>
+                      </div>
+                    )}
+                    {model.explainer_available !== undefined && (
+                      <div className="flex items-center space-x-1">
+                        {model.explainer_available ? 
+                          <CheckCircleIcon className="h-4 w-4 text-green-500" /> : 
+                          <XCircleIcon className="h-4 w-4 text-red-500" />
+                        }
+                        <span className="text-xs">SHAP Explainer</span>
+                      </div>
+                    )}
+                    {model.features && (
+                      <div className="text-xs">
+                        <span className="text-gray-500">Features:</span> {model.features}
+                      </div>
+                    )}
+                  </div>
+                  {model.accuracy && (
+                    <div className="mt-2 text-xs text-purple-600">
+                      <span className="font-medium">Performance:</span> {model.accuracy}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Error display */}
+              {model.error && (
+                <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                  <span className="font-medium">Error:</span> {model.error}
+                </div>
+              )}
             </div>
           ))}
         </div>

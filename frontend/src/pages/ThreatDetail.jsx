@@ -1,9 +1,28 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
+/*
+ * Author: Kevin Zachary
+ * Copyright: Sentient Spire
+ */
+
+
+
 // frontend/src/pages/ThreatDetail.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Chatbot from '../components/Chatbot';
 import SoarActionLog from '../components/SoarActionLog';
 import ModelExplanation from '../components/ModelExplanation'; // Import the component
+import AIResponseOrchestrator from '../components/AIResponseOrchestrator'; // Import AI Response Orchestrator
 
 const SeverityBadge = ({ severity }) => {
     const severityStyles = {
@@ -102,8 +121,9 @@ export default function ThreatDetail() {
   const [threat, setThreat] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetch(`/api/threats/${id}`)
+  const fetchThreat = () => {
+    setIsLoading(true);
+    fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001'}/api/threats/${id}`)
       .then(res => res.ok ? res.json() : Promise.reject('Failed to load threat details'))
       .then(data => {
         // Sanitize the data on the frontend as well
@@ -128,6 +148,10 @@ export default function ThreatDetail() {
       })
       .catch(console.error)
       .finally(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    fetchThreat();
   }, [id]);
 
   if (isLoading) return <div className="p-6 text-sky-400">Loading Analysis...</div>;
@@ -164,7 +188,7 @@ export default function ThreatDetail() {
       )}
 
       {threat.misp_summary && (
-        <DetailCard title="Quantum Intel (MISP) Summary">
+        <DetailCard title="Sentient Intel (MISP) Summary">
             <p className="italic text-slate-200">{threat.misp_summary}</p>
         </DetailCard>
       )}
@@ -179,9 +203,9 @@ export default function ThreatDetail() {
 
       {threat.recommendations ? (
         <>
-          <DetailCard title="Quantum AI Analysis: Threat Explanation"><p>{threat.recommendations.explanation}</p></DetailCard>
-          <DetailCard title="Quantum AI Analysis: Potential Impact"><p>{threat.recommendations.impact}</p></DetailCard>
-          <DetailCard title="Quantum AI Analysis: Mitigation Protocols"><ul className="list-disc list-inside space-y-2">{threat.recommendations.mitigation.map((step, index) => (<li key={index}>{step}</li>))}</ul></DetailCard>
+          <DetailCard title="Sentient AI Analysis: Threat Explanation"><p>{threat.recommendations.explanation}</p></DetailCard>
+          <DetailCard title="Sentient AI Analysis: Potential Impact"><p>{threat.recommendations.impact}</p></DetailCard>
+          <DetailCard title="Sentient AI Analysis: Mitigation Protocols"><ul className="list-disc list-inside space-y-2">{threat.recommendations.mitigation.map((step, index) => (<li key={index}>{step}</li>))}</ul></DetailCard>
         </>
       ) : ( <DetailCard title="AI Analysis"><p>Could not generate AI recommendations for this threat.</p></DetailCard> )}
       
@@ -194,11 +218,22 @@ export default function ThreatDetail() {
         />
       </DetailCard>
       
+      <DetailCard title="AI Response Orchestrator">
+        <AIResponseOrchestrator 
+            threatId={id}
+            onResponseExecuted={(result) => {
+              console.log('Response executed:', result);
+              // Optionally refresh threat data after response execution
+              fetchThreat();
+            }}
+        />
+      </DetailCard>
+      
       <DetailCard title="Automated Response Log">
         <SoarActionLog actions={threat.soar_actions} />
       </DetailCard>
       
-      <DetailCard title="Quantum AI Bot">
+      <DetailCard title="Sentient AI Bot">
         <Chatbot threatContext={threat} />
       </DetailCard>
     </div>

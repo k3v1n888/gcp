@@ -1,88 +1,44 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
+/*
+ * Author: Kevin Zachary
+ * Copyright: Sentient Spire
+ */
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Progress } from './ui/progress';
+// Using heroicons since lucide-react is not installed
 import { 
   CpuChipIcon,
-  ShieldCheckIcon, 
-  ExclamationTriangleIcon, 
-  CheckCircleIcon, 
-  XCircleIcon, 
+  ChartBarIcon,
+  ShieldCheckIcon,
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
+  XCircleIcon,
   ClockIcon,
   BoltIcon,
-  EyeIcon,
-  CircleStackIcon,
-  ChartBarIcon,
+  CursorArrowRaysIcon as TargetIcon,
+  WifiIcon,
   ArrowTrendingUpIcon,
-  BeakerIcon,
-  Cog6ToothIcon,
-  ArrowPathIcon
+  EyeIcon,
+  CpuChipIcon as CpuIcon,
+  CircleStackIcon as DatabaseIcon,
+  ArrowPathIcon as RefreshCwIcon
 } from '@heroicons/react/24/outline';
-
-// Simple UI component replacements
-const Card = ({ children, className = "" }) => (
-  <div className={`bg-slate-800 rounded-lg shadow-lg border border-slate-700 ${className}`}>
-    {children}
-  </div>
-);
-
-const CardHeader = ({ children, className = "" }) => (
-  <div className={`px-6 py-4 border-b border-slate-700 ${className}`}>
-    {children}
-  </div>
-);
-
-const CardTitle = ({ children, className = "" }) => (
-  <h3 className={`text-lg font-semibold text-slate-100 ${className}`}>
-    {children}
-  </h3>
-);
-
-const CardContent = ({ children, className = "" }) => (
-  <div className={`px-6 py-4 ${className}`}>
-    {children}
-  </div>
-);
-
-const Badge = ({ children, variant = "default", className = "" }) => {
-  const baseClasses = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
-  const variantClasses = {
-    default: "bg-slate-700 text-slate-300",
-    success: "bg-green-600 text-white", 
-    warning: "bg-yellow-600 text-white",
-    error: "bg-red-600 text-white",
-    outline: "border border-slate-600 text-slate-300"
-  };
-  
-  return (
-    <span className={`${baseClasses} ${variantClasses[variant]} ${className}`}>
-      {children}
-    </span>
-  );
-};
-
-const Button = ({ children, onClick, variant = "default", className = "" }) => {
-  const baseClasses = "inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2";
-  const variantClasses = {
-    default: "bg-sky-600 text-white hover:bg-sky-700",
-    outline: "border border-slate-600 text-slate-300 hover:bg-slate-700"
-  };
-  
-  return (
-    <button 
-      onClick={onClick}
-      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
-    >
-      {children}
-    </button>
-  );
-};
-
-const Progress = ({ value = 0, className = "" }) => (
-  <div className={`w-full bg-slate-700 rounded-full h-2 ${className}`}>
-    <div 
-      className="bg-sky-600 h-2 rounded-full transition-all duration-300"
-      style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-    />
-  </div>
-);
 
 const AIModelDashboard = () => {
   const [systemStatus, setSystemStatus] = useState(null);
@@ -114,7 +70,7 @@ const AIModelDashboard = () => {
 
   const fetchSystemStatus = async () => {
     try {
-      const response = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000'}/api/ai/status`);
+      const response = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001'}/api/ai/status`);
       if (response.ok) {
         const data = await response.json();
         setSystemStatus(data);
@@ -128,7 +84,7 @@ const AIModelDashboard = () => {
   const fetchRealtimeData = async () => {
     try {
       // Fetch recent AI decisions
-      const decisionsResponse = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000'}/api/ai/decisions/recent`);
+      const decisionsResponse = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001'}/api/ai/decisions/recent`);
       if (decisionsResponse.ok) {
         const decisions = await decisionsResponse.json();
         setRealtimeData(prev => ({
@@ -138,7 +94,7 @@ const AIModelDashboard = () => {
       }
 
       // Fetch current processing
-      const processingResponse = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000'}/api/ai/processing/current`);
+      const processingResponse = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001'}/api/ai/processing/current`);
       if (processingResponse.ok) {
         const processing = await processingResponse.json();
         setRealtimeData(prev => ({
@@ -148,7 +104,7 @@ const AIModelDashboard = () => {
       }
 
       // Fetch recent threats
-      const threatsResponse = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000'}/api/threats?limit=10`);
+      const threatsResponse = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001'}/api/threats?limit=10`);
       if (threatsResponse.ok) {
         const threatsData = await threatsResponse.json();
         setRealtimeData(prev => ({
@@ -187,7 +143,7 @@ const AIModelDashboard = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <ArrowPathIcon className="h-8 w-8 animate-spin text-blue-600" />
+        <RefreshCwIcon className="h-8 w-8 animate-spin text-blue-600" />
         <span className="ml-2 text-lg">Loading AI System Status...</span>
       </div>
     );
@@ -202,7 +158,7 @@ const AIModelDashboard = () => {
           <h1 className="text-2xl font-bold text-gray-900">AI Model Management Dashboard</h1>
         </div>
         <Button onClick={() => { fetchSystemStatus(); fetchRealtimeData(); }} variant="outline">
-          <ArrowPathIcon className="h-4 w-4 mr-2" />
+          <RefreshCwIcon className="h-4 w-4 mr-2" />
           Refresh
         </Button>
       </div>
@@ -246,7 +202,7 @@ const AIModelDashboard = () => {
                   {systemStatus?.models ? Object.keys(systemStatus.models).length : 0}
                 </p>
               </div>
-              <CpuChipIcon className="h-8 w-8 text-green-600" />
+              <CpuIcon className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
@@ -261,7 +217,7 @@ const AIModelDashboard = () => {
                     `${(systemStatus.performance_metrics.average_confidence * 100).toFixed(1)}%` : '0%'}
                 </p>
               </div>
-              <EyeIcon className="h-8 w-8 text-purple-600" />
+              <TargetIcon className="h-8 w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
@@ -271,7 +227,7 @@ const AIModelDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <CircleStackIcon className="h-5 w-5" />
+            <WifiIcon className="h-5 w-5" />
             <span>AI Models Status</span>
           </CardTitle>
         </CardHeader>
@@ -404,7 +360,7 @@ const AIModelDashboard = () => {
                 </div>
                 <div className="flex items-center space-x-1">
                   {threat.ai_processed && <CpuChipIcon className="h-4 w-4 text-blue-500" />}
-                  {threat.correlation_score > 0.5 && <CircleStackIcon className="h-4 w-4 text-orange-500" />}
+                  {threat.correlation_score > 0.5 && <WifiIcon className="h-4 w-4 text-orange-500" />}
                   {threat.severity === 'high' || threat.severity === 'critical' ? 
                     <ExclamationTriangleIcon className="h-4 w-4 text-red-500" /> : 
                     <CheckCircleIcon className="h-4 w-4 text-green-500" />

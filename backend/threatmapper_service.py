@@ -1,3 +1,17 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
 # backend/threatmapper_service.py
 import requests
 import os
@@ -58,7 +72,7 @@ def fetch_and_save_threatmapper_vulns(db: Session):
             new_log = models.ThreatLog(
                 ip=vuln.get("host_name", "N/A"),
                 threat=threat_desc,
-                source="Quantum Pathfinder",
+                source="Sentient Pathfinder",
                 severity=vuln.get("cve_severity", "high"),
                 tenant_id=1,
                 cve_id=vuln.get("cve_id"),

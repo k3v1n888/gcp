@@ -1,3 +1,17 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
 import os, requests
 from fastapi import FastAPI, Request, Form, status
 from fastapi.responses import RedirectResponse
@@ -6,9 +20,14 @@ from starlette.templating import Jinja2Templates
 
 INGEST_UI = os.getenv("INGEST_URL", "http://localhost:8000")
 
-app = FastAPI(title="CXyber Console", version="0.1.0")
+app = FastAPI(title="Sentient Console", version="0.1.0")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+@app.get("/health")
+def health():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "console"}
 
 @app.get("/")
 def home(request: Request):

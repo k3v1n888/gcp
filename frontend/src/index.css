@@ -1,36 +1,71 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  /* Use a professional dark grey and a highly readable off-white for text */
-  background-color: #111827; /* A very dark slate blue */
-  color: #f1f5f9; /* A bright, clean off-white (slate-100) */
-  /* Use the system's default sans-serif font for maximum readability */
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  /* High contrast dark theme with excellent readability */
+  background: #0a0f1c;
+  color: #ffffff; /* Pure white text for maximum readability */
+  /* Modern font stack for excellent readability */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  font-weight: 400;
+  line-height: 1.7; /* Better line spacing for readability */
+  letter-spacing: 0.02em; /* Slightly more letter spacing for clarity */
 }
 
-/* A clean, professional card style */
+/* Professional card styling with enhanced visibility */
 .widget-card {
-  @apply bg-slate-900 border border-slate-700 rounded-lg shadow-lg;
+  @apply bg-slate-800/90 border border-slate-600/50 rounded-xl shadow-xl;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease-in-out;
 }
 
-/* A clean, bright accent color for headings */
+.widget-card:hover {
+  @apply border-blue-500/50 shadow-2xl;
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1);
+}
+
+/* Enhanced accent text with better contrast */
 .glow-text {
-  @apply text-sky-400 font-semibold;
+  @apply text-blue-300 font-semibold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Updated table style for clarity */
+/* Modern table with improved readability */
 .cyber-table {
-  @apply min-w-full text-sm bg-transparent;
+  @apply min-w-full text-sm;
+  background: linear-gradient(135deg, #1a2332 0%, #1e293b 100%);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .cyber-table th {
-  @apply px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider border-b-2 border-slate-700;
+  @apply px-6 py-4 text-left text-xs font-bold text-slate-200 uppercase tracking-wider;
+  background: linear-gradient(135deg, #334155 0%, #475569 100%);
+  border-bottom: 2px solid #64748b;
 }
 
 .cyber-table td {
-  @apply px-4 py-3 border-t border-slate-800;
+  @apply px-6 py-4 text-slate-100;
+  border-bottom: 1px solid #334155;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.cyber-table tr:hover {
+  background: rgba(59, 130, 246, 0.08);
 }
 
 /* Custom scrollbar styles for better appearance */
@@ -68,3 +103,4 @@ body {
 .scrollbar-thumb-sky-600::-webkit-scrollbar-thumb:hover {
   background: #0ea5e9;
 }
+@import "./styles/theme-fixes.css";

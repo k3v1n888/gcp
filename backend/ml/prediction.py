@@ -1,3 +1,17 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
 # backend/ml/prediction.py
 import os
 import requests
@@ -13,7 +27,7 @@ if DEV_MODE:
     from .local_prediction import LocalSeverityPredictor
 
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "https://quantum-predictor-api-1020401092050.asia-southeast1.run.app")
-LOCAL_AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://ai-service:8001")  # Use container name in dev
+LOCAL_AI_SERVICE_URL = "http://localhost:8001"  # Local AI service URL
 
 class SeverityPredictor:
     def __init__(self):

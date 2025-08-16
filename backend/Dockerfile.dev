@@ -1,3 +1,12 @@
+# Copyright (c) 2025 Kevin Zachary
+# All rights reserved.
+#
+# This software and associated documentation files (the "Software") are the 
+# exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+# modification, or use of this software is strictly prohibited.
+#
+# For licensing inquiries, contact: kevin@zachary.com
+
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -5,16 +14,18 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy backend requirements
-COPY backend/requirements.txt ./backend/
+# Copy backend requirements files
+COPY backend/requirements-clean.txt requirements-clean.txt
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r backend/requirements.txt
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements-clean.txt
 
-# Copy backend code
-COPY backend/ ./backend/
+# Copy backend code (flat structure for container)
+COPY backend/ ./
 
 # Set environment variables
 ENV PYTHONPATH=/app
@@ -22,5 +33,5 @@ ENV DEV_MODE=true
 
 EXPOSE 8000
 
-# Start FastAPI with hot reload
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Start FastAPI with hot reload using flat structure
+CMD ["uvicorn", "main_flat:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

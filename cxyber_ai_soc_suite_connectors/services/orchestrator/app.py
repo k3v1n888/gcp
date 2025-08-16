@@ -1,3 +1,17 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
 
 import os, requests
 from fastapi import FastAPI, Body
@@ -44,7 +58,7 @@ def actions_execute(body: dict = Body(...)):
     for step in plan:
         action = step.get("action")
         if action == "notify":
-            text = f"[{step.get('priority','p3')}] SOC Notification via CXyber"
+            text = f"[{step.get('priority','p3')}] SOC Notification via Sentient"
             if options.get("notify_via") == "teams":
                 res = {"connector":"teams","dry_run":dry}
                 if not dry: res |= notify_teams(text)
@@ -53,8 +67,8 @@ def actions_execute(body: dict = Body(...)):
                 if not dry: res |= notify_slack(text, channel=step.get("channel"))
             results.append({"step": step, "result": res})
         elif action == "ticket":
-            summary = f"CXyber Incident - {step.get('template','incident')}"
-            desc = "Auto-created by CXyber policy. See orchestrator for details."
+            summary = f"Sentient Incident - {step.get('template','incident')}"
+            desc = "Auto-created by Sentient policy. See orchestrator for details."
             res = {"connector":"jira","dry_run":dry}
             if not dry:
                 res |= create_jira_ticket(summary, desc, issue_type=options.get("jira_issue_type","Task"))

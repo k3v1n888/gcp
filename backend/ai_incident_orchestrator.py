@@ -1,4 +1,18 @@
 """
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
+"""
 🚀 AI-Driven Incident Orchestrator
 Next-Generation Incident Management following MITRE ATT&CK, NIST, and SANS frameworks
 
@@ -107,7 +121,7 @@ class AIIncidentOrchestrator:
     def __init__(self):
         print("🔥 DEBUG: Initializing AIIncidentOrchestrator")
         try:
-            # Initialize your existing Quantum AI service
+            # Initialize your existing Sentient AI service
             self.predictor = SeverityPredictor()
             print("🔥 DEBUG: SeverityPredictor initialized successfully")
         except Exception as e:
@@ -209,16 +223,16 @@ class AIIncidentOrchestrator:
 
     async def _ai_analyze_and_group_threats(self, threats: List[models.ThreatLog]) -> List[Dict[str, Any]]:
         """
-        Use your Quantum AI service to intelligently analyze and group threats into potential incidents
+        Use your Sentient AI service to intelligently analyze and group threats into potential incidents
         based on cybersecurity best practices and attack patterns.
         """
         if not threats:
             logger.info("No threats provided for analysis")
             return []
         
-        logger.info(f"🎯 Analyzing {len(threats)} threats using Quantum AI service")
+        logger.info(f"🎯 Analyzing {len(threats)} threats using Sentient AI service")
         
-        # Analyze each threat using your existing Quantum AI service
+        # Analyze each threat using your existing Sentient AI service
         threat_analyses = []
         for threat in threats:
             try:
@@ -238,7 +252,7 @@ class AIIncidentOrchestrator:
                 }
                 
                 # Get AI analysis from your existing service
-                severity_prediction = self.predictor.predict_severity(
+                severity_prediction = self.predictor.predict(
                     threat=threat_dict["threat"],
                     source=threat_dict["source"], 
                     ip_reputation_score=threat_dict["ip_reputation_score"],
@@ -256,10 +270,10 @@ class AIIncidentOrchestrator:
                     'explanation': explanation
                 })
                 
-                logger.debug(f"✅ Quantum AI analyzed threat {threat.id}: {severity_prediction}")
+                logger.debug(f"✅ Sentient AI analyzed threat {threat.id}: {severity_prediction}")
                 
             except Exception as e:
-                logger.warning(f"⚠️ Failed to analyze threat {threat.id} with Quantum AI: {e}")
+                logger.warning(f"⚠️ Failed to analyze threat {threat.id} with Sentient AI: {e}")
                 # Continue with basic data if AI fails
                 threat_analyses.append({
                     'threat': threat_dict,
@@ -267,14 +281,14 @@ class AIIncidentOrchestrator:
                     'explanation': None
                 })
         
-        # Group threats using Quantum AI insights
+        # Group threats using Sentient AI insights
         return self._correlate_with_quantum_ai(threat_analyses)
 
     def _correlate_with_quantum_ai(self, analyses: List[Dict]) -> List[Dict[str, Any]]:
         """
-        Use Quantum AI analysis results to correlate threats into incidents
+        Use Sentient AI analysis results to correlate threats into incidents
         """
-        logger.info("🔗 Correlating threats using Quantum AI insights")
+        logger.info("🔗 Correlating threats using Sentient AI insights")
         groups = []
         group_id = 1
         
@@ -304,14 +318,14 @@ class AIIncidentOrchestrator:
                     suspicious_ips[ip] = []
                 suspicious_ips[ip].append(analysis)
         
-        # Create incidents based on Quantum AI analysis
+        # Create incidents based on Sentient AI analysis
         
         # Critical threat incidents
         if critical_threats:
             groups.append(self._create_ai_incident_group(
                 critical_threats, group_id, "critical", 
-                "Critical Security Incident - Quantum AI Detected", 
-                "Quantum AI identified critical threats requiring immediate response"
+                "Critical Security Incident - Sentient AI Detected", 
+                "Sentient AI identified critical threats requiring immediate response"
             ))
             group_id += 1
         
@@ -320,7 +334,7 @@ class AIIncidentOrchestrator:
             groups.append(self._create_ai_incident_group(
                 high_threats, group_id, "high",
                 "High-Priority Security Event",
-                "Multiple high-severity threats detected by Quantum AI"
+                "Multiple high-severity threats detected by Sentient AI"
             ))
             group_id += 1
         
@@ -333,16 +347,16 @@ class AIIncidentOrchestrator:
                     groups.append(self._create_ai_incident_group(
                         ip_analyses, group_id, "medium",
                         f"Coordinated Attack from {ip}",
-                        f"Quantum AI detected {len(ip_analyses)} correlated threats from IP {ip}"
+                        f"Sentient AI detected {len(ip_analyses)} correlated threats from IP {ip}"
                     ))
                     group_id += 1
         
-        logger.info(f"✅ Quantum AI correlation created {len(groups)} incident groups")
+        logger.info(f"✅ Sentient AI correlation created {len(groups)} incident groups")
         return groups
     
     def _create_ai_incident_group(self, analyses: List[Dict], group_id: int, 
                                   severity: str, title: str, description: str) -> Dict[str, Any]:
-        """Create an incident group from Quantum AI analysis"""
+        """Create an incident group from Sentient AI analysis"""
         threat_ids = [analysis['threat']['id'] for analysis in analyses]
         key_indicators = []
         mitre_techniques = set()
@@ -366,7 +380,7 @@ class AIIncidentOrchestrator:
         return {
             "group_id": f"QAI-INC-{group_id:04d}",
             "incident_worthy": True,
-            "confidence_level": 0.85,  # High confidence from Quantum AI
+            "confidence_level": 0.85,  # High confidence from Sentient AI
             "incident_category": "ai_detected_incident",
             "attack_phase": "multiple_phases",
             "severity": severity,
@@ -376,7 +390,7 @@ class AIIncidentOrchestrator:
             "key_indicators": list(set(key_indicators))[:10],
             "recommended_actions": [
                 "Immediate threat containment",
-                "Quantum AI forensic analysis",
+                "Sentient AI forensic analysis",
                 "Review affected systems",
                 "Monitor for lateral movement"
             ],

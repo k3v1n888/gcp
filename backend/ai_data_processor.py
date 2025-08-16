@@ -1,4 +1,18 @@
 """
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
+"""
 Enhanced AI Data Ingestion Service
 Integrates advanced AI models for intelligent data processing
 """
@@ -32,9 +46,8 @@ class AIDataProcessor:
     """Advanced AI-powered data processor that intelligently handles incoming data"""
     
     def __init__(self):
-        ai_service_base = os.getenv("AI_SERVICE_URL", "http://ai-service:8001")
-        self.threat_service_url = ai_service_base
-        self.policy_service_url = ai_service_base.replace(":8001", ":8002")
+        self.threat_service_url = os.getenv("THREAT_SERVICE_URL", "http://localhost:8001")
+        self.policy_service_url = os.getenv("POLICY_SERVICE_URL", "http://localhost:8002")
         self.auto_mapping_enabled = True
         self.ai_enrichment_enabled = True
         

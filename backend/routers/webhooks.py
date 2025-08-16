@@ -1,3 +1,17 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
 from fastapi import APIRouter, Depends, Request, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
@@ -35,7 +49,7 @@ async def handle_wazuh_webhook(request: Request, db: Session = Depends(database.
     db_log = models.ThreatLog(
         ip=agent_ip,
         threat=rule_desc,
-        source="Quantum XDR (Wazuh)",
+        source="Sentient XDR (Wazuh)",
         severity=severity,
         tenant_id=1,
         timestamp=datetime.now(timezone.utc)

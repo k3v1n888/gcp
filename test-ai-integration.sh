@@ -1,4 +1,17 @@
 #!/bin/bash
+# Copyright (c) 2025 Kevin Zachary
+# All rights reserved.
+#
+# This software and associated documentation files (the "Software") are the 
+# exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+# modification, or use of this software is strictly prohibited.
+#
+# For licensing inquiries, contact: kevin@zachary.com
+
+#!/bin/bash
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
 
 echo "🤖 AI System Integration Test"
 echo "========================================"
@@ -41,10 +54,10 @@ curl -X POST "http://192.168.64.13:8000/api/connectors/collect" \
 # Test 4: Database verification
 echo ""
 echo "4️⃣  Verifying Database Integration..."
-THREAT_COUNT=$(curl -s "http://192.168.64.13:8000/api/threats" | jq 'length' 2>/dev/null || echo "0")
+THREAT_COUNT=$(curl -s "http://192.168.64.13:8000/api/threats?limit=1" | jq '.total' || echo "0")
 echo "📊 Threats in database: $THREAT_COUNT"
 
-INCIDENT_COUNT=$(curl -s "http://192.168.64.13:8000/api/incidents" | jq 'length' 2>/dev/null || echo "0")
+INCIDENT_COUNT=$(curl -s "http://192.168.64.13:8000/api/incidents?limit=1" | jq '.total' || echo "0")
 echo "📋 Incidents in database: $INCIDENT_COUNT"
 
 # Test 5: System Health

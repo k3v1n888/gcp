@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
+/*
+ * Author: Kevin Zachary
+ * Copyright: Sentient Spire
+ */
+
+
+
 import React, { useState, useEffect, useContext } from 'react';
 import { UserContext } from '../context/UserContext';
 import { useDevUser } from '../context/DevUserContext';
@@ -137,7 +155,8 @@ const UnifiedIncidentManager = () => {
             
             if (response.ok) {
                 const data = await response.json();
-                setIncidents(data);
+                // API returns {incidents: [...], total: number} format
+                setIncidents(data.incidents || []);
                 setError(null);
             } else {
                 setError('Failed to fetch incidents');

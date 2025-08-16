@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
+/*
+ * Author: Kevin Zachary
+ * Copyright: Sentient Spire
+ */
+
+
+
 // Environment detection utility
 export const isDevelopment = () => {
   // Primary detection: Check React environment variables set in docker-compose
@@ -30,7 +48,7 @@ export const isDevelopment = () => {
 
 export const getApiBaseUrl = () => {
   if (isDevelopment()) {
-    return 'http://192.168.64.13:8000';
+    return 'http://localhost:8001';
   }
   return window.location.origin;
 };

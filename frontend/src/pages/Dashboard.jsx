@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2025 Kevin Zachary
+ * All rights reserved.
+ *
+ * This software and associated documentation files (the "Software") are the 
+ * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+ * modification, or use of this software is strictly prohibited.
+ *
+ * For licensing inquiries, contact: kevin@zachary.com
+ */
+
+/*
+ * Author: Kevin Zachary
+ * Copyright: Sentient Spire
+ */
+
+
+
 import { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../context/UserContext';
 import { useDevUser } from '../context/DevUserContext';
@@ -10,6 +28,7 @@ import SecurityOutlook from '../components/SecurityOutlook';
 import ThreatsManager from '../components/ThreatsManager';
 import UnifiedIncidentManager from '../components/UnifiedIncidentManager';
 import AIThreatHunting from '../components/AIThreatHunting';
+import AIModelManagement from '../components/AIModelManagement';
 import { sanitizeApiResponse, formatNumber } from '../utils/dataUtils';
 import { isDevelopment, getApiBaseUrl } from '../utils/environment';
 
@@ -154,8 +173,8 @@ export default function Dashboard() {
                 return res.json();
             })
             .then(data => {
-                console.log('🔥 Threats data:', data?.length, 'items');
-                setLogs(sanitizeApiResponse(data));
+                console.log('🔥 Threats data:', data?.threats?.length || data?.length, 'items');
+                setLogs(sanitizeApiResponse(data.threats || data || []));
             })
             .catch(error => {
                 console.error('❌ Threats API error:', error);
@@ -288,6 +307,17 @@ export default function Dashboard() {
                         <span>🧠</span>
                         <span>AI Hunting</span>
                     </button>
+                    <button
+                        onClick={() => setActiveTab('ai-models')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                            activeTab === 'ai-models'
+                                ? 'border-purple-500 text-purple-400'
+                                : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-300'
+                        }`}
+                    >
+                        <span>🤖</span>
+                        <span>AI Models</span>
+                    </button>
                 </nav>
             </div>
 
@@ -367,6 +397,10 @@ export default function Dashboard() {
 
             {activeTab === 'ai-hunting' && (
                 <AIThreatHunting />
+            )}
+
+            {activeTab === 'ai-models' && (
+                <AIModelManagement />
             )}
             </div>
         </div>

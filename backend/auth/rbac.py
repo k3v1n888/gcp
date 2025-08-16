@@ -1,3 +1,17 @@
+"""
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
 # backend/auth/rbac.py
 
 from fastapi import Request, HTTPException, Depends
@@ -102,6 +116,14 @@ def require_role(required_roles: list[str]):
             raise HTTPException(status_code=403, detail="Forbidden: Insufficient role")
         return user
     return role_checker
+
+def require_admin(user: User = Depends(get_current_user)):
+    """
+    Requires admin role for the authenticated user.
+    """
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Admin role required")
+    return user
 
 def get_tenant_id(user: User = Depends(get_current_user)):
     """

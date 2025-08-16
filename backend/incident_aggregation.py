@@ -1,9 +1,22 @@
 """
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
+
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+modification, or use of this software is strictly prohibited.
+
+For licensing inquiries, contact: kevin@zachary.com
+"""
+
+# Author: Kevin Zachary
+# Copyright: Sentient Spire
+
+"""
 AI-Powered Incident Aggregation Service
 Analyzes threats and creates comprehensive incident reports
 """
 
-import os
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
@@ -109,9 +122,8 @@ class AIIncidentAggregator:
         try:
             # Use local AI service for analysis
             import requests
-            ai_service_url = os.getenv("AI_SERVICE_URL", "http://ai-service:8001")
             response = requests.post(
-                f"{ai_service_url}/analyze",
+                "http://localhost:8001/analyze",
                 json={"prompt": prompt},
                 timeout=30
             )

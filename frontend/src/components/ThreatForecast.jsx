@@ -1,20 +1,25 @@
-/*
- * Copyright (c) 2025 Kevin Zachary
- * All rights reserved.
- *
- * This software and associated documentation files (the "Software") are the 
- * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
- * modification, or use of this software is strictly prohibited.
- *
- * For licensing inquiries, contact: kevin@zachary.com
- */
+
 
 /*
- * Author: Kevin Zachary
- * Copyright: Sentient Spire
- */
+Copyright (c) 2025 Kevin Zachary
+All rights reserved.
 
+This software and associated documentation files (the "Software") are the 
+exclusive property of Kevin Zachary. The Software is protected by copyright 
+laws and international copyright treaties, as well as other intellectual 
+property laws and treaties.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
+KEVIN ZACHARY BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER 
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Unauthorized copying, modification, distribution, or use of this software, 
+via any medium, is strictly prohibited without the express written permission 
+of Kevin Zachary.
+*/
 
 import React, { useState, useEffect } from 'react';
 import { getApiBaseUrl } from '../utils/environment';

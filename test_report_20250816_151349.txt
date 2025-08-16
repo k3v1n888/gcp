@@ -1,0 +1,105 @@
+================================================================================
+🧪 SENTIENT AI SOC COMPREHENSIVE TEST REPORT
+================================================================================
+Test Suite: Sentient AI SOC Multi-Model Architecture
+Executed: 2025-08-16 15:13:49
+Duration: 23.83 seconds
+
+📊 TEST SUMMARY
+----------------------------------------
+Total Tests:    36
+✅ Passed:     10
+❌ Failed:     7
+⏭️  Skipped:    16
+⚠️  Warnings:   3
+🎯 Success Rate: 27.8%
+
+📋 CATEGORY BREAKDOWN
+----------------------------------------
+INFRASTRUCTURE  1/1 (100%)
+DATABASE        0/2 (0%)
+API             0/13 (0%)
+AI_MODELS       2/4 (50%)
+ORCHESTRATOR    1/2 (50%)
+FRONTEND        6/6 (100%)
+SECURITY        0/3 (0%)
+DATA_FLOW       0/2 (0%)
+MONITORING      0/2 (0%)
+INTEGRATION     0/1 (0%)
+
+📝 DETAILED RESULTS
+----------------------------------------
+
+INFRASTRUCTURE:
+  ✅ Docker Services                9 services running (0.10s)
+
+DATABASE:
+  ❌ Database Connection            Connection failed: cannot import name 'Threat' from 'backend.models' (/Users/kevinzachary/Downloads/VS-GCP-QAI/gcp/backend/models.py) (0.99s)
+  ❌ Database Health                Health check failed: 404 (0.03s)
+
+API:
+  ⏭️  System Health Endpoint         Endpoint not implemented (0.00s)
+  ⏭️  Threats API Endpoint           Endpoint not implemented (0.00s)
+  ⏭️  Incidents API Endpoint         Endpoint not implemented (0.00s)
+  ⏭️  AI Status Endpoint             Endpoint not implemented (0.00s)
+  ⏭️  AI Models Endpoint             Endpoint not implemented (0.00s)
+  ⏭️  AI Health Endpoint             Endpoint not implemented (0.00s)
+  ⏭️  Threat Forecasting Endpoint    Endpoint not implemented (0.00s)
+  ⏭️  Correlation Status Endpoint    Endpoint not implemented (0.00s)
+  ⏭️  Predictive Status Endpoint     Endpoint not implemented (0.00s)
+  ⏭️  Graph API Endpoint             Endpoint not implemented (0.00s)
+  ⏭️  Threat Hunting Endpoint        Endpoint not implemented (0.00s)
+  ⏭️  Data Connectors Endpoint       Endpoint not implemented (0.00s)
+  ⏭️  Admin Dashboard Endpoint       Endpoint not implemented (0.00s)
+
+AI_MODELS:
+  ✅ Safe Threat Forecaster         Forecaster working correctly (9.23s)
+  ⚠️  AI Provider Manager            No preferred provider available (6.99s)
+  ✅ AI Incident Orchestrator       Orchestrator initialized, AI integration: False (0.04s)
+  ❌ ML Severity Predictor          Predictor failed: SeverityPredictor.predict_severity() missing 1 required positional argument: 'source' (0.00s)
+
+ORCHESTRATOR:
+  ✅ Orchestrator Status            Status endpoint working (0.05s)
+  ❌ Model Testing Endpoint         Status 404 (0.02s)
+
+FRONTEND:
+  ✅ Frontend Accessibility         Frontend accessible, size: 652 bytes (0.10s)
+  ✅ Component: AIModelTestingDashboard.js Component exists and validated (0.00s)
+  ✅ Component: ThreatForecast.jsx  Component exists and validated (0.00s)
+  ✅ Component: AIModelDashboard.jsx Component exists and validated (0.00s)
+  ✅ Component: CyberSidebar.jsx    Component exists and validated (0.00s)
+  ✅ Component: AdminPanel.jsx      Component exists and validated (0.00s)
+
+SECURITY:
+  ⚠️  CORS Configuration             No CORS headers found (0.02s)
+  ⏭️  Auth Endpoint /api/auth/health Endpoint not implemented (0.01s)
+  ⏭️  Auth Endpoint /api/admin/health Endpoint not implemented (0.01s)
+
+DATA_FLOW:
+  ❌ Threat Processing              Processing failed: 404 (0.01s)
+  ❌ Data Connector Collection      Collection failed: 404 (0.00s)
+
+MONITORING:
+  ❌ System Health Monitor          Health check failed: 404 (0.01s)
+  ⏭️  Alerting System                Alerting endpoint not implemented (0.01s)
+
+INTEGRATION:
+  ⚠️  End-to-End Threat Analysis     Workflow completed but no groups created (6.16s)
+
+================================================================================
+🔍 SYSTEM ANALYSIS & RECOMMENDATIONS
+================================================================================
+❌ CRITICAL: System has significant issues requiring immediate attention.
+   Address failed tests before using in production.
+
+🛠️  NEXT STEPS:
+   1. Review failed tests and error messages
+   2. Check Docker services and container logs
+   3. Verify database connectivity and migrations
+   4. Ensure all AI models are properly loaded
+   5. Test frontend components manually
+   6. Run integration tests after fixes
+
+================================================================================
+© 2025 Kevin Zachary - Sentient AI SOC Multi-Model Architecture
+================================================================================

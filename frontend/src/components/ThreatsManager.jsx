@@ -670,7 +670,7 @@ const ThreatsManager = () => {
 
                   {/* MISP Summary - matching ThreatDetail.jsx */}
                   {threatDetail.misp_summary && (
-                    <DetailCard title="Quantum Intel (MISP) Summary">
+                    <DetailCard title="Sentient Intel (MISP) Summary">
                       <p className="italic text-slate-200">{threatDetail.misp_summary}</p>
                     </DetailCard>
                   )}
@@ -690,13 +690,13 @@ const ThreatsManager = () => {
                   {/* Sentient AI Analysis - matching ThreatDetail.jsx */}
                   {threatDetail.recommendations ? (
                     <>
-                      <DetailCard title="Quantum Sentient AI Analysis: Threat Explanation">
+                      <DetailCard title="Sentient AI Analysis: Threat Explanation">
                         <p>{threatDetail.recommendations.explanation}</p>
                       </DetailCard>
-                      <DetailCard title="Quantum Sentient AI Analysis: Potential Impact">
+                      <DetailCard title="Sentient AI Analysis: Potential Impact">
                         <p>{threatDetail.recommendations.impact}</p>
                       </DetailCard>
-                      <DetailCard title="Quantum Sentient AI Analysis: Mitigation Protocols">
+                      <DetailCard title="Sentient AI Analysis: Mitigation Protocols">
                         <ul className="list-disc list-inside space-y-2">
                           {threatDetail.recommendations.mitigation.map((step, index) => (
                             <li key={index}>{step}</li>

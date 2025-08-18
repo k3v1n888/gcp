@@ -24,11 +24,11 @@ POLICY_URL = os.getenv("POLICY_URL", "http://localhost:8002/policy/decide")
 
 # Model endpoint mappings for testing
 MODEL_ENDPOINTS = {
-    "ingest": "http://ingest-service:8000/health",
-    "postprocess": "http://postprocess-service:8000/health", 
-    "threat-model": "http://threat-model:8001/health",
-    "orchestrator": "http://orchestrator:8003/health",
-    "console": "http://console:8005/health"
+    "ingest": "http://ssai_ingest:8000/health",
+    "postprocess": "http://ssai_postprocess:8000/health", 
+    "threat-model": "http://ssai_threat_model:8001/health",
+    "orchestrator": "http://ssai_orchestrator:8003/health",
+    "console": "http://ssai_console:8005/health"
 }
 
 app = FastAPI(title="Orchestrator", version="0.1.0")

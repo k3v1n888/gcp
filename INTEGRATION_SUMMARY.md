@@ -85,8 +85,8 @@ Expected Response:
 {
   "status": "success",
   "ai_provider_available": true,
-  "provider_type": "quantum_ai",
-  "service_url": "https://quantum-predictor-api-*",
+  "provider_type": "sentient_ai",
+  "service_url": "https://sentient-predictor-api-*",
   "message": "✅ Sentient AI Provider ready and integrated"
 }
 ```

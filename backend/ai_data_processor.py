@@ -1,18 +1,4 @@
 """
-Copyright (c) 2025 Kevin Zachary
-All rights reserved.
-
-This software and associated documentation files (the "Software") are the 
-exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-modification, or use of this software is strictly prohibited.
-
-For licensing inquiries, contact: kevin@zachary.com
-"""
-
-# Author: Kevin Zachary
-# Copyright: Sentient Spire
-
-"""
 Enhanced AI Data Ingestion Service
 Integrates advanced AI models for intelligent data processing
 """
@@ -28,8 +14,8 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 # Add the AI services to the path
-sys.path.append("/app/cxyber_ai_soc_suite/services/ingest")
-sys.path.append("/app/cxyber_ai_soc_suite/shared")
+sys.path.append("/app/sentient_ai_soc_suite/services/ingest")
+sys.path.append("/app/sentient_ai_soc_suite/shared")
 
 try:
     from automapper import propose_json_mapping, build_yaml
@@ -116,7 +102,7 @@ class AIDataProcessor:
     def _get_or_create_mapping(self, source: str, sample_data: Dict[str, Any]) -> Dict[str, str]:
         """Get existing mapping or create new one using AI"""
         
-        mapping_file = f"/app/cxyber_ai_soc_suite/services/ingest/mappings/{source}.yaml"
+        mapping_file = f"/app/sentient_ai_soc_suite/services/ingest/mappings/{source}.yaml"
         
         if os.path.exists(mapping_file):
             # Load existing mapping

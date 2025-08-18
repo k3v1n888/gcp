@@ -282,9 +282,9 @@ class AIIncidentOrchestrator:
                 })
         
         # Group threats using Sentient AI insights
-        return self._correlate_with_quantum_ai(threat_analyses)
+        return self._correlate_with_sentient_ai(threat_analyses)
 
-    def _correlate_with_quantum_ai(self, analyses: List[Dict]) -> List[Dict[str, Any]]:
+    def _correlate_with_sentient_ai(self, analyses: List[Dict]) -> List[Dict[str, Any]]:
         """
         Use Sentient AI analysis results to correlate threats into incidents
         """
@@ -397,7 +397,7 @@ class AIIncidentOrchestrator:
             "business_impact": "high" if severity in ['critical', 'high'] else "medium",
             "mitre_techniques": list(mitre_techniques),
             "estimated_risk_score": min(9.0, len(analyses) * 2.0),
-            "ai_provider": "quantum_ai",
+            "ai_provider": "sentient_ai",
             "ai_confidence": "high"
         }
 
@@ -457,7 +457,7 @@ class AIIncidentOrchestrator:
         enhanced_group["source_count"] = len(unique_sources)
         
         # Add quantum AI provider tag
-        enhanced_group["ai_provider"] = "quantum_ai"
+        enhanced_group["ai_provider"] = "sentient_ai"
         enhanced_group["analysis_timestamp"] = datetime.now().isoformat()
         
         return enhanced_group

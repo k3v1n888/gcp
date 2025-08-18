@@ -100,7 +100,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # Model C: Quantum AI Predictive Security Engine (Your trained models)
+  # Model C: Sentient AI Predictive Security Engine (Your trained models)
   threat-model:
     build:
       context: .

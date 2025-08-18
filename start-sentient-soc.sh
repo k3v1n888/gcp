@@ -34,16 +34,16 @@ echo "  Frontend: React Dashboard (Port 3000)"
 echo ""
 
 echo "🔧 Building services..."
-docker-compose -f docker-compose.cxyber.yml build
+docker-compose -f docker-compose.sentient.yml build
 
 echo "🟢 Starting all services..."
-docker-compose -f docker-compose.cxyber.yml up -d
+docker-compose -f docker-compose.sentient.yml up -d
 
 echo "⏳ Waiting for services to initialize..."
 sleep 30
 
 echo "📊 Service Status Check:"
-docker-compose -f docker-compose.cxyber.yml ps
+docker-compose -f docker-compose.sentient.yml ps
 
 echo ""
 echo "🎯 Your Sentient AI SOC System is now running!"
@@ -77,5 +77,5 @@ echo "  Frontend: $(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000
 
 echo ""
 echo "✅ Sentient AI SOC System successfully deployed!"
-echo "   Monitor logs: docker-compose -f docker-compose.cxyber.yml logs -f"
-echo "   Stop system: docker-compose -f docker-compose.cxyber.yml down"
+echo "   Monitor logs: docker-compose -f docker-compose.sentient.yml logs -f"
+echo "   Stop system: docker-compose -f docker-compose.sentient.yml down"

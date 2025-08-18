@@ -114,7 +114,7 @@ export REDIS_URL=redis://redis:6379
 
 ### Start Complete System
 ```bash
-./start-cxyber-soc.sh
+./start-sentient-soc.sh
 ```
 
 ### Individual Services (Development)
@@ -217,10 +217,10 @@ curl http://localhost:9000/drift_check
 ### Service Logs
 ```bash
 # All services
-docker-compose -f docker-compose.cxyber.yml logs -f
+docker-compose -f docker-compose.sentient.yml logs -f
 
 # Specific service
-docker-compose -f docker-compose.cxyber.yml logs -f threat-model
+docker-compose -f docker-compose.sentient.yml logs -f threat-model
 ```
 
 ### Performance Metrics
@@ -265,4 +265,4 @@ docker-compose -f docker-compose.cxyber.yml logs -f threat-model
 
 ---
 
-🎯 **Your CXyber AI SOC system is now a complete multi-model architecture with your trained threat detection models at the core!**
+🎯 **Your Sentient AI SOC system is now a complete multi-model architecture with your trained threat detection models at the core!**

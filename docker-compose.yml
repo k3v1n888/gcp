@@ -14,8 +14,8 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - DOMAIN=qai.quantum-ai.asia
-      - FRONTEND_URL=https://qai.quantum-ai.asia
+      - DOMAIN=sentient.ai-soc.com
+      - FRONTEND_URL=https://sentient.ai-soc.com
       - DATABASE_URL=postgresql://user:password@db:5432/cyberdb
       # Add other env vars like JWT_SECRET, OAUTH keys, Slack tokens here
     ports:
@@ -30,7 +30,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./certs:/etc/ssl/quantum-ai.asia:ro
+      - ./certs:/etc/ssl/sentient.ai-soc.com:ro
       - ./certbot/www:/var/www/certbot
     depends_on:
       - backend

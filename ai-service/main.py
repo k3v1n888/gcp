@@ -144,25 +144,7 @@ def load_artifacts_local():
     else:
         logger.info(f"🎉 All {loaded_count} models loaded successfully!")
     
-    return artifacts
-    
-    artifacts = {}
-    for key, filename in files.items():
-        filepath = os.path.join(model_dir, filename)
-        if os.path.exists(filepath):
-            artifacts[key] = joblib.load(filepath)
-            logger.info(f"✅ Loaded {key} from {filepath}")
-        else:
-            logger.warning(f"⚠️ Missing {filepath}, using fallback")
-            # Create fallback artifacts if files don't exist
-            if key == "model":
-                artifacts[key] = SGDClassifier()
-            elif key == "column_names":
-                artifacts[key] = ["technique_id", "asset_type", "login_hour", "is_admin", "is_remote_session"]
-            else:
-                artifacts[key] = None
-    
-    # Assign to global variables
+    # Assign to global variables from artifacts dictionary
     model = artifacts["model"]
     preprocessor = artifacts["preprocessor"]
     X_train = artifacts["X_train"]
@@ -171,6 +153,7 @@ def load_artifacts_local():
     iso = artifacts["isolation_forest"]
     
     # Create explainer if we have the necessary components
+    explainer = None
     if X_train is not None and model is not None:
         try:
             # Check if model is fitted by testing if it has the required attributes
@@ -184,7 +167,7 @@ def load_artifacts_local():
         except Exception as e:
             logger.warning(f"⚠️ Could not create SHAP explainer: {e}")
             explainer = None
-    
+
     return model, preprocessor, X_train, column_names, baseline_shap, iso, explainer
 
 def predict_fn(df, model, preprocessor, column_names, anomaly_filter=None):
@@ -293,7 +276,7 @@ except Exception as e:
 
 @app.route("/")
 def root():
-    return jsonify({"status": "Local Quantum AI Predictive Security Engine is running"}), 200
+    return jsonify({"status": "Local Sentient AI Predictive Security Engine is running"}), 200
 
 @app.route("/health")
 def health():

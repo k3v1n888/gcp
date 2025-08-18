@@ -43,7 +43,7 @@ const HealthDashboard = () => {
     try {
       const baseUrl = getApiBaseUrl();
       
-      // Use port 8000 for health endpoints (ingest service) as it has Docker API access
+      // For health endpoints, use the backend service directly
       const healthBaseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
       
       // Fetch all health endpoints
@@ -344,7 +344,7 @@ const HealthDashboard = () => {
               </div>
               
               {/* Special details for Model C (Your Trained AI) */}
-              {model.name?.includes('Quantum AI Predictive Security Engine') && (
+              {model.name?.includes('Sentient AI Predictive Security Engine') && (
                 <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
                   <div className="text-sm font-medium text-purple-800 mb-2">🤖 Your Trained AI Model Status</div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">

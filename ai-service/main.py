@@ -408,7 +408,7 @@ def predict():
             "prediction": int(prediction),
             "anomaly_score": result.get("anomaly_score", 0.0),
             "timestamp": datetime.utcnow().isoformat() + "Z",
-            "source": "cxyber_ai_model"
+            "source": "sentient_ai_model"
         }
         
         return jsonify(response), 200
@@ -423,7 +423,7 @@ def predict():
             "prediction": 1,
             "anomaly_score": 0.0,
             "timestamp": datetime.utcnow().isoformat() + "Z",
-            "source": "cxyber_ai_model_fallback",
+            "source": "sentient_ai_model_fallback",
             "error": str(e)
         }), 200
 

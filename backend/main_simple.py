@@ -1,17 +1,3 @@
-"""
-Copyright (c) 2025 Kevin Zachary
-All rights reserved.
-
-This software and associated documentation files (the "Software") are the 
-exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-modification, or use of this software is strictly prohibited.
-
-For licensing inquiries, contact: kevin@zachary.com
-"""
-
-# Author: Kevin Zachary
-# Copyright: Sentient Spire
-
 import os
 import asyncio
 from datetime import datetime, timezone
@@ -65,7 +51,7 @@ def get_db():
     finally:
         db.close()
 
-app = FastAPI(title="CXyber AI SOC API")
+app = FastAPI(title="Sentient AI SOC API")
 
 # Create tables on startup
 @app.on_event("startup")
@@ -206,7 +192,7 @@ def api_health():
             "database": "connected",
             "redis": "connected"
         },
-        "message": "CXyber AI SOC Backend is operational"
+        "message": "Sentient AI SOC Backend is operational"
     }
 
 @app.get("/api/incidents")
@@ -1300,7 +1286,7 @@ def get_threat_detail(threat_id: int, db: Session = Depends(get_db)):
         ],
         "confidence_score": 0.87,
         "reasoning": f"This threat was classified as {threat.severity} severity based on multiple indicators including source IP reputation, behavior patterns, and CVSS score. The AI model identified key risk factors and recommends immediate containment actions.",
-        "model_version": "CXyber-AI-v2.1",
+        "model_version": "Sentient-AI-v2.1",
         "analysis_timestamp": threat.timestamp.isoformat() if threat.timestamp else None
     }
     
@@ -1489,7 +1475,7 @@ def generate_response_plan(threat_id: int, db: Session = Depends(get_db)):
             "No evidence of data exfiltration",
             "Enhanced monitoring in place"
         ],
-        "generated_by": "CXyber AI Response Orchestrator v2.1",
+        "generated_by": "Sentient AI Response Orchestrator v2.1",
         "generated_at": threat.timestamp.isoformat() if threat.timestamp else None
     }
 
@@ -1701,7 +1687,7 @@ def analyst_feedback_endpoint(threat_id: str, feedback: dict):
 @app.get("/")
 def root():
     return {
-        "message": "CXyber AI SOC Platform API", 
+        "message": "Sentient AI SOC Platform API", 
         "status": "operational",
         "version": "1.0.0",
         "endpoints": [

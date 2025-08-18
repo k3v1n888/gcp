@@ -1,21 +1,3 @@
-/*
- * Copyright (c) 2025 Kevin Zachary
- * All rights reserved.
- *
- * This software and associated documentation files (the "Software") are the 
- * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
- * modification, or use of this software is strictly prohibited.
- *
- * For licensing inquiries, contact: kevin@zachary.com
- */
-
-/*
- * Author: Kevin Zachary
- * Copyright: Sentient Spire
- */
-
-
-
 // frontend/src/pages/ThreatDetail.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
@@ -188,7 +170,7 @@ export default function ThreatDetail() {
       )}
 
       {threat.misp_summary && (
-        <DetailCard title="Sentient Intel (MISP) Summary">
+        <DetailCard title="Quantum Intel (MISP) Summary">
             <p className="italic text-slate-200">{threat.misp_summary}</p>
         </DetailCard>
       )}

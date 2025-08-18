@@ -1,27 +1,14 @@
 #!/bin/bash
-# Copyright (c) 2025 Kevin Zachary
-# All rights reserved.
-#
-# This software and associated documentation files (the "Software") are the 
-# exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-# modification, or use of this software is strictly prohibited.
-#
-# For licensing inquiries, contact: kevin@zachary.com
 
-#!/bin/bash
-# Author: Kevin Zachary
-# Copyright: Sentient Spire
-
-
-# CXyber AI SOC - Theme & UI Contrast Fix Script
+# Sentient AI SOC - Theme & UI Contrast Fix Script
 # Addresses white background and visibility issues
 
-echo "🎨 CXyber AI SOC - Theme & UI Contrast Fix"
+echo "🎨 Sentient AI SOC - Theme & UI Contrast Fix"
 echo "=========================================="
 
 # Create a comprehensive CSS override file for better contrast
 cat > /Users/kevinzachary/Downloads/VS-GCP-QAI/gcp/frontend/src/styles/theme-fixes.css << 'EOF'
-/* CXyber AI SOC - Theme Contrast Fixes */
+/* Sentient AI SOC - Theme Contrast Fixes */
 
 /* Global dark theme enforcement */
 * {

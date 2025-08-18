@@ -1,17 +1,4 @@
 #!/bin/bash
-# Copyright (c) 2025 Kevin Zachary
-# All rights reserved.
-#
-# This software and associated documentation files (the "Software") are the 
-# exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-# modification, or use of this software is strictly prohibited.
-#
-# For licensing inquiries, contact: kevin@zachary.com
-
-#!/bin/bash
-# Author: Kevin Zachary
-# Copyright: Sentient Spire
-
 
 # Comprehensive End-to-End Testing System for Sentient AI SOC
 # Tests all AI models, data ingestion, and intelligent features
@@ -22,7 +9,7 @@ echo "=========================================================="
 # Configuration
 API_BASE="http://localhost:8001"
 FRONTEND_BASE="http://localhost:3000"
-TEST_RESULTS_DIR="/tmp/cxyber_test_results"
+TEST_RESULTS_DIR="/tmp/sentient_test_results"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
 # Colors for output

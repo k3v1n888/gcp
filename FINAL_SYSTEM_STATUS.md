@@ -73,7 +73,7 @@
 ├── 🤖 AI Command Center
 │   ├── AI Model Management (3 active)
 │   ├── Response Orchestrator
-│   ├── Sentient AI Analytics
+│   ├── Quantum AI Analytics
 │   └── XAI Explanations
 ├── 🔗 Data Operations  
 │   ├── Data Connectors (4 online)

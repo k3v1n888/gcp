@@ -1,17 +1,3 @@
-"""
-Copyright (c) 2025 Kevin Zachary
-All rights reserved.
-
-This software and associated documentation files (the "Software") are the 
-exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-modification, or use of this software is strictly prohibited.
-
-For licensing inquiries, contact: kevin@zachary.com
-"""
-
-# Author: Kevin Zachary
-# Copyright: Sentient Spire
-
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import Dict, Any, Optional, List
@@ -290,7 +276,7 @@ async def get_pipeline_overview():
                 {
                     "stage": 6,
                     "name": "Console & Human Interface",
-                    "model": "CXyber Console",
+                    "model": "Sentient Console",
                     "endpoint": "http://localhost:8005",
                     "description": "Human-in-the-loop interface and final decision approval",
                     "status": ai_orchestrator.models.get("console", {}).status if "console" in ai_orchestrator.models else "unknown"

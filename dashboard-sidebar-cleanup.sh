@@ -1,17 +1,4 @@
 #!/bin/bash
-# Copyright (c) 2025 Kevin Zachary
-# All rights reserved.
-#
-# This software and associated documentation files (the "Software") are the 
-# exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-# modification, or use of this software is strictly prohibited.
-#
-# For licensing inquiries, contact: kevin@zachary.com
-
-#!/bin/bash
-# Author: Kevin Zachary
-# Copyright: Sentient Spire
-
 
 # Sentient AI SOC - Dashboard Sidebar Structure Cleanup
 # Removes duplicates and creates elegant, futuristic layout
@@ -96,7 +83,7 @@ const CyberSidebar = ({ isCollapsed, onToggle }) => {
       items: [
         { name: 'AI Model Management', href: '/ai-models', icon: CpuChipIcon, badge: systemStats.aiModelsActive },
         { name: 'Response Orchestrator', href: '/ai-responses', icon: BoltIcon },
-        { name: 'Sentient AI Analytics', href: '/ai-analytics', icon: BeakerIcon },
+        { name: 'Quantum AI Analytics', href: '/ai-analytics', icon: BeakerIcon },
         { name: 'XAI Explanations', href: '/ai-explanations', icon: ChartBarIcon }
       ]
     },

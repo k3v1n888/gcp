@@ -1,17 +1,3 @@
-"""
-Copyright (c) 2025 Kevin Zachary
-All rights reserved.
-
-This software and associated documentation files (the "Software") are the 
-exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-modification, or use of this software is strictly prohibited.
-
-For licensing inquiries, contact: kevin@zachary.com
-"""
-
-# Author: Kevin Zachary
-# Copyright: Sentient Spire
-
 import os
 import asyncio
 from contextlib import asynccontextmanager
@@ -179,7 +165,7 @@ app.add_middleware(
 # Development-aware CORS configuration
 allowed_origins = [
     "https://ai-cyber-fullstack-1020401092050.us-central1.run.app",
-    "https://qai.quantum-ai.asia"
+    "https://sentient.ai-soc.com"
 ]
 
 # Add development origins if in development mode

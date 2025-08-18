@@ -1,14 +1,3 @@
-"""
-Copyright (c) 2025 Kevin Zachary
-All rights reserved.
-
-This software and associated documentation files (the "Software") are the 
-exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-modification, or use of this software is strictly prohibited.
-
-For licensing inquiries, contact: kevin@zachary.com
-"""
-
 
 from fastapi import FastAPI, Body, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -175,7 +164,7 @@ def get_apis_health():
     import requests
     
     endpoints_to_check = [
-        {"name": "Main API", "url": "http://ingest-service:8000/health"},
+        {"name": "Main API", "url": "http://localhost:8000/health"},
         {"name": "Threats API", "url": "http://ssai_postprocess:8000/api/threats"},
         {"name": "Incidents API", "url": "http://ssai_postprocess:8000/api/incidents"},
         {"name": "AI Service", "url": "http://ssai_threat_service:8002/health"},
@@ -302,7 +291,7 @@ async def get_api_health():
     import asyncio
     
     endpoints_to_check = [
-        {"name": "Main API", "url": "http://ingest-service:8000/health"},
+        {"name": "Main API", "url": "http://localhost:8000/health"},
         {"name": "Threats API", "url": "http://ssai_postprocess:8000/api/threats"}, 
         {"name": "Incidents API", "url": "http://ssai_postprocess:8000/api/incidents"},
         {"name": "AI Service", "url": "http://ssai_threat_service:8002/health"}
@@ -376,12 +365,12 @@ async def get_ai_models_health():
     healthy_count = 0
     
     model_checks = [
-        {"name": "Model A: Data Intake & Normalization AI", "url": "http://ingest-service:8000/health", "port": 8000},
-        {"name": "Model B: Post-Processing & Enrichment AI", "url": "http://postprocess-service:8000/health", "port": 8001},
-        {"name": "Model C: Sentient AI Predictive Security Engine", "url": "http://threat-model:8001/health", "port": 9000},
-        {"name": "Threat Service", "url": "http://threat-service:8002/health", "port": 8002},
-        {"name": "Orchestrator", "url": "http://orchestrator:8003/health", "port": 8003},
-        {"name": "Console", "url": "http://console:8005/health", "port": 8005}
+        {"name": "Model A: Data Intake & Normalization AI", "url": "http://ssai_ingest:8000/health", "port": 8000},
+        {"name": "Model B: Post-Processing & Enrichment AI", "url": "http://ssai_postprocess:8000/health", "port": 8001},
+        {"name": "Model C: Sentient AI Predictive Security Engine", "url": "http://ssai_threat_model:8001/health", "port": 9000},
+        {"name": "Threat Service", "url": "http://ssai_threat_service:8002/health", "port": 8002},
+        {"name": "Orchestrator", "url": "http://ssai_orchestrator:8003/health", "port": 8003},
+        {"name": "Console", "url": "http://ssai_console:8005/health", "port": 8005}
     ]
     
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
@@ -389,27 +378,86 @@ async def get_ai_models_health():
             try:
                 async with session.get(model["url"]) as response:
                     if response.status == 200:
-                        models.append({
-                            "name": model["name"],
-                            "status": "healthy",
-                            "endpoint": model["url"],
-                            "port": model["port"]
-                        })
-                        healthy_count += 1
+                        data = await response.json()
+                        
+                        # Special handling for Model C (Sentient AI Predictive Security Engine)
+                        if "Sentient AI Predictive Security Engine" in model["name"]:
+                            model_loaded = data.get("model_loaded", False)
+                            preprocessor_loaded = data.get("preprocessor_loaded", False)
+                            explainer_available = data.get("explainer_available", False)
+                            
+                            # All components must be loaded for healthy status
+                            all_loaded = model_loaded and preprocessor_loaded and explainer_available
+                            status = "healthy" if all_loaded else "degraded"
+                            
+                            models.append({
+                                "name": model["name"],
+                                "status": status,
+                                "endpoint": model["url"],
+                                "port": model["port"],
+                                "sub_modules": {
+                                    "RandomForest Model": "Loaded" if model_loaded else "Missing",
+                                    "Preprocessor": "Loaded" if preprocessor_loaded else "Missing",
+                                    "SHAP Explainer": "Loaded" if explainer_available else "Missing"
+                                },
+                                "model_loaded": model_loaded,
+                                "preprocessor_loaded": preprocessor_loaded,
+                                "explainer_available": explainer_available,
+                                "features": "4,025 engineered features" if all_loaded else "N/A"
+                            })
+                            if all_loaded:
+                                healthy_count += 1
+                        else:
+                            # Standard handling for other models
+                            models.append({
+                                "name": model["name"],
+                                "status": "healthy",
+                                "endpoint": model["url"],
+                                "port": model["port"]
+                            })
+                            healthy_count += 1
                     else:
-                        models.append({
-                            "name": model["name"],
-                            "status": "degraded",
-                            "endpoint": model["url"],
-                            "error": f"HTTP {response.status}"
-                        })
+                        # Error response handling
+                        if "Sentient AI Predictive Security Engine" in model["name"]:
+                            models.append({
+                                "name": model["name"],
+                                "status": "degraded",
+                                "endpoint": model["url"],
+                                "error": f"HTTP {response.status}",
+                                "sub_modules": {
+                                    "RandomForest Model": "Missing",
+                                    "Preprocessor": "Missing",
+                                    "SHAP Explainer": "Missing"
+                                }
+                            })
+                        else:
+                            models.append({
+                                "name": model["name"],
+                                "status": "degraded",
+                                "endpoint": model["url"],
+                                "error": f"HTTP {response.status}"
+                            })
             except Exception as e:
-                models.append({
-                    "name": model["name"],
-                    "status": "offline",
-                    "endpoint": model["url"],
-                    "error": str(e)
-                })
+                # Exception handling
+                if "Sentient AI Predictive Security Engine" in model["name"]:
+                    models.append({
+                        "name": model["name"],
+                        "status": "offline",
+                        "endpoint": model["url"],
+                        "error": str(e),
+                        "sub_modules": {
+                            "RandomForest Model": "Missing",
+                            "Preprocessor": "Missing",
+                            "SHAP Explainer": "Missing"
+                        }
+                    })
+                else:
+                    models.append({
+                        "name": model["name"],
+                        "status": "offline",
+                        "endpoint": model["url"],
+                        "error": str(e)
+                    })
     
     total_models = len(models)
     overall_status = "healthy" if healthy_count == total_models else "degraded" if healthy_count > 0 else "critical"

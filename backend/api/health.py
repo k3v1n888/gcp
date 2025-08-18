@@ -203,7 +203,7 @@ async def get_ai_model_health(current_user: dict = Depends(require_admin)):
     # Model A: Data Intake & Normalization AI (Port 8000)
     try:
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
-            async with session.get("http://localhost:8000/health") as response:
+            async with session.get("http://ssai_ingest:8000/health") as response:
                 if response.status == 200:
                     data = await response.json()
                     models.append({
@@ -238,7 +238,7 @@ async def get_ai_model_health(current_user: dict = Depends(require_admin)):
     # Model B: Post-Processing & Enrichment AI (Port 8001)
     try:
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
-            async with session.get("http://localhost:8001/health") as response:
+            async with session.get("http://ssai_postprocess:8000/health") as response:
                 if response.status == 200:
                     data = await response.json()
                     # Handle different response formats
@@ -272,53 +272,73 @@ async def get_ai_model_health(current_user: dict = Depends(require_admin)):
             "error": str(e)
         })
 
-    # Model C: Your Trained Quantum AI Predictive Security Engine (Port 9000)
+    # Model C: Your Trained Sentient AI Predictive Security Engine (Port 9000)
     try:
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
-            async with session.get("http://localhost:9000/health") as response:
+            async with session.get("http://ssai_threat_model:8001/health") as response:
                 if response.status == 200:
                     data = await response.json()
                     # Check if model is properly loaded
                     model_loaded = data.get("model_loaded", False)
-                    model_status = "healthy" if model_loaded else "degraded"
+                    preprocessor_loaded = data.get("preprocessor_loaded", False) 
+                    explainer_available = data.get("explainer_available", False)
+                    
+                    # All components must be loaded for healthy status
+                    all_loaded = model_loaded and preprocessor_loaded and explainer_available
+                    model_status = "healthy" if all_loaded else "degraded"
                     
                     models.append({
-                        "name": "Model C: Quantum AI Predictive Security Engine",
+                        "name": "Model C: Sentient AI Predictive Security Engine",
                         "type": "Your Trained AI Model (RandomForest + SHAP)",
                         "status": model_status,
                         "endpoint": "http://localhost:9000",
                         "port": 9000,
                         "container": "ssai_threat_model", 
                         "description": "Your trained RandomForest classifier with SHAP explainability",
-                        "model_loaded": data.get("model_loaded", False),
-                        "preprocessor_loaded": data.get("preprocessor_loaded", False),
-                        "explainer_available": data.get("explainer_available", False),
-                        "features": "4,025 engineered features",
-                        "accuracy": "High confidence threat prediction"
+                        "sub_modules": {
+                            "RandomForest Model": "Loaded" if model_loaded else "Missing",
+                            "Preprocessor": "Loaded" if preprocessor_loaded else "Missing", 
+                            "SHAP Explainer": "Loaded" if explainer_available else "Missing"
+                        },
+                        "model_loaded": model_loaded,
+                        "preprocessor_loaded": preprocessor_loaded,
+                        "explainer_available": explainer_available,
+                        "features": "N/A" if not all_loaded else "4,025 engineered features",
+                        "accuracy": "High confidence threat prediction" if all_loaded else "N/A"
                     })
-                    if model_loaded:
+                    if all_loaded:
                         healthy_count += 1
                 else:
                     models.append({
-                        "name": "Model C: Quantum AI Predictive Security Engine", 
+                        "name": "Model C: Sentient AI Predictive Security Engine", 
                         "type": "Your Trained AI Model",
                         "status": "degraded",
                         "endpoint": "http://localhost:9000",
-                        "error": f"HTTP {response.status}"
+                        "error": f"HTTP {response.status}",
+                        "sub_modules": {
+                            "RandomForest Model": "Missing",
+                            "Preprocessor": "Missing", 
+                            "SHAP Explainer": "Missing"
+                        }
                     })
     except Exception as e:
         models.append({
-            "name": "Model C: Quantum AI Predictive Security Engine",
+            "name": "Model C: Sentient AI Predictive Security Engine",
             "type": "Your Trained AI Model",
             "status": "offline",
             "endpoint": "http://localhost:9000", 
-            "error": str(e)
+            "error": str(e),
+            "sub_modules": {
+                "RandomForest Model": "Missing",
+                "Preprocessor": "Missing", 
+                "SHAP Explainer": "Missing"
+            }
         })
 
     # Threat Service (Model C Wrapper) - Port 8002
     try:
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
-            async with session.get("http://localhost:8002/health") as response:
+            async with session.get("http://ssai_threat_service:8002/health") as response:
                 if response.status == 200:
                     data = await response.json()
                     # Handle simple "ok" response format
@@ -353,7 +373,7 @@ async def get_ai_model_health(current_user: dict = Depends(require_admin)):
     # Orchestrator (Action Execution) - Port 8003
     try:
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
-            async with session.get("http://localhost:8003/health") as response:
+            async with session.get("http://ssai_orchestrator:8003/health") as response:
                 if response.status == 200:
                     data = await response.json()
                     models.append({
@@ -386,7 +406,7 @@ async def get_ai_model_health(current_user: dict = Depends(require_admin)):
     # Console (Web Approval Interface) - Port 8005
     try:
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
-            async with session.get("http://localhost:8005/health") as response:
+            async with session.get("http://ssai_console:8005/health") as response:
                 if response.status == 200:
                     models.append({
                         "name": "Console (Web Approval Interface)",

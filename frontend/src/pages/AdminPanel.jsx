@@ -9,21 +9,29 @@
  * For licensing inquiries, contact: kevin@zachary.com
  */
 
-
-
 import { useContext, useEffect, useState } from 'react';
 import { 
   UserGroupIcon, 
   CogIcon, 
   HeartIcon,
   CircleStackIcon,
-  CpuChipIcon
+  CpuChipIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  ShieldCheckIcon,
+  BuildingOfficeIcon,
+  ServerIcon
 } from '@heroicons/react/24/outline';
 import { UserContext } from '../context/UserContext';
 import { useDevUser } from '../context/DevUserContext';
 import { isDevelopment, getApiBaseUrl } from '../utils/environment';
 import HealthDashboard from './HealthDashboard';
 import SentientAIModelsDashboard from '../components/admin/AIModelTestingDashboard';
+import AuditLogsPanel from '../components/admin/AuditLogsPanel';
+import SystemLogsPanel from '../components/admin/SystemLogsPanel';
+import UserManagementPanel from '../components/admin/UserManagementPanel';
+import TenantManagementPanel from '../components/admin/TenantManagementPanel';
+import AuthenticationPanel from '../components/admin/AuthenticationPanel';
 
 const InviteUserForm = () => {
     const [email, setEmail] = useState('');
@@ -139,6 +147,42 @@ export default function AdminPanel() {
       description: 'Sentient AI SOC Multi-Model Management'
     },
     {
+      id: 'users',
+      name: 'User Management',
+      icon: UserGroupIcon,
+      description: 'Manage users, roles, and authentication'
+    },
+    {
+      id: 'tenants',
+      name: 'Tenant Management',
+      icon: BuildingOfficeIcon,
+      description: 'Multi-tenant environment management'
+    },
+    {
+      id: 'audit-logs',
+      name: 'Audit Logs',
+      icon: ClockIcon,
+      description: 'View audit trail and user activities'
+    },
+    {
+      id: 'system-logs',
+      name: 'System Logs',
+      icon: DocumentTextIcon,
+      description: 'Monitor system logs and events'
+    },
+    {
+      id: 'authentication',
+      name: 'Authentication',
+      icon: ShieldCheckIcon,
+      description: 'Configure SSO and security settings'
+    },
+    {
+      id: 'agents',
+      name: 'SOC Agents',
+      icon: ServerIcon,
+      description: 'Manage distributed SOC agents'
+    },
+    {
       id: 'connectors',
       name: 'Data Connectors',
       icon: CircleStackIcon,
@@ -149,12 +193,6 @@ export default function AdminPanel() {
       name: 'System Settings',
       icon: CogIcon,
       description: 'Configure system settings'
-    },
-    {
-      id: 'users',
-      name: 'User Management',
-      icon: UserGroupIcon,
-      description: 'Manage users and permissions'
     }
   ];
 
@@ -165,6 +203,93 @@ export default function AdminPanel() {
         
       case 'ai-models':
         return <SentientAIModelsDashboard />;
+        
+      case 'users':
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-slate-100">User Management & Authentication</h2>
+            <UserManagementPanel />
+          </div>
+        );
+        
+      case 'tenants':
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-slate-100">Tenant Management</h2>
+            <TenantManagementPanel />
+          </div>
+        );
+        
+      case 'audit-logs':
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-slate-100">Audit Logs & Trail</h2>
+            <AuditLogsPanel />
+          </div>
+        );
+        
+      case 'system-logs':
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-slate-100">System Logs & Monitoring</h2>
+            <SystemLogsPanel />
+          </div>
+        );
+        
+      case 'authentication':
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-slate-100">Authentication & Security</h2>
+            <AuthenticationPanel />
+          </div>
+        );
+        
+      case 'agents':
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-slate-100">SOC Agent Management</h2>
+            <div className="bg-slate-800 rounded-lg p-6">
+              <div className="text-center py-8">
+                <ServerIcon className="h-16 w-16 text-slate-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-slate-300 mb-2">SOC Agent Dashboard</h3>
+                <p className="text-slate-400 mb-4">Monitor and manage distributed SOC agents across your infrastructure</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                  <div className="bg-slate-700 rounded-lg p-4 border border-slate-600">
+                    <h4 className="text-white font-medium mb-2">Agent Status</h4>
+                    <p className="text-2xl font-bold text-green-400">0 Active</p>
+                    <p className="text-slate-400 text-sm">Agents currently online</p>
+                  </div>
+                  
+                  <div className="bg-slate-700 rounded-lg p-4 border border-slate-600">
+                    <h4 className="text-white font-medium mb-2">Data Collection</h4>
+                    <p className="text-2xl font-bold text-blue-400">0 GB</p>
+                    <p className="text-slate-400 text-sm">Data collected today</p>
+                  </div>
+                  
+                  <div className="bg-slate-700 rounded-lg p-4 border border-slate-600">
+                    <h4 className="text-white font-medium mb-2">Coverage</h4>
+                    <p className="text-2xl font-bold text-purple-400">0%</p>
+                    <p className="text-slate-400 text-sm">Infrastructure coverage</p>
+                  </div>
+                </div>
+                
+                <div className="mt-6 p-4 bg-blue-900/20 border border-blue-800 rounded-lg">
+                  <h4 className="text-blue-400 font-medium mb-2">Deploy SOC Agent</h4>
+                  <p className="text-slate-300 text-sm mb-3">
+                    Use our universal installer to deploy SOC agents on any environment:
+                  </p>
+                  <code className="bg-slate-900 text-green-400 px-3 py-2 rounded text-sm block">
+                    curl -sSL https://your-soc-server.com/install | bash
+                  </code>
+                  <p className="text-slate-400 text-xs mt-2">
+                    Agent installer supports Linux, macOS, and Windows environments
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
         
       case 'connectors':
         return (
@@ -206,16 +331,10 @@ export default function AdminPanel() {
                 </button>
                 {message && <p className="mt-2 text-green-400">{message}</p>}
               </div>
-            </div>
-          </div>
-        );
-        
-      case 'users':
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4 text-slate-100">User Management</h2>
-            <div className="widget-card p-6">
-              <InviteUserForm />
+              
+              <div className="mt-8">
+                <InviteUserForm />
+              </div>
             </div>
           </div>
         );
@@ -230,20 +349,21 @@ export default function AdminPanel() {
       {/* Tab Navigation */}
       <div className="border-b border-slate-700">
         <nav className="px-6 py-4">
-          <div className="flex space-x-8">
+          <div className="flex flex-wrap gap-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-2 px-4 rounded-md transition-colors ${
+                  className={`flex items-center space-x-2 py-2 px-3 rounded-md transition-colors text-sm ${
                     activeTab === tab.id
                       ? 'bg-sky-600 text-white'
                       : 'text-slate-300 hover:text-white hover:bg-slate-800'
                   }`}
+                  title={tab.description}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4 w-4" />
                   <span className="font-medium">{tab.name}</span>
                 </button>
               );

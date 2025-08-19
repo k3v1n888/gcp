@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Orchestration Test</title>
+</head>
+<body>
+    <h1>AI Orchestration Test</h1>
+    <button onclick="testOrchestration()">Test AI Orchestration</button>
+    <div id="result"></div>
+
+    <script>
+        async function testOrchestration() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('http://localhost:8001/api/v1/incidents/orchestrate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    resultDiv.innerHTML = `
+                        <h3>✅ Success!</h3>
+                        <p>Status: ${result.status}</p>
+                        <p>Threats analyzed: ${result.threats_analyzed}</p>
+                        <p>Incidents created: ${result.incidents_created}</p>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `❌ Error: ${response.status} - ${response.statusText}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -24,7 +24,8 @@ import {
   UserGroupIcon,
   EyeIcon,
   CommandLineIcon,
-  BeakerIcon
+  BeakerIcon,
+  BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 
 const CyberSidebar = ({ isCollapsed, onToggle }) => {
@@ -56,6 +57,12 @@ const CyberSidebar = ({ isCollapsed, onToggle }) => {
 
   const navigationItems = [
     {
+      category: 'Multi-Tenant Operations',
+      items: [
+        { name: 'Multi-Tenant Dashboard', href: '/multi-tenant', icon: BuildingOfficeIcon, badge: null, highlight: true }
+      ]
+    },
+    {
       category: 'Intelligence Operations',
       items: [
         { name: 'Threat Dashboard', href: '/threats', icon: ExclamationTriangleIcon, badge: systemStats.threatsActive },
@@ -69,7 +76,7 @@ const CyberSidebar = ({ isCollapsed, onToggle }) => {
       items: [
         { name: 'AI Model Management', href: '/ai-models', icon: CpuChipIcon, badge: systemStats.aiModelsActive },
         { name: 'Response Orchestrator', href: '/ai-responses', icon: BoltIcon },
-        { name: 'Quantum AI Analytics', href: '/ai-analytics', icon: BeakerIcon },
+        { name: 'Sentient AI Analytics', href: '/ai-analytics', icon: BeakerIcon },
         { name: 'XAI Explanations', href: '/ai-explanations', icon: ChartBarIcon }
       ]
     },
@@ -158,6 +165,7 @@ const CyberSidebar = ({ isCollapsed, onToggle }) => {
                   {category.items.map((item, itemIndex) => {
                     const Icon = item.icon;
                     const active = isActive(item.href);
+                    const isHighlighted = item.highlight;
                     
                     return (
                       <li key={itemIndex}>
@@ -166,14 +174,14 @@ const CyberSidebar = ({ isCollapsed, onToggle }) => {
                           className={`
                             flex items-center px-3 py-2 rounded-lg transition-all duration-200 group
                             ${active 
-                              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' 
-                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                              ? (isHighlighted ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/20' : 'bg-blue-600 text-white shadow-lg shadow-blue-500/20')
+                              : (isHighlighted ? 'text-slate-300 hover:bg-gradient-to-r hover:from-purple-800 hover:to-blue-800 hover:text-white border border-purple-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white')
                             }
                           `}
                         >
                           <Icon className={`
                             h-5 w-5 flex-shrink-0 transition-colors
-                            ${active ? 'text-white' : 'text-slate-400 group-hover:text-white'}
+                            ${active ? 'text-white' : (isHighlighted ? 'text-purple-400 group-hover:text-white' : 'text-slate-400 group-hover:text-white')}
                           `} />
                           
                           {!isCollapsed && (

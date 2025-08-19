@@ -1,12 +1,3 @@
-# Copyright (c) 2025 Kevin Zachary
-# All rights reserved.
-#
-# This software and associated documentation files (the "Software") are the 
-# exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-# modification, or use of this software is strictly prohibited.
-#
-# For licensing inquiries, contact: kevin@zachary.com
-
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -18,7 +9,6 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     libffi-dev \
     build-essential \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy AI service requirements

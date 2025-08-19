@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Kevin Zachary
+# All rights reserved.
+#
+# This software and associated documentation files (the "Software") are the 
+# exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
+# modification, or use of this software is strictly prohibited.
+#
+# For licensing inquiries, contact: kevin@zachary.com
+
+vendor: "ThreatSimulator"
+product: "SecurityTestSuite"
+event_type: "security_event"
+fields:
+  timestamp: "$.timestamp"
+  severity: "$.severity"
+  src_ip: "$.ip"
+  dst_ip: "$.target_ip"
+  src_port: "$.source_port"
+  dst_port: "$.target_port"
+  rule_name: "$.threat"
+  rule_id: "$.mitre_technique"
+  user: "$.user_agent"
+  bytes_in: "$.bytes_in"
+  bytes_out: "$.bytes_out"

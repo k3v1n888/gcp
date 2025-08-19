@@ -1,18 +1,4 @@
 """
-Copyright (c) 2025 Kevin Zachary
-All rights reserved.
-
-This software and associated documentation files (the "Software") are the 
-exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-modification, or use of this software is strictly prohibited.
-
-For licensing inquiries, contact: kevin@zachary.com
-"""
-
-# Author: Kevin Zachary
-# Copyright: Sentient Spire
-
-"""
 🚀 AI-Driven Incident Management API
 Next-generation incident endpoints with AI orchestration capabilities
 """
@@ -38,12 +24,12 @@ router = APIRouter(prefix="/api/v1", tags=["ai-incidents"])
 @router.get("/incidents/ai-status")
 async def get_ai_provider_status():
     """
-    🔍 Check Sentient AI provider status and capabilities
+    🔍 Check Quantum AI provider status and capabilities
     """
     try:
         from backend.ml.prediction import SeverityPredictor
         
-        # Test your Sentient AI service
+        # Test your Quantum AI service
         predictor = SeverityPredictor()
         
         return {
@@ -52,17 +38,17 @@ async def get_ai_provider_status():
             "provider_type": "quantum_ai",
             "provider_healthy": True,
             "service_url": predictor.target_audience,
-            "message": "✅ Sentient AI Provider ready and integrated"
+            "message": "✅ Quantum AI Provider ready and integrated"
         }
             
     except Exception as e:
-        logger.error(f"❌ Error checking Sentient AI status: {e}")
+        logger.error(f"❌ Error checking Quantum AI status: {e}")
         return {
             "status": "error",
             "ai_provider_available": False,
             "provider_type": "quantum_ai",
             "provider_healthy": False,
-            "message": f"❌ Sentient AI service unavailable: {str(e)}"
+            "message": f"❌ Quantum AI service unavailable: {str(e)}"
         }
 
 @router.post("/incidents/orchestrate")

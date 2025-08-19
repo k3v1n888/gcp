@@ -1,17 +1,4 @@
-#!/bin/bash
-# Copyright (c) 2025 Kevin Zachary
-# All rights reserved.
-#
-# This software and associated documentation files (the "Software") are the 
-# exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-# modification, or use of this software is strictly prohibited.
-#
-# For licensing inquiries, contact: kevin@zachary.com
-
-#!/bin/bash
-# Author: Kevin Zachary
-# Copyright: Sentient Spire
-
+#!/usr/bin/env bash
 #
 # 1) Launch Nginx in the foreground. It will start as root and then
 #    drop privileges for its worker processes as configured.

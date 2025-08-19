@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2025 Kevin Zachary
- * All rights reserved.
- *
- * This software and associated documentation files (the "Software") are the 
- * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
- * modification, or use of this software is strictly prohibited.
- *
- * For licensing inquiries, contact: kevin@zachary.com
- */
-
-/*
- * Author: Kevin Zachary
- * Copyright: Sentient Spire
- */
-
 
 
 import React, { useState, useEffect, useContext } from 'react';
@@ -218,9 +202,12 @@ const UnifiedIncidentManager = () => {
             setOrchestrationStatus('running');
             const apiBaseUrl = getApiBaseUrl();
             
-            // Trigger threat aggregation
-            const response = await fetch(`${apiBaseUrl}/api/incidents/aggregate-threats`, {
-                method: 'POST'
+            // Trigger threat aggregation using the correct endpoint
+            const response = await fetch(`${apiBaseUrl}/api/v1/incidents/orchestrate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
             
             if (response.ok) {

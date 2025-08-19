@@ -1,0 +1,122 @@
+[
+  {
+    "threat_id": 27,
+    "feedback_type": "confirmation",
+    "original_prediction": 0.8400000000000001,
+    "corrected_prediction": null,
+    "feature_corrections": null,
+    "explanation": "XAI explanation is comprehensive and accurate. Good MITRE integration.",
+    "confidence_level": 4,
+    "analyst_id": "analyst_5",
+    "analysis_time_minutes": 18,
+    "used_explanation": true
+  },
+  {
+    "threat_id": 26,
+    "feedback_type": "confirmation",
+    "original_prediction": 0.8400000000000001,
+    "corrected_prediction": null,
+    "feature_corrections": null,
+    "explanation": "XAI explanation is comprehensive and accurate. Good MITRE integration.",
+    "confidence_level": 4,
+    "analyst_id": "analyst_4",
+    "analysis_time_minutes": 30,
+    "used_explanation": true
+  },
+  {
+    "threat_id": 25,
+    "feedback_type": "confirmation",
+    "original_prediction": 0.8400000000000001,
+    "corrected_prediction": null,
+    "feature_corrections": null,
+    "explanation": "XAI explanation is comprehensive and accurate. Good MITRE integration.",
+    "confidence_level": 4,
+    "analyst_id": "analyst_1",
+    "analysis_time_minutes": 26,
+    "used_explanation": true
+  },
+  {
+    "threat_id": 24,
+    "feedback_type": "confirmation",
+    "original_prediction": 0.8400000000000001,
+    "corrected_prediction": null,
+    "feature_corrections": null,
+    "explanation": "XAI explanation is comprehensive and accurate. Good MITRE integration.",
+    "confidence_level": 4,
+    "analyst_id": "analyst_2",
+    "analysis_time_minutes": 28,
+    "used_explanation": true
+  },
+  {
+    "threat_id": 23,
+    "feedback_type": "confirmation",
+    "original_prediction": 0.8400000000000001,
+    "corrected_prediction": null,
+    "feature_corrections": null,
+    "explanation": "XAI explanation is comprehensive and accurate. Good MITRE integration.",
+    "confidence_level": 4,
+    "analyst_id": "analyst_2",
+    "analysis_time_minutes": 11,
+    "used_explanation": true
+  },
+  {
+    "threat_id": 22,
+    "feedback_type": "confirmation",
+    "original_prediction": 0.8400000000000001,
+    "corrected_prediction": null,
+    "feature_corrections": null,
+    "explanation": "XAI explanation is comprehensive and accurate. Good MITRE integration.",
+    "confidence_level": 4,
+    "analyst_id": "analyst_5",
+    "analysis_time_minutes": 18,
+    "used_explanation": true
+  },
+  {
+    "threat_id": 21,
+    "feedback_type": "confirmation",
+    "original_prediction": 0.8400000000000001,
+    "corrected_prediction": null,
+    "feature_corrections": null,
+    "explanation": "XAI explanation is comprehensive and accurate. Good MITRE integration.",
+    "confidence_level": 4,
+    "analyst_id": "analyst_5",
+    "analysis_time_minutes": 16,
+    "used_explanation": true
+  },
+  {
+    "threat_id": 20,
+    "feedback_type": "confirmation",
+    "original_prediction": 0.8400000000000001,
+    "corrected_prediction": null,
+    "feature_corrections": null,
+    "explanation": "XAI explanation is comprehensive and accurate. Good MITRE integration.",
+    "confidence_level": 4,
+    "analyst_id": "analyst_2",
+    "analysis_time_minutes": 10,
+    "used_explanation": true
+  },
+  {
+    "threat_id": 19,
+    "feedback_type": "confirmation",
+    "original_prediction": 0.8400000000000001,
+    "corrected_prediction": null,
+    "feature_corrections": null,
+    "explanation": "XAI explanation is comprehensive and accurate. Good MITRE integration.",
+    "confidence_level": 4,
+    "analyst_id": "analyst_1",
+    "analysis_time_minutes": 9,
+    "used_explanation": true
+  },
+  {
+    "threat_id": 18,
+    "feedback_type": "confirmation",
+    "original_prediction": 0.8400000000000001,
+    "corrected_prediction": null,
+    "feature_corrections": null,
+    "explanation": "XAI explanation is comprehensive and accurate. Good MITRE integration.",
+    "confidence_level": 4,
+    "analyst_id": "analyst_4",
+    "analysis_time_minutes": 21,
+    "used_explanation": true
+  }
+]

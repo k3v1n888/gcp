@@ -1,6 +1,7 @@
 import os
+import json
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -24,6 +25,7 @@ class ThreatLog(Base):
     severity = Column(String, default="unknown")
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     cvss_score = Column(Float, nullable=True, default=0.0)
+    tenant_id = Column(String, default="default")
 
 class SecurityIncident(Base):
     __tablename__ = "security_incidents"
@@ -33,6 +35,7 @@ class SecurityIncident(Base):
     severity = Column(String)
     start_time = Column(DateTime(timezone=True), server_default=func.now())
     description = Column(Text)
+    tenant_id = Column(String, default="default")
 
 class AIModel(Base):
     __tablename__ = "ai_models"
@@ -42,6 +45,90 @@ class AIModel(Base):
     status = Column(String, default="active")
     accuracy = Column(Float, default=0.0)
     last_trained = Column(DateTime(timezone=True), server_default=func.now())
+    tenant_id = Column(String, default="default")
+
+class AnalystFeedback(Base):
+    __tablename__ = "analyst_feedback"
+    id = Column(Integer, primary_key=True)
+    threat_id = Column(Integer, ForeignKey("threat_logs.id"))
+    analyst_id = Column(String, default="system")
+    feedback_type = Column(String)  # 'correction', 'confirmation', 'feature_importance'
+    original_prediction = Column(Float)
+    corrected_prediction = Column(Float, nullable=True)
+    feature_corrections = Column(Text, nullable=True)  # JSON as text
+    explanation = Column(Text, nullable=True)
+    confidence_level = Column(Integer)  # 1-5 scale
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    tenant_id = Column(String, default="default")
+
+class SOCAgent(Base):
+    __tablename__ = "soc_agents"
+    id = Column(Integer, primary_key=True)
+    agent_id = Column(String, unique=True)
+    name = Column(String)
+    environment = Column(String)
+    status = Column(String, default="active")  # active, inactive, error
+    last_heartbeat = Column(DateTime(timezone=True))
+    system_info = Column(Text)  # JSON as text
+    tenant_id = Column(String, default="default")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String)
+    action = Column(String)
+    resource_type = Column(String)  # incident, threat, ai_model, etc.
+    resource_id = Column(String)
+    details = Column(Text)  # JSON as text
+    ip_address = Column(String)
+    user_agent = Column(String)
+    tenant_id = Column(String, default="default")
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, unique=True)
+    email = Column(String, unique=True)
+    name = Column(String)
+    role = Column(String, default="viewer")  # admin, analyst, viewer
+    auth_provider = Column(String)  # google, microsoft, local
+    auth_provider_id = Column(String)
+    tenant_id = Column(String, default="default")
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_login = Column(DateTime(timezone=True))
+
+class Tenant(Base):
+    __tablename__ = "tenants"
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(String, unique=True)
+    name = Column(String)
+    status = Column(String, default="active")  # active, suspended, deleted
+    database_url = Column(String)  # For sharded environments
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    settings = Column(Text)  # JSON as text
+
+class SystemLog(Base):
+    __tablename__ = "system_logs"
+    id = Column(Integer, primary_key=True)
+    source = Column(String)  # agent, api, internal, etc.
+    level = Column(String)  # INFO, WARNING, ERROR, CRITICAL
+    message = Column(Text)
+    details = Column(Text)  # JSON as text for additional data
+    tenant_id = Column(String, default="default")
+    agent_id = Column(String, nullable=True)  # If log is from a specific agent
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+class TenantMetrics(Base):
+    __tablename__ = "tenant_metrics"
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(String)
+    metric_type = Column(String)  # incidents, threats, agents, users
+    metric_value = Column(Integer, default=0)
+    period = Column(String)  # daily, weekly, monthly
+    date = Column(DateTime(timezone=True), server_default=func.now())
 
 # Dependency to get database session
 def get_db():
@@ -50,6 +137,48 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Audit logging helper function
+def log_audit_event(db: Session, user_id: str, action: str, resource_type: str, 
+                   resource_id: str = None, details: dict = None, 
+                   ip_address: str = None, user_agent: str = None, 
+                   tenant_id: str = "default"):
+    """Log an audit event to the database"""
+    try:
+        audit_log = AuditLog(
+            user_id=user_id,
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            details=json.dumps(details) if details else None,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            tenant_id=tenant_id
+        )
+        db.add(audit_log)
+        db.commit()
+    except Exception as e:
+        print(f"Failed to log audit event: {e}")
+        db.rollback()
+
+# System logging helper function
+def log_system_event(db: Session, source: str, level: str, message: str, 
+                    details: dict = None, tenant_id: str = "default", agent_id: str = None):
+    """Log a system event to the database"""
+    try:
+        system_log = SystemLog(
+            source=source,
+            level=level,
+            message=message,
+            details=json.dumps(details) if details else None,
+            tenant_id=tenant_id,
+            agent_id=agent_id
+        )
+        db.add(system_log)
+        db.commit()
+    except Exception as e:
+        print(f"Failed to log system event: {e}")
+        db.rollback()
 
 app = FastAPI(title="Sentient AI SOC API")
 
@@ -149,6 +278,9 @@ async def startup_event():
             print("Sample data initialized successfully!")
     finally:
         db.close()
+    
+    # Start automated threat aggregation service
+    aggregation_service.start()
 
 # Add session middleware
 SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "dev-secret-key")
@@ -259,8 +391,14 @@ def get_threat_detail(threat_id: int, db: Session = Depends(get_db)):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Threat not found")
     
+    # Get analyst feedback for this threat
+    feedback_records = db.query(AnalystFeedback).filter(AnalystFeedback.threat_id == threat_id).order_by(AnalystFeedback.timestamp.desc()).first()
+    
     # Generate realistic IP reputation score
     ip_reputation = 85.2 if threat.severity == "high" else 65.5 if threat.severity == "medium" else 45.0
+    
+    # MITRE ATT&CK mapping based on threat content
+    mitre_info = generate_mitre_mapping(threat)
     
     # Create timeline events
     timeline_threats = [
@@ -282,6 +420,50 @@ def get_threat_detail(threat_id: int, db: Session = Depends(get_db)):
         }
     ]
     
+    # Enhanced XAI explanation with MITRE context
+    xai_explanation = {
+        "reasoning": f"High confidence detection based on {threat.source} patterns and IP reputation analysis. MITRE ATT&CK technique {mitre_info['technique_id']} identified in {mitre_info['tactic']} phase.",
+        "decision_factors": [
+            f"Source IP reputation: {ip_reputation}%",
+            f"Threat pattern match: {threat.source}",
+            f"Severity assessment: {threat.severity}",
+            f"MITRE technique: {mitre_info['technique_id']} ({mitre_info['technique_name']})"
+        ],
+        "mitre_context": mitre_info,
+        "confidence_score": 0.89,
+        "model_version": "Sentient-AI-v2.1",
+        # Add structure expected by frontend ModelExplanation component
+        "base_value": threat.cvss_score / 10.0 if threat.cvss_score else 0.5,  # Normalize to 0-1 scale
+        "features": {
+            "is_admin": 1.0 if "admin" in threat.threat.lower() else 0.0,
+            "cvss_score": threat.cvss_score or 0.0,
+            "criticality_score": 0.8 if threat.severity == "high" else 0.5 if threat.severity == "medium" else 0.2,
+            "ioc_risk_score": 0.9 if threat.severity == "high" else 0.6,
+            "bytes_received": 50000.0,
+            "bytes_sent": 10000.0,
+            "asset_type": "server",
+            "is_remote_session": 0.0,
+            "login_hour": 15.0,
+            "login_duration": 30.0,
+            "packet_count": 1500.0
+        },
+        "shap_values": [
+            [
+                0.04 if "admin" in threat.threat.lower() else 0.01,  # is_admin
+                0.02 if threat.cvss_score and threat.cvss_score > 7 else 0.01,  # cvss_score
+                0.01 if threat.severity == "high" else 0.005,  # criticality_score  
+                0.01 if threat.severity == "high" else 0.003,  # ioc_risk_score
+                0.005,  # bytes_received
+                0.005,  # bytes_sent
+                0.001,  # asset_type
+                0.001,  # is_remote_session
+                -0.01,  # login_hour (normal hours reduce risk)
+                0.002,  # login_duration
+                0.001   # packet_count
+            ]
+        ]
+    }
+    
     return {
         "id": threat.id,
         "threat_type": threat.source or "Unknown",
@@ -295,12 +477,14 @@ def get_threat_detail(threat_id: int, db: Session = Depends(get_db)):
         "ip_reputation_score": ip_reputation,
         "cve_id": "CVE-2024-1234" if "trojan" in threat.threat.lower() else None,
         "timeline_threats": timeline_threats,
-        "misp_summary": f"Threat intelligence analysis indicates this {threat.source} threat matches known attack patterns. Confidence: High. Recommended immediate containment.",
+        "misp_summary": f"Threat intelligence analysis indicates this {threat.source} threat matches known attack patterns. MITRE ATT&CK technique {mitre_info['technique_id']} confirms {mitre_info['tactic']} phase activity. Confidence: High. Recommended immediate containment.",
         "correlation": {
             "title": f"Correlated {threat.source.title()} Attack Pattern",
-            "summary": f"This threat correlates with recent {threat.source} activities detected across the network. Pattern analysis suggests coordinated attack campaign.",
+            "summary": f"This threat correlates with recent {threat.source} activities detected across the network. MITRE ATT&CK analysis shows {mitre_info['technique_name']} technique usage typical of {mitre_info['tactic']} phase operations.",
             "cve_id": "CVE-2024-1234" if "trojan" in threat.threat.lower() else None,
-            "confidence": 0.89
+            "confidence": 0.89,
+            "mitre_techniques": [mitre_info['technique_id']],
+            "attack_phase": mitre_info['tactic']
         },
         "ai_analysis": {
             "confidence_score": 0.89,
@@ -309,23 +493,92 @@ def get_threat_detail(threat_id: int, db: Session = Depends(get_db)):
                 f"Block source IP {threat.ip} immediately",
                 "Isolate affected systems",
                 "Monitor for lateral movement",
-                "Update threat signatures"
+                "Update threat signatures",
+                f"Implement countermeasures for MITRE technique {mitre_info['technique_id']}"
             ],
-            "xai_explanation": {
-                "reasoning": f"High confidence detection based on {threat.source} patterns and IP reputation analysis",
-                "decision_factors": [
-                    f"Source IP reputation: {ip_reputation}%",
-                    f"Threat pattern match: {threat.source}",
-                    f"Severity assessment: {threat.severity}"
-                ]
-            }
+            "xai_explanation": xai_explanation
         },
         "additional_info": {
             "attack_vector": f"Network attack from {threat.ip}",
             "detection_method": "AI Pattern Analysis", 
             "threat_category": threat.source or "Security Event"
-        }
+        },
+        "mitre_attck": mitre_info,
+        "xai_explanation": xai_explanation,  # Add XAI explanation at top level for frontend
+        "analyst_feedback": {
+            "id": feedback_records.id if feedback_records else None,
+            "feedback_type": feedback_records.feedback_type if feedback_records else None,
+            "explanation": feedback_records.explanation if feedback_records else None,
+            "confidence_level": feedback_records.confidence_level if feedback_records else None,
+            "timestamp": feedback_records.timestamp.isoformat() if feedback_records and feedback_records.timestamp else None
+        } if feedback_records else None
     }
+
+def generate_mitre_mapping(threat: ThreatLog) -> dict:
+    """Generate MITRE ATT&CK mapping based on threat characteristics"""
+    threat_content = f"{threat.threat} {threat.source}".lower()
+    
+    # MITRE ATT&CK technique mappings
+    if any(keyword in threat_content for keyword in ["trojan", "malware", "virus", "backdoor"]):
+        return {
+            "technique_id": "T1059.001",
+            "technique_name": "PowerShell",
+            "tactic": "Execution", 
+            "tactic_id": "TA0002",
+            "description": "Adversaries may abuse PowerShell commands and scripts for execution",
+            "platforms": ["Windows"],
+            "data_sources": ["Process monitoring", "PowerShell logs"]
+        }
+    elif any(keyword in threat_content for keyword in ["scan", "port scan", "reconnaissance"]):
+        return {
+            "technique_id": "T1046",
+            "technique_name": "Network Service Scanning",
+            "tactic": "Discovery",
+            "tactic_id": "TA0007", 
+            "description": "Adversaries may attempt to get a listing of services running on remote hosts",
+            "platforms": ["Linux", "macOS", "Windows"],
+            "data_sources": ["Network protocol analysis", "Process monitoring"]
+        }
+    elif any(keyword in threat_content for keyword in ["brute force", "login", "credential"]):
+        return {
+            "technique_id": "T1110",
+            "technique_name": "Brute Force",
+            "tactic": "Credential Access",
+            "tactic_id": "TA0006",
+            "description": "Adversaries may use brute force techniques to gain access to accounts",
+            "platforms": ["Linux", "macOS", "Windows", "Office 365", "SaaS", "Google Workspace"],
+            "data_sources": ["Authentication logs", "Office 365 account logs"]
+        }
+    elif any(keyword in threat_content for keyword in ["email", "phishing", "attachment"]):
+        return {
+            "technique_id": "T1566.001",
+            "technique_name": "Spearphishing Attachment",
+            "tactic": "Initial Access",
+            "tactic_id": "TA0001",
+            "description": "Adversaries may send spearphishing emails with a malicious attachment",
+            "platforms": ["Linux", "macOS", "Windows"],
+            "data_sources": ["Email gateway", "File monitoring"]
+        }
+    elif any(keyword in threat_content for keyword in ["sql", "injection", "web"]):
+        return {
+            "technique_id": "T1190",
+            "technique_name": "Exploit Public-Facing Application", 
+            "tactic": "Initial Access",
+            "tactic_id": "TA0001",
+            "description": "Adversaries may attempt to take advantage of a weakness in an Internet-facing computer",
+            "platforms": ["Linux", "Windows", "macOS"],
+            "data_sources": ["Web application firewall logs", "Web logs"]
+        }
+    else:
+        return {
+            "technique_id": "T1071.001",
+            "technique_name": "Web Protocols",
+            "tactic": "Command and Control",
+            "tactic_id": "TA0011",
+            "description": "Adversaries may communicate using application layer protocols",
+            "platforms": ["Linux", "macOS", "Windows"],
+            "data_sources": ["Network protocol analysis", "Process monitoring"]
+        }
 
 @app.get("/api/threats/{threat_id}/explain")
 def get_threat_explanation(threat_id: int, db: Session = Depends(get_db)):
@@ -1135,6 +1388,272 @@ def get_orchestrator_status():
         }
     }
 
+@app.post("/api/v1/incidents/orchestrate")
+def orchestrate_incidents(db: Session = Depends(get_db)):
+    """AI-driven incident orchestration and threat aggregation"""
+    try:
+        # Get all recent threats for aggregation
+        recent_threats = db.query(ThreatLog).order_by(ThreatLog.timestamp.desc()).limit(10).all()
+        
+        # Analyze threats for patterns and create incidents
+        incident_groups = aggregate_threats_to_incidents(recent_threats)
+        
+        created_incidents = []
+        for group in incident_groups:
+            # Create incident from threat group
+            incident = SecurityIncident(
+                title=group['title'],
+                description=group['description'],
+                severity=group['severity'],
+                status="open"
+            )
+            db.add(incident)
+            db.commit()
+            db.refresh(incident)
+            
+            created_incidents.append({
+                "id": incident.id,
+                "title": incident.title,
+                "severity": incident.severity,
+                "threats_involved": len(group['threats']),
+                "ai_confidence": group['confidence']
+            })
+        
+        # Log orchestration activity
+        orchestration_result = {
+            "status": "completed",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "threats_analyzed": len(recent_threats),
+            "incidents_created": len(created_incidents),
+            "incidents": created_incidents,
+            "ai_analysis": {
+                "threat_correlation": "High correlation detected between network-based attacks",
+                "risk_assessment": "Medium to high risk level requiring immediate attention",
+                "recommended_actions": [
+                    "Monitor affected IP ranges for lateral movement",
+                    "Implement additional network segmentation",
+                    "Update threat detection signatures",
+                    "Conduct forensic analysis on identified systems"
+                ]
+            },
+            "next_orchestration": "Scheduled in 15 minutes"
+        }
+        
+        return orchestration_result
+        
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=f"Orchestration failed: {str(e)}")
+
+def aggregate_threats_to_incidents(threats):
+    """Aggregate similar threats into incidents using AI analysis"""
+    incident_groups = []
+    
+    # Group threats by IP address patterns
+    ip_groups = {}
+    malware_threats = []
+    network_threats = []
+    
+    for threat in threats:
+        if "trojan" in threat.threat.lower() or "malware" in threat.threat.lower():
+            malware_threats.append(threat)
+        elif "scan" in threat.threat.lower() or "intrusion" in threat.threat.lower():
+            network_threats.append(threat)
+        else:
+            # Group by IP subnet
+            ip_key = '.'.join(threat.ip.split('.')[:3]) + '.x'
+            if ip_key not in ip_groups:
+                ip_groups[ip_key] = []
+            ip_groups[ip_key].append(threat)
+    
+    # Create incident for malware cluster
+    if malware_threats:
+        severity = "critical" if any(t.severity == "high" for t in malware_threats) else "high"
+        incident_groups.append({
+            "title": f"Coordinated Malware Campaign - {len(malware_threats)} Threats Detected",
+            "description": f"AI analysis identified {len(malware_threats)} related malware threats indicating a coordinated attack campaign. Immediate containment required.",
+            "severity": severity,
+            "threats": malware_threats,
+            "confidence": 0.92
+        })
+    
+    # Create incident for network attacks
+    if network_threats:
+        severity = "high" if len(network_threats) > 1 else "medium"
+        incident_groups.append({
+            "title": f"Network Reconnaissance Activity - {len(network_threats)} Events",
+            "description": f"Multiple network scanning and intrusion attempts detected. AI correlation suggests reconnaissance phase of advanced persistent threat.",
+            "severity": severity,
+            "threats": network_threats,
+            "confidence": 0.87
+        })
+    
+    # Create incidents for IP-based clusters
+    for ip_pattern, ip_threats in ip_groups.items():
+        if len(ip_threats) > 1:
+            severity = "medium" if len(ip_threats) < 3 else "high"
+            incident_groups.append({
+                "title": f"Coordinated Attack from {ip_pattern} Subnet",
+                "description": f"AI detected {len(ip_threats)} coordinated threats from {ip_pattern} subnet indicating potential botnet or distributed attack.",
+                "severity": severity,
+                "threats": ip_threats,
+                "confidence": 0.85
+            })
+    
+    return incident_groups
+
+@app.get("/api/v1/incidents/orchestration-status")
+def get_orchestration_status():
+    """Get current orchestration system status and automation settings"""
+    return {
+        "orchestration_engine": {
+            "status": "active",
+            "mode": "automated",
+            "last_run": datetime.now(timezone.utc).isoformat(),
+            "next_scheduled": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat(),
+            "automation_enabled": True
+        },
+        "threat_aggregation": {
+            "active_rules": [
+                "IP subnet correlation (confidence: 0.85+)",
+                "Malware family clustering (confidence: 0.90+)", 
+                "Attack pattern recognition (confidence: 0.87+)",
+                "Temporal correlation analysis (confidence: 0.80+)"
+            ],
+            "thresholds": {
+                "min_threats_for_incident": 2,
+                "correlation_confidence_min": 0.80,
+                "auto_escalation_threshold": 0.90
+            }
+        },
+        "performance_metrics": {
+            "threats_processed_today": 15,
+            "incidents_created_today": 3,
+            "false_positive_rate": 0.12,
+            "analyst_feedback_integration": "active"
+        }
+    }
+
+@app.post("/api/v1/incidents/automation/toggle")
+def toggle_orchestration_automation():
+    """Toggle automated incident orchestration on/off"""
+    # In a real system, this would update a configuration setting
+    return {
+        "automation_enabled": True,
+        "message": "Automated incident orchestration is now enabled",
+        "next_run": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
+    }
+
+@app.get("/api/v1/incidents/orchestration-logs")
+def get_orchestration_logs(limit: int = 10, db: Session = Depends(get_db)):
+    """Get recent orchestration activity logs"""
+    # Get recent incidents created by AI orchestration
+    recent_incidents = db.query(SecurityIncident).filter(
+        SecurityIncident.title.contains("[AUTO]") | 
+        SecurityIncident.title.contains("Coordinated") |
+        SecurityIncident.title.contains("Campaign")
+    ).order_by(SecurityIncident.start_time.desc()).limit(limit).all()
+    
+    logs = []
+    for incident in recent_incidents:
+        logs.append({
+            "timestamp": incident.start_time.isoformat() if incident.start_time else None,
+            "action": "incident_created",
+            "incident_id": incident.id,
+            "title": incident.title,
+            "severity": incident.severity,
+            "status": incident.status,
+            "confidence": 0.89,  # Default confidence for demo
+            "threats_aggregated": 2 if "Coordinated" in incident.title else 1,
+            "ai_reasoning": f"Created incident based on correlation analysis of {incident.severity} severity threats"
+        })
+    
+    return {
+        "orchestration_logs": logs,
+        "total_logs": len(logs),
+        "system_status": "active",
+        "last_aggregation": datetime.now(timezone.utc).isoformat()
+    }
+
+# Background task for automated threat aggregation
+import asyncio
+from threading import Thread
+import time
+
+class ThreatAggregationService:
+    def __init__(self):
+        self.running = False
+        self.thread = None
+        
+    def start(self):
+        if not self.running:
+            self.running = True
+            self.thread = Thread(target=self._run_aggregation_loop, daemon=True)
+            self.thread.start()
+            print("🤖 Automated Threat Aggregation Service started")
+    
+    def stop(self):
+        self.running = False
+        if self.thread:
+            self.thread.join()
+            print("🤖 Automated Threat Aggregation Service stopped")
+    
+    def _run_aggregation_loop(self):
+        while self.running:
+            try:
+                self._perform_aggregation()
+                time.sleep(900)  # Run every 15 minutes
+            except Exception as e:
+                print(f"⚠️ Threat aggregation error: {e}")
+                time.sleep(60)  # Wait 1 minute before retrying
+    
+    def _perform_aggregation(self):
+        """Perform automated threat aggregation"""
+        db = SessionLocal()
+        try:
+            # Get threats from last 30 minutes
+            cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=30)
+            recent_threats = db.query(ThreatLog).filter(
+                ThreatLog.timestamp >= cutoff_time
+            ).order_by(ThreatLog.timestamp.desc()).all()
+            
+            if len(recent_threats) >= 2:  # Only aggregate if we have multiple threats
+                # Check if incidents already exist for these threats
+                existing_incidents = db.query(SecurityIncident).filter(
+                    SecurityIncident.start_time >= cutoff_time
+                ).count()
+                
+                if existing_incidents < len(recent_threats) // 2:  # If we don't have enough incidents
+                    incident_groups = aggregate_threats_to_incidents(recent_threats)
+                    
+                    for group in incident_groups:
+                        if group['confidence'] > 0.80:  # Only create high-confidence incidents
+                            incident = SecurityIncident(
+                                title=f"[AUTO] {group['title']}",
+                                description=f"{group['description']} (Automated Detection)",
+                                severity=group['severity'],
+                                status="open"
+                            )
+                            db.add(incident)
+                    
+                    db.commit()
+                    print(f"🤖 Automated aggregation: Created {len(incident_groups)} incidents from {len(recent_threats)} threats")
+        
+        except Exception as e:
+            print(f"⚠️ Aggregation error: {e}")
+        finally:
+            db.close()
+
+# Global aggregation service instance
+aggregation_service = ThreatAggregationService()
+
+# Start aggregation service on startup - merged with existing startup event
+
+# Stop aggregation service on shutdown  
+@app.on_event("shutdown")
+async def stop_aggregation_service():
+    aggregation_service.stop()
+
 @app.get("/api/ai/status")
 def get_ai_status():
     """AI system status"""
@@ -1179,6 +1698,36 @@ def get_current_processing():
         ]
     }
 
+@app.get("/api/ai/executive-summary")
+def get_executive_summary():
+    """AI-generated executive summary for security posture"""
+    return {
+        "summary": {
+            "overall_status": "Secure",
+            "threat_level": "Low",
+            "key_findings": [
+                "Network perimeter is secure with no unauthorized access attempts",
+                "All endpoints are compliant with security policies",
+                "AI threat detection models are operating at 94% accuracy"
+            ],
+            "recommendations": [
+                "Continue regular security monitoring",
+                "Schedule quarterly security assessments",
+                "Update threat intelligence feeds"
+            ],
+            "metrics": {
+                "threats_detected": 15,
+                "threats_mitigated": 13,
+                "false_positives": 2,
+                "response_time_avg": "4.2 minutes"
+            }
+        },
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "confidence": 0.89,
+        "data_sources": ["network_logs", "endpoint_data", "threat_intelligence"],
+        "analysis_period": "24_hours"
+    }
+
 # Support query parameters for threats endpoint
 @app.get("/api/threats")
 def get_threats_with_params(limit: int = None, db: Session = Depends(get_db)):
@@ -1192,11 +1741,14 @@ def get_threats_with_params(limit: int = None, db: Session = Depends(get_db)):
         "threats": [
             {
                 "id": threat.id,
-                "threat_type": threat.source,
+                "threat": threat.threat,           # Frontend expects threat.threat
+                "threat_type": threat.source,      # Keep for compatibility
+                "source": threat.source,           # Frontend expects threat.source
                 "severity": threat.severity,
                 "status": "active",
-                "source_ip": threat.ip,
-                "description": threat.threat,
+                "ip": threat.ip,                   # Frontend expects threat.ip
+                "source_ip": threat.ip,            # Keep for compatibility
+                "description": threat.threat,      # Keep for compatibility
                 "timestamp": threat.timestamp.isoformat() if threat.timestamp else None,
                 "cvss_score": threat.cvss_score
             }
@@ -1556,17 +2108,20 @@ def get_incidents_analytics():
 
 @app.get("/api/forecasting/24_hour")
 def get_24_hour_forecast():
-    """24-hour threat forecast"""
+    """24-hour threat forecast with predicted threats breakdown"""
     return {
-        "forecast": [
-            {"hour": 0, "predicted_threats": 2},
-            {"hour": 6, "predicted_threats": 4},
-            {"hour": 12, "predicted_threats": 8},
-            {"hour": 18, "predicted_threats": 6},
-            {"hour": 24, "predicted_threats": 3}
-        ],
+        "predicted_threats": {
+            "powershell_command_execution": 0.12,
+            "failed_authentication_attempts": 0.08,
+            "network_port_scanning": 0.15,
+            "sql_injection_attempts": 0.05,
+            "log4j_exploit_attempts": 0.03,
+            "unauthorized_file_access": 0.07
+        },
         "confidence": 0.85,
-        "model_accuracy": 0.92
+        "model_accuracy": 0.92,
+        "method": "ai_ml_prediction",
+        "forecast_period": "24_hours"
     }
 
 @app.get("/api/correlation/summary") 
@@ -1673,39 +2228,572 @@ def data_ingestion_endpoint(data: dict):
     }
 
 @app.post("/api/threats/{threat_id}/feedback")
-def analyst_feedback_endpoint(threat_id: str, feedback: dict):
-    """Analyst feedback submission endpoint"""
+def analyst_feedback_endpoint(threat_id: int, feedback: dict, db: Session = Depends(get_db)):
+    """Analyst feedback submission endpoint with database storage"""
+    try:
+        # Get the threat to get original prediction
+        threat = db.query(ThreatLog).filter(ThreatLog.id == threat_id).first()
+        if not threat:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Threat not found")
+        
+        # Create analyst feedback record
+        analyst_feedback = AnalystFeedback(
+            threat_id=threat_id,
+            analyst_id=feedback.get("analyst_id", "system"),
+            feedback_type=feedback.get("feedback_type", "confirmation"),
+            original_prediction=threat.cvss_score or 0.0,
+            corrected_prediction=feedback.get("corrected_prediction"),
+            feature_corrections=str(feedback.get("feature_corrections", {})) if feedback.get("feature_corrections") else None,
+            explanation=feedback.get("explanation"),
+            confidence_level=feedback.get("confidence_level", 3)
+        )
+        
+        db.add(analyst_feedback)
+        db.commit()
+        db.refresh(analyst_feedback)
+        
+        return {
+            "success": True,
+            "feedback_id": analyst_feedback.id,
+            "threat_id": threat_id,
+            "status": "recorded",
+            "analyst_id": analyst_feedback.analyst_id,
+            "timestamp": analyst_feedback.timestamp.isoformat() if analyst_feedback.timestamp else None,
+            "message": "Feedback stored successfully and will be used to improve AI model"
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "threat_id": threat_id,
+            "message": "Failed to store feedback"
+        }
+
+@app.get("/api/threats/{threat_id}/feedback")
+def get_analyst_feedback(threat_id: int, db: Session = Depends(get_db)):
+    """Get analyst feedback for a specific threat"""
+    feedback_records = db.query(AnalystFeedback).filter(AnalystFeedback.threat_id == threat_id).order_by(AnalystFeedback.timestamp.desc()).all()
+    
     return {
-        "feedback_simulated": True,
         "threat_id": threat_id,
-        "feedback_id": "fb_001",
-        "status": "recorded",
-        "analyst_id": feedback.get("analyst_id", "unknown"),
-        "timestamp": datetime.now().isoformat()
+        "feedback_count": len(feedback_records),
+        "feedback": [
+            {
+                "id": f.id,
+                "analyst_id": f.analyst_id,
+                "feedback_type": f.feedback_type,
+                "original_prediction": f.original_prediction,
+                "corrected_prediction": f.corrected_prediction,
+                "feature_corrections": f.feature_corrections,
+                "explanation": f.explanation,
+                "confidence_level": f.confidence_level,
+                "timestamp": f.timestamp.isoformat() if f.timestamp else None
+            }
+            for f in feedback_records
+        ]
     }
+
+@app.get("/api/analyst/feedback/summary")
+def get_feedback_summary(db: Session = Depends(get_db)):
+    """Get summary of all analyst feedback for model improvement insights"""
+    total_feedback = db.query(AnalystFeedback).count()
+    correction_feedback = db.query(AnalystFeedback).filter(AnalystFeedback.feedback_type == "correction").count()
+    confirmation_feedback = db.query(AnalystFeedback).filter(AnalystFeedback.feedback_type == "confirmation").count()
+    feature_importance_feedback = db.query(AnalystFeedback).filter(AnalystFeedback.feedback_type == "feature_importance").count()
+    
+    # Get recent feedback
+    recent_feedback = db.query(AnalystFeedback).order_by(AnalystFeedback.timestamp.desc()).limit(10).all()
+    
+    return {
+        "summary": {
+            "total_feedback": total_feedback,
+            "correction_count": correction_feedback,
+            "confirmation_count": confirmation_feedback,
+            "feature_importance_count": feature_importance_feedback,
+            "correction_rate": (correction_feedback / total_feedback * 100) if total_feedback > 0 else 0
+        },
+        "recent_feedback": [
+            {
+                "id": f.id,
+                "threat_id": f.threat_id,
+                "feedback_type": f.feedback_type,
+                "analyst_id": f.analyst_id,
+                "confidence_level": f.confidence_level,
+                "timestamp": f.timestamp.isoformat() if f.timestamp else None
+            }
+            for f in recent_feedback
+        ]
+    }
+
+# Agent Management Endpoints
+@app.post("/api/agents/heartbeat")
+async def agent_heartbeat(request: dict, db: Session = Depends(get_db)):
+    """Receive agent heartbeat"""
+    try:
+        agent_id = request.get("agent_id")
+        agent_name = request.get("agent_name")
+        status = request.get("status", "active")
+        system_info = request.get("system_info", {})
+        tenant_id = request.get("tenant_id", "default")
+        
+        # Check if agent exists
+        agent = db.query(SOCAgent).filter(SOCAgent.agent_id == agent_id).first()
+        
+        if agent:
+            # Update existing agent
+            agent.last_heartbeat = datetime.now(timezone.utc)
+            agent.status = status
+            agent.system_info = json.dumps(system_info)
+        else:
+            # Create new agent
+            agent = SOCAgent(
+                agent_id=agent_id,
+                name=agent_name,
+                status=status,
+                last_heartbeat=datetime.now(timezone.utc),
+                system_info=json.dumps(system_info),
+                tenant_id=tenant_id,
+                environment="unknown"
+            )
+            db.add(agent)
+        
+        db.commit()
+        
+        # Log audit trail
+        audit_log = AuditLog(
+            user_id="system",
+            action="agent_heartbeat",
+            resource_type="agent",
+            resource_id=agent_id,
+            details=json.dumps({"status": status, "timestamp": datetime.now(timezone.utc).isoformat()}),
+            tenant_id=tenant_id
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {"status": "success", "message": "Heartbeat received"}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/agents")
+async def get_agents(db: Session = Depends(get_db)):
+    """Get all registered agents"""
+    try:
+        agents = db.query(SOCAgent).all()
+        
+        return {
+            "agents": [
+                {
+                    "id": agent.id,
+                    "agent_id": agent.agent_id,
+                    "name": agent.name,
+                    "environment": agent.environment,
+                    "status": agent.status,
+                    "last_heartbeat": agent.last_heartbeat.isoformat() if agent.last_heartbeat else None,
+                    "system_info": json.loads(agent.system_info) if agent.system_info else {},
+                    "tenant_id": agent.tenant_id,
+                    "created_at": agent.created_at.isoformat() if agent.created_at else None
+                }
+                for agent in agents
+            ]
+        }
+    except Exception as e:
+        return {"error": str(e), "agents": []}
+
+@app.get("/api/agents/{agent_id}")
+async def get_agent_details(agent_id: str, db: Session = Depends(get_db)):
+    """Get detailed information about a specific agent"""
+    try:
+        agent = db.query(SOCAgent).filter(SOCAgent.agent_id == agent_id).first()
+        if not agent:
+            return {"error": "Agent not found"}
+        
+        return {
+            "id": agent.id,
+            "agent_id": agent.agent_id,
+            "name": agent.name,
+            "environment": agent.environment,
+            "status": agent.status,
+            "last_heartbeat": agent.last_heartbeat.isoformat() if agent.last_heartbeat else None,
+            "system_info": json.loads(agent.system_info) if agent.system_info else {},
+            "tenant_id": agent.tenant_id,
+            "created_at": agent.created_at.isoformat() if agent.created_at else None
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+# Audit and Logging Endpoints
+@app.get("/api/admin/audit-logs")
+async def get_audit_logs(limit: int = 100, offset: int = 0, db: Session = Depends(get_db)):
+    """Get audit logs"""
+    try:
+        logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).offset(offset).limit(limit).all()
+        total_count = db.query(AuditLog).count()
+        
+        return {
+            "logs": [
+                {
+                    "id": log.id,
+                    "user_id": log.user_id,
+                    "action": log.action,
+                    "resource_type": log.resource_type,
+                    "resource_id": log.resource_id,
+                    "details": json.loads(log.details) if log.details else {},
+                    "ip_address": log.ip_address,
+                    "user_agent": log.user_agent,
+                    "tenant_id": log.tenant_id,
+                    "timestamp": log.timestamp.isoformat() if log.timestamp else None
+                }
+                for log in logs
+            ],
+            "total_count": total_count,
+            "limit": limit,
+            "offset": offset
+        }
+    except Exception as e:
+        return {"error": str(e), "logs": [], "total_count": 0}
+
+@app.get("/api/admin/system-logs")
+async def get_system_logs():
+    """Get system logs from various sources"""
+    try:
+        logs = []
+        
+        # Add AI orchestration logs
+        logs.append({
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "level": "INFO",
+            "source": "ai_orchestration",
+            "message": "AI threat correlation service running",
+            "details": {"threats_analyzed": 10, "incidents_created": 3}
+        })
+        
+        # Add threat hunting logs
+        logs.append({
+            "timestamp": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat(),
+            "level": "INFO",
+            "source": "threat_hunting",
+            "message": "Automated threat scanning completed",
+            "details": {"scanned_endpoints": 250, "threats_found": 2}
+        })
+        
+        return {"logs": logs}
+    except Exception as e:
+        return {"error": str(e), "logs": []}
+
+# User Management Endpoints
+@app.get("/api/admin/users")
+async def get_users(db: Session = Depends(get_db)):
+    """Get all users"""
+    try:
+        users = db.query(User).all()
+        
+        return {
+            "users": [
+                {
+                    "id": user.id,
+                    "user_id": user.user_id,
+                    "email": user.email,
+                    "name": user.name,
+                    "role": user.role,
+                    "auth_provider": user.auth_provider,
+                    "tenant_id": user.tenant_id,
+                    "is_active": user.is_active,
+                    "created_at": user.created_at.isoformat() if user.created_at else None,
+                    "last_login": user.last_login.isoformat() if user.last_login else None
+                }
+                for user in users
+            ]
+        }
+    except Exception as e:
+        return {"error": str(e), "users": []}
+
+@app.post("/api/admin/users")
+async def create_user(request: dict, db: Session = Depends(get_db)):
+    """Create a new user"""
+    try:
+        user = User(
+            user_id=request.get("user_id"),
+            email=request.get("email"),
+            name=request.get("name"),
+            role=request.get("role", "viewer"),
+            auth_provider=request.get("auth_provider", "local"),
+            auth_provider_id=request.get("auth_provider_id"),
+            tenant_id=request.get("tenant_id", "default")
+        )
+        
+        db.add(user)
+        db.commit()
+        
+        # Log audit trail
+        audit_log = AuditLog(
+            user_id="system",
+            action="user_created",
+            resource_type="user",
+            resource_id=user.user_id,
+            details=json.dumps({"email": user.email, "role": user.role}),
+            tenant_id=user.tenant_id
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {"status": "success", "message": "User created successfully", "user_id": user.user_id}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.put("/api/admin/users/{user_id}")
+async def update_user(user_id: str, request: dict, db: Session = Depends(get_db)):
+    """Update a user"""
+    try:
+        user = db.query(User).filter(User.user_id == user_id).first()
+        if not user:
+            return {"error": "User not found"}
+        
+        # Update fields
+        if "name" in request:
+            user.name = request["name"]
+        if "role" in request:
+            user.role = request["role"]
+        if "is_active" in request:
+            user.is_active = request["is_active"]
+        
+        db.commit()
+        
+        # Log audit trail
+        audit_log = AuditLog(
+            user_id="system",
+            action="user_updated",
+            resource_type="user",
+            resource_id=user_id,
+            details=json.dumps(request),
+            tenant_id=user.tenant_id
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {"status": "success", "message": "User updated successfully"}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+# Tenant Management Endpoints
+@app.get("/api/admin/tenants")
+async def get_tenants(db: Session = Depends(get_db)):
+    """Get all tenants"""
+    try:
+        tenants = db.query(Tenant).all()
+        
+        return {
+            "tenants": [
+                {
+                    "id": tenant.id,
+                    "tenant_id": tenant.tenant_id,
+                    "name": tenant.name,
+                    "status": tenant.status,
+                    "created_at": tenant.created_at.isoformat() if tenant.created_at else None,
+                    "settings": json.loads(tenant.settings) if tenant.settings else {}
+                }
+                for tenant in tenants
+            ]
+        }
+    except Exception as e:
+        return {"error": str(e), "tenants": []}
+
+@app.post("/api/admin/tenants")
+async def create_tenant(request: dict, db: Session = Depends(get_db)):
+    """Create a new tenant (sharded environment)"""
+    try:
+        tenant_id = request.get("tenant_id")
+        name = request.get("name")
+        
+        # Create tenant record
+        tenant = Tenant(
+            tenant_id=tenant_id,
+            name=name,
+            status="active",
+            settings=json.dumps(request.get("settings", {}))
+        )
+        
+        db.add(tenant)
+        db.commit()
+        
+        # Log audit trail
+        audit_log = AuditLog(
+            user_id="system",
+            action="tenant_created",
+            resource_type="tenant",
+            resource_id=tenant_id,
+            details=json.dumps({"name": name}),
+            tenant_id="system"
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {"status": "success", "message": "Tenant created successfully", "tenant_id": tenant_id}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+# Authentication Endpoints (Enhanced)
+@app.post("/api/auth/microsoft")
+async def microsoft_auth(request: dict, db: Session = Depends(get_db)):
+    """Microsoft SSO authentication"""
+    try:
+        # In a real implementation, you would validate the Microsoft token
+        token = request.get("token")
+        user_info = request.get("user_info", {})
+        
+        email = user_info.get("email")
+        name = user_info.get("name")
+        microsoft_id = user_info.get("id")
+        
+        # Check if user exists
+        user = db.query(User).filter(User.email == email).first()
+        
+        if not user:
+            # Create new user
+            user = User(
+                user_id=f"ms_{microsoft_id}",
+                email=email,
+                name=name,
+                auth_provider="microsoft",
+                auth_provider_id=microsoft_id,
+                role="viewer"
+            )
+            db.add(user)
+        else:
+            # Update last login
+            user.last_login = datetime.now(timezone.utc)
+        
+        db.commit()
+        
+        # Log audit trail
+        audit_log = AuditLog(
+            user_id=user.user_id,
+            action="login",
+            resource_type="authentication",
+            resource_id=user.user_id,
+            details=json.dumps({"provider": "microsoft", "email": email}),
+            tenant_id=user.tenant_id
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {
+            "status": "success",
+            "user": {
+                "user_id": user.user_id,
+                "email": user.email,
+                "name": user.name,
+                "role": user.role,
+                "tenant_id": user.tenant_id
+            }
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.get("/")
 def root():
     return {
         "message": "Sentient AI SOC Platform API", 
         "status": "operational",
-        "version": "1.0.0",
-        "endpoints": [
-            "/health",
-            "/api/health",
-            "/api/incidents", 
-            "/api/incidents/{id}",
-            "/api/threats",
-            "/api/threats/{id}/explain",
-            "/api/threats/{id}/response-plan",
-            "/api/admin/health",
-            "/api/admin/health/database",
-            "/api/ai/models",
-            "/api/security/metrics",
-            "/api/security/outlook",
-            "/api/data/ingest",
-            "/api/threats/{id}/feedback"
-        ]
+        "version": "2.0.0",
+        "features": [
+            "AI-Powered Threat Detection",
+            "XAI Explainable AI",
+            "Incident Orchestration",
+            "Agent Management",
+            "Audit Logging",
+            "Multi-Tenant Support",
+            "Microsoft/Google SSO",
+            "Real-time Analytics"
+        ],
+        "endpoints": {
+            "health": [
+                "/_fastapi_health",
+                "/api/health",
+                "/health"
+            ],
+            "incidents": [
+                "/api/incidents",
+                "/api/incidents/{id}",
+                "/api/incidents/{id}/ai-responses",
+                "/api/incidents/{id}/suggested-responses",
+                "/api/incidents/{id}/execute-response"
+            ],
+            "orchestration": [
+                "/api/v1/incidents/orchestrate",
+                "/api/v1/incidents/orchestration-status",
+                "/api/v1/incidents/automation/toggle",
+                "/api/v1/incidents/orchestration-logs"
+            ],
+            "threats": [
+                "/api/threats",
+                "/api/threats/{id}",
+                "/api/threats/{id}/explain",
+                "/api/threats/{id}/response-plan",
+                "/api/threats/{id}/ai-responses",
+                "/api/threats/{id}/suggested-responses",
+                "/api/threats/{id}/execute-response",
+                "/api/threats/{id}/feedback"
+            ],
+            "ai_models": [
+                "/api/ai/models",
+                "/api/ai/models/management",
+                "/api/ai/models/{id}/control",
+                "/api/ai/models/{id}/performance",
+                "/api/ai/status",
+                "/api/ai/decisions/recent",
+                "/api/ai/processing/current",
+                "/api/ai/executive-summary"
+            ],
+            "analytics": [
+                "/api/analytics/summary",
+                "/api/analytics/incidents-summary",
+                "/api/forecasting/24_hour",
+                "/api/correlation/summary"
+            ],
+            "security": [
+                "/api/security/metrics",
+                "/api/security/outlook"
+            ],
+            "agents": [
+                "/api/agents",
+                "/api/agents/{id}",
+                "/api/agents/heartbeat"
+            ],
+            "admin": [
+                "/api/admin/health",
+                "/api/admin/health/database",
+                "/api/admin/health/docker",
+                "/api/admin/health/ai-models",
+                "/api/admin/health/apis",
+                "/api/admin/health/system",
+                "/api/admin/audit-logs",
+                "/api/admin/system-logs",
+                "/api/admin/users",
+                "/api/admin/tenants"
+            ],
+            "auth": [
+                "/api/auth/me",
+                "/api/auth/microsoft"
+            ],
+            "data": [
+                "/api/data/ingest"
+            ],
+            "connectors": [
+                "/api/connectors/intelligent-routing",
+                "/api/connectors/status",
+                "/api/connectors/stats",
+                "/api/connectors/threats/recent"
+            ]
+        },
+        "documentation": "/docs"
     }
 
 if __name__ == "__main__":

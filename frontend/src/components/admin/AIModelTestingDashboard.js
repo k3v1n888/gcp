@@ -55,8 +55,8 @@ const SentientAIModelsDashboard = () => {
       'Data Intake & Normalization AI': 'ingest',
       'Model B: Post-Processing & Enrichment AI': 'postprocess',
       'Post-Processing & Enrichment AI': 'postprocess',
-      'Model C: Quantum AI Predictive Security Engine': 'threat-model',
-      'Quantum AI Predictive Security Engine': 'threat-model',
+      'Model C: Sentient AI Predictive Security Engine': 'threat-model',
+      'Sentient AI Predictive Security Engine': 'threat-model',
       'Threat Service (Model C Wrapper)': 'threat-model',
       'AI Orchestrator (Action Execution)': 'orchestrator',
       'Console (Web Approval Interface)': 'console'
@@ -81,7 +81,7 @@ const SentientAIModelsDashboard = () => {
     if (displayName.includes('Post-Process') || displayName.includes('Enrichment')) {
       return 'postprocess';
     }
-    if (displayName.includes('Quantum') || displayName.includes('Threat') || displayName.includes('Predictive')) {
+    if (displayName.includes('Sentient') || displayName.includes('Threat') || displayName.includes('Predictive')) {
       return 'threat-model';
     }
     if (displayName.includes('Orchestrator') || displayName.includes('Action')) {
@@ -388,7 +388,7 @@ const SentientAIModelsDashboard = () => {
             </div>
 
             {/* Special Model C (Your AI) Details */}
-            {model.name?.includes('Quantum AI Predictive Security Engine') && (
+            {model.name?.includes('Sentient AI Predictive Security Engine') && (
               <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
                 <div className="text-sm font-medium text-purple-800 mb-3">🤖 Your Trained AI Model Details</div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

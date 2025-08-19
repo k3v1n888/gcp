@@ -30,6 +30,7 @@ import Unauthorized from './pages/Unauthorized';
 import AuthSuccess from './pages/AuthSuccess';
 import ThreatDetail from './pages/ThreatDetail';
 import IncidentDetail from './pages/IncidentDetail';
+import MultiTenantDashboard from './components/MultiTenantDashboard';
 
 function ProdApp() {
   return (
@@ -45,6 +46,7 @@ function ProdApp() {
         <Route element={<Layout />}>
           <Route element={<ProtectedRoutes allowedRoles={['admin', 'user', 'analyst', 'viewer']} />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/multi-tenant" element={<MultiTenantDashboard />} />
             <Route path="/threats/:id" element={<ThreatDetail />} />
             <Route path="/incidents/:id" element={<IncidentDetail />} />
           </Route>

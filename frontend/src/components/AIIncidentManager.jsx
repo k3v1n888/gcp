@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2025 Kevin Zachary
- * All rights reserved.
- *
- * This software and associated documentation files (the "Software") are the 
- * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
- * modification, or use of this software is strictly prohibited.
- *
- * For licensing inquiries, contact: kevin@zachary.com
- */
-
-/*
- * Author: Kevin Zachary
- * Copyright: Sentient Spire
- */
-
 
 
 import React, { useState, useEffect, useContext } from 'react';
@@ -121,10 +105,10 @@ const AIIncidentManager = () => {
     setLoading(true);
     
     try {
-      const response = await fetch('/api/v1/incidents/orchestrate', {
+      const baseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001';
+      const response = await fetch(`${baseUrl}/api/v1/incidents/orchestrate`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json'
         }
       });

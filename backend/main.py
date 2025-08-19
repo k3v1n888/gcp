@@ -9,9 +9,6 @@ modification, or use of this software is strictly prohibited.
 For licensing inquiries, contact: kevin@zachary.com
 """
 
-# Author: Kevin Zachary
-# Copyright: Sentient Spire
-
 import os
 import asyncio
 from contextlib import asynccontextmanager
@@ -165,7 +162,180 @@ async def lifespan(app: FastAPI):
     if hasattr(app.state, 'graph_service'):
         app.state.graph_service.close()
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    title="Sentient AI SOC API",
+    description="""
+# Sentient AI Security Operations Center API
+
+**Version 2.0** - Comprehensive Multi-Tenant Cybersecurity Platform
+
+## 🎯 **Core Capabilities**
+
+### **Multi-Tenant Security Dashboard**
+- **Centralized Security Overview**: View all tenants' security posture from a unified dashboard
+- **Threat & Incident Drill-Down**: Modal-based threat and incident detail views with full context
+- **Tenant Switching**: Seamless navigation between tenant environments with complete feature access
+- **Real-Time Security Metrics**: Live threat counts, incident status, and AI model performance
+
+### **AI-Powered Threat Management**
+- **Advanced Threat Detection**: Machine learning-based threat identification and severity scoring
+- **Predictive Analytics**: 24-hour threat forecasting with confidence intervals
+- **Intelligent Response Suggestions**: AI-generated response plans for threats and incidents
+- **Automated Threat Correlation**: Cross-system threat intelligence aggregation
+
+### **Incident Orchestration & Response**
+- **AI Incident Orchestration**: Automated incident creation, assignment, and workflow management
+- **Smart Incident Aggregation**: Related threat consolidation into comprehensive incidents
+- **Response Plan Generation**: AI-powered response plans with step-by-step remediation
+- **Escalation Management**: Intelligent priority-based incident escalation
+
+### **Comprehensive Health Monitoring**
+- **System Health Dashboard**: Real-time monitoring of all system components
+- **Docker Container Management**: Live container status, resource usage, and health checks
+- **API Endpoint Monitoring**: Complete API health validation with response time tracking
+- **Resource Utilization**: CPU, memory, disk, and network monitoring
+
+### **Universal Data Connectors**
+- **Intelligent Data Routing**: AI-powered data ingestion from multiple security sources
+- **Connector Health Monitoring**: Real-time status of all data connectors
+- **Automated Data Mapping**: Smart field mapping for various data sources
+- **Connector Statistics**: Throughput, error rates, and performance metrics
+
+### **Advanced Analytics & Forecasting**
+- **Security Outlook**: 24-hour predictive security analysis with threat probability
+- **Correlation Analysis**: Multi-source event correlation and pattern detection
+- **Executive Reporting**: AI-generated executive summaries and security insights
+- **Trend Analysis**: Historical security trends and pattern recognition
+
+## 🚀 **Quick Start**
+
+1. **Access the Dashboard**: http://localhost:3000
+2. **Multi-Tenant Overview**: Navigate to "All Tenants" in the left panel
+3. **API Documentation**: http://localhost:8001/docs
+4. **System Health**: Monitor at `/api/admin/health`
+
+## 🔧 **API Categories**
+
+### **Authentication & Authorization**
+- Microsoft SSO integration
+- Multi-tenant access control
+- Session management
+
+### **Threat Intelligence**
+- Real-time threat feeds
+- AI-powered threat analysis
+- Response plan generation
+- Threat explanation and context
+
+### **Incident Management** 
+- Incident lifecycle management
+- AI-suggested responses
+- Orchestration automation
+- Status tracking and reporting
+
+### **System Administration**
+- User and tenant management
+- Audit logging
+- System health monitoring
+- Configuration management
+
+### **AI & Machine Learning**
+- Model management and control
+- Performance metrics
+- Decision tracking
+- Executive summaries
+
+### **Data Integration**
+- Universal connector management
+- Data ingestion endpoints
+- Analytics and correlation
+- Forecasting services
+
+## 🛡️ **Security Features**
+
+- **Zero-Trust Architecture**: Multi-layered security validation
+- **Encryption**: End-to-end data encryption in transit and at rest
+- **Audit Trail**: Comprehensive logging of all user actions and system events
+- **Access Controls**: Role-based access control with tenant isolation
+- **Compliance**: SOC2, ISO27001, GDPR, and PCI DSS compliance ready
+
+## 📊 **Monitoring & Observability**
+
+- **Real-Time Dashboards**: Live security metrics and system health
+- **Alerting**: Intelligent alert generation and notification routing
+- **Performance Metrics**: API response times, system resource usage
+- **Troubleshooting**: Detailed error tracking and diagnostic information
+
+## 🌐 **Multi-Tenant Architecture**
+
+- **Tenant Isolation**: Complete data and resource isolation between tenants
+- **Shared Infrastructure**: Optimized resource utilization across tenants
+- **Scalable Design**: Horizontal scaling support for growing tenant base
+- **Unified Management**: Centralized administration with tenant-specific controls
+
+---
+
+**Developed by Kevin Zachary** | **© 2025 All Rights Reserved**
+    """,
+    version="2.0.0",
+    contact={
+        "name": "Kevin Zachary",
+        "email": "kevin@zachary.com",
+    },
+    license_info={
+        "name": "Proprietary License",
+        "url": "https://sentient.ai-soc.com/license",
+    },
+    servers=[
+        {
+            "url": "http://localhost:8001",
+            "description": "Development Server"
+        },
+        {
+            "url": "https://sentient.ai-soc.com",
+            "description": "Production Server"
+        }
+    ],
+    tags_metadata=[
+        {
+            "name": "health",
+            "description": "System health and monitoring endpoints"
+        },
+        {
+            "name": "threats",
+            "description": "Threat detection, analysis, and management"
+        },
+        {
+            "name": "incidents",
+            "description": "Security incident management and orchestration"
+        },
+        {
+            "name": "ai",
+            "description": "AI model management and decision tracking"
+        },
+        {
+            "name": "admin",
+            "description": "Administrative functions and system management"
+        },
+        {
+            "name": "auth",
+            "description": "Authentication and authorization"
+        },
+        {
+            "name": "connectors",
+            "description": "Universal data connector management"
+        },
+        {
+            "name": "analytics",
+            "description": "Security analytics and forecasting"
+        },
+        {
+            "name": "orchestration",
+            "description": "AI-powered incident orchestration and automation"
+        }
+    ]
+)
 
 SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change_this_in_prod")
 app.add_middleware(
@@ -179,7 +349,7 @@ app.add_middleware(
 # Development-aware CORS configuration
 allowed_origins = [
     "https://ai-cyber-fullstack-1020401092050.us-central1.run.app",
-    "https://qai.quantum-ai.asia"
+    "https://sentient.ai-soc.com"
 ]
 
 # Add development origins if in development mode

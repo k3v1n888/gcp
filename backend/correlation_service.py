@@ -1,17 +1,3 @@
-"""
-Copyright (c) 2025 Kevin Zachary
-All rights reserved.
-
-This software and associated documentation files (the "Software") are the 
-exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-modification, or use of this software is strictly prohibited.
-
-For licensing inquiries, contact: kevin@zachary.com
-"""
-
-# Author: Kevin Zachary
-# Copyright: Sentient Spire
-
 import os
 import requests
 import openai
@@ -90,7 +76,7 @@ def get_cvss_score(cve_id: str) -> float:
         # Updated to NVD API v2.0 endpoint
         url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
         headers = {
-            "User-Agent": "SentientAI-CVE-Fetcher/2.0"
+            "User-Agent": "QuantumAI-CVE-Fetcher/2.0"
         }
         
         # Parameters for the new API
@@ -336,7 +322,7 @@ def generate_threat_remediation_plan(threat_log: models.ThreatLog) -> dict | Non
 def get_and_summarize_misp_intel(indicator: str) -> str | None:
     if not MISP_URL or not MISP_API_KEY:
         logger.warning("MISP credentials not configured for summary.")
-        return "Sentient Intel hub not configured."
+        return "Quantum Intel hub not configured."
     openai.api_key = os.getenv("OPENAI_API_KEY")
     if not openai.api_key:
         logger.warning("OpenAI key not configured for MISP summary.")

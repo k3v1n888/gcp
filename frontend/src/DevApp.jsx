@@ -1,21 +1,3 @@
-/*
- * Copyright (c) 2025 Kevin Zachary
- * All rights reserved.
- *
- * This software and associated documentation files (the "Software") are the 
- * exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
- * modification, or use of this software is strictly prohibited.
- *
- * For licensing inquiries, contact: kevin@zachary.com
- */
-
-/*
- * Author: Kevin Zachary
- * Copyright: Sentient Spire
- */
-
-
-
 // Development-specific App component with auth bypass
 import React from 'react';
 import { Route, Routes, Link } from 'react-router-dom';
@@ -29,6 +11,7 @@ import IncidentDetail from './pages/IncidentDetail';
 import DebugPage from './pages/DebugPage';
 import DataConnectorManager from './pages/DataConnectorManager';
 import AIModelDashboard from './components/AIModelDashboard';
+import MultiTenantDashboard from './components/MultiTenantDashboard';
 
 // Simple dev layout without complex dependencies
 const SimpleDevLayout = ({ children }) => (
@@ -39,6 +22,7 @@ const SimpleDevLayout = ({ children }) => (
         <p className="text-xs text-yellow-400 mt-1">🔧 Development Mode</p>
       </div>
       <nav className="flex-grow p-2">
+        <Link to="/multi-tenant" className="block py-2.5 px-4 rounded hover:bg-slate-800 mb-2 text-purple-400">🏢 Multi-Tenant</Link>
         <Link to="/dashboard" className="block py-2.5 px-4 rounded hover:bg-slate-800 mb-2">Dashboard</Link>
         <Link to="/ai-models" className="block py-2.5 px-4 rounded hover:bg-slate-800 mb-2 text-blue-400">🤖 AI Models</Link>
         <Link to="/connectors" className="block py-2.5 px-4 rounded hover:bg-slate-800 mb-2">🔌 Data Connectors</Link>
@@ -61,6 +45,7 @@ function DevApp() {
         <Route path="/" element={<SimpleDevLayout><Dashboard /></SimpleDevLayout>} />
         <Route path="/debug" element={<SimpleDevLayout><DebugPage /></SimpleDevLayout>} />
         <Route path="/dashboard" element={<SimpleDevLayout><Dashboard /></SimpleDevLayout>} />
+        <Route path="/multi-tenant" element={<SimpleDevLayout><MultiTenantDashboard /></SimpleDevLayout>} />
         <Route path="/ai-models" element={<SimpleDevLayout><AIModelDashboard /></SimpleDevLayout>} />
         <Route path="/connectors" element={<SimpleDevLayout><DataConnectorManager /></SimpleDevLayout>} />
         <Route path="/admin" element={<SimpleDevLayout><AdminPanel /></SimpleDevLayout>} />

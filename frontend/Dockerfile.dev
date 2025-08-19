@@ -1,18 +1,6 @@
-# Copyright (c) 2025 Kevin Zachary
-# All rights reserved.
-#
-# This software and associated documentation files (the "Software") are the 
-# exclusive property of Kevin Zachary. Unauthorized copying, distribution, 
-# modification, or use of this software is strictly prohibited.
-#
-# For licensing inquiries, contact: kevin@zachary.com
-
 FROM node:18-alpine
 
 WORKDIR /app
-
-# Install curl for health checks
-RUN apk add --no-cache curl
 
 # Copy package files
 COPY frontend/package*.json ./

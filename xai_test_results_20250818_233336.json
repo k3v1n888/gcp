@@ -1,0 +1,556 @@
+[
+  {
+    "quality_score": 0.8400000000000001,
+    "metrics": {
+      "completeness": 1.0,
+      "clarity": 0.6,
+      "technical_accuracy": 0.7,
+      "mitre_integration": 1.0,
+      "actionability": 0.8999999999999999
+    },
+    "xai_data": {
+      "reasoning": "High confidence detection based on threat_simulator patterns and IP reputation analysis. MITRE ATT&CK technique T1059.001 identified in Execution phase.",
+      "decision_factors": [
+        "Source IP reputation: 45.0%",
+        "Threat pattern match: threat_simulator",
+        "Severity assessment: critical",
+        "MITRE technique: T1059.001 (PowerShell)"
+      ],
+      "mitre_context": {
+        "technique_id": "T1059.001",
+        "technique_name": "PowerShell",
+        "tactic": "Execution",
+        "tactic_id": "TA0002",
+        "description": "Adversaries may abuse PowerShell commands and scripts for execution",
+        "platforms": [
+          "Windows"
+        ],
+        "data_sources": [
+          "Process monitoring",
+          "PowerShell logs"
+        ]
+      },
+      "confidence_score": 0.89,
+      "model_version": "Sentient-AI-v2.1"
+    },
+    "mitre_data": {
+      "technique_id": "T1059.001",
+      "technique_name": "PowerShell",
+      "tactic": "Execution",
+      "tactic_id": "TA0002",
+      "description": "Adversaries may abuse PowerShell commands and scripts for execution",
+      "platforms": [
+        "Windows"
+      ],
+      "data_sources": [
+        "Process monitoring",
+        "PowerShell logs"
+      ]
+    },
+    "threat_id": 27,
+    "threat_type": "threat_simulator",
+    "severity": "critical"
+  },
+  {
+    "quality_score": 0.8400000000000001,
+    "metrics": {
+      "completeness": 1.0,
+      "clarity": 0.6,
+      "technical_accuracy": 0.7,
+      "mitre_integration": 1.0,
+      "actionability": 0.8999999999999999
+    },
+    "xai_data": {
+      "reasoning": "High confidence detection based on threat_simulator patterns and IP reputation analysis. MITRE ATT&CK technique T1110 identified in Credential Access phase.",
+      "decision_factors": [
+        "Source IP reputation: 65.5%",
+        "Threat pattern match: threat_simulator",
+        "Severity assessment: medium",
+        "MITRE technique: T1110 (Brute Force)"
+      ],
+      "mitre_context": {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access",
+        "tactic_id": "TA0006",
+        "description": "Adversaries may use brute force techniques to gain access to accounts",
+        "platforms": [
+          "Linux",
+          "macOS",
+          "Windows",
+          "Office 365",
+          "SaaS",
+          "Google Workspace"
+        ],
+        "data_sources": [
+          "Authentication logs",
+          "Office 365 account logs"
+        ]
+      },
+      "confidence_score": 0.89,
+      "model_version": "Sentient-AI-v2.1"
+    },
+    "mitre_data": {
+      "technique_id": "T1110",
+      "technique_name": "Brute Force",
+      "tactic": "Credential Access",
+      "tactic_id": "TA0006",
+      "description": "Adversaries may use brute force techniques to gain access to accounts",
+      "platforms": [
+        "Linux",
+        "macOS",
+        "Windows",
+        "Office 365",
+        "SaaS",
+        "Google Workspace"
+      ],
+      "data_sources": [
+        "Authentication logs",
+        "Office 365 account logs"
+      ]
+    },
+    "threat_id": 26,
+    "threat_type": "threat_simulator",
+    "severity": "medium"
+  },
+  {
+    "quality_score": 0.8400000000000001,
+    "metrics": {
+      "completeness": 1.0,
+      "clarity": 0.6,
+      "technical_accuracy": 0.7,
+      "mitre_integration": 1.0,
+      "actionability": 0.8999999999999999
+    },
+    "xai_data": {
+      "reasoning": "High confidence detection based on threat_simulator patterns and IP reputation analysis. MITRE ATT&CK technique T1059.001 identified in Execution phase.",
+      "decision_factors": [
+        "Source IP reputation: 45.0%",
+        "Threat pattern match: threat_simulator",
+        "Severity assessment: critical",
+        "MITRE technique: T1059.001 (PowerShell)"
+      ],
+      "mitre_context": {
+        "technique_id": "T1059.001",
+        "technique_name": "PowerShell",
+        "tactic": "Execution",
+        "tactic_id": "TA0002",
+        "description": "Adversaries may abuse PowerShell commands and scripts for execution",
+        "platforms": [
+          "Windows"
+        ],
+        "data_sources": [
+          "Process monitoring",
+          "PowerShell logs"
+        ]
+      },
+      "confidence_score": 0.89,
+      "model_version": "Sentient-AI-v2.1"
+    },
+    "mitre_data": {
+      "technique_id": "T1059.001",
+      "technique_name": "PowerShell",
+      "tactic": "Execution",
+      "tactic_id": "TA0002",
+      "description": "Adversaries may abuse PowerShell commands and scripts for execution",
+      "platforms": [
+        "Windows"
+      ],
+      "data_sources": [
+        "Process monitoring",
+        "PowerShell logs"
+      ]
+    },
+    "threat_id": 25,
+    "threat_type": "threat_simulator",
+    "severity": "critical"
+  },
+  {
+    "quality_score": 0.8400000000000001,
+    "metrics": {
+      "completeness": 1.0,
+      "clarity": 0.6,
+      "technical_accuracy": 0.7,
+      "mitre_integration": 1.0,
+      "actionability": 0.8999999999999999
+    },
+    "xai_data": {
+      "reasoning": "High confidence detection based on threat_simulator patterns and IP reputation analysis. MITRE ATT&CK technique T1059.001 identified in Execution phase.",
+      "decision_factors": [
+        "Source IP reputation: 45.0%",
+        "Threat pattern match: threat_simulator",
+        "Severity assessment: critical",
+        "MITRE technique: T1059.001 (PowerShell)"
+      ],
+      "mitre_context": {
+        "technique_id": "T1059.001",
+        "technique_name": "PowerShell",
+        "tactic": "Execution",
+        "tactic_id": "TA0002",
+        "description": "Adversaries may abuse PowerShell commands and scripts for execution",
+        "platforms": [
+          "Windows"
+        ],
+        "data_sources": [
+          "Process monitoring",
+          "PowerShell logs"
+        ]
+      },
+      "confidence_score": 0.89,
+      "model_version": "Sentient-AI-v2.1"
+    },
+    "mitre_data": {
+      "technique_id": "T1059.001",
+      "technique_name": "PowerShell",
+      "tactic": "Execution",
+      "tactic_id": "TA0002",
+      "description": "Adversaries may abuse PowerShell commands and scripts for execution",
+      "platforms": [
+        "Windows"
+      ],
+      "data_sources": [
+        "Process monitoring",
+        "PowerShell logs"
+      ]
+    },
+    "threat_id": 24,
+    "threat_type": "threat_simulator",
+    "severity": "critical"
+  },
+  {
+    "quality_score": 0.8400000000000001,
+    "metrics": {
+      "completeness": 1.0,
+      "clarity": 0.6,
+      "technical_accuracy": 0.7,
+      "mitre_integration": 1.0,
+      "actionability": 0.8999999999999999
+    },
+    "xai_data": {
+      "reasoning": "High confidence detection based on threat_simulator patterns and IP reputation analysis. MITRE ATT&CK technique T1071.001 identified in Command and Control phase.",
+      "decision_factors": [
+        "Source IP reputation: 65.5%",
+        "Threat pattern match: threat_simulator",
+        "Severity assessment: medium",
+        "MITRE technique: T1071.001 (Web Protocols)"
+      ],
+      "mitre_context": {
+        "technique_id": "T1071.001",
+        "technique_name": "Web Protocols",
+        "tactic": "Command and Control",
+        "tactic_id": "TA0011",
+        "description": "Adversaries may communicate using application layer protocols",
+        "platforms": [
+          "Linux",
+          "macOS",
+          "Windows"
+        ],
+        "data_sources": [
+          "Network protocol analysis",
+          "Process monitoring"
+        ]
+      },
+      "confidence_score": 0.89,
+      "model_version": "Sentient-AI-v2.1"
+    },
+    "mitre_data": {
+      "technique_id": "T1071.001",
+      "technique_name": "Web Protocols",
+      "tactic": "Command and Control",
+      "tactic_id": "TA0011",
+      "description": "Adversaries may communicate using application layer protocols",
+      "platforms": [
+        "Linux",
+        "macOS",
+        "Windows"
+      ],
+      "data_sources": [
+        "Network protocol analysis",
+        "Process monitoring"
+      ]
+    },
+    "threat_id": 23,
+    "threat_type": "threat_simulator",
+    "severity": "medium"
+  },
+  {
+    "quality_score": 0.8400000000000001,
+    "metrics": {
+      "completeness": 1.0,
+      "clarity": 0.6,
+      "technical_accuracy": 0.7,
+      "mitre_integration": 1.0,
+      "actionability": 0.8999999999999999
+    },
+    "xai_data": {
+      "reasoning": "High confidence detection based on threat_simulator patterns and IP reputation analysis. MITRE ATT&CK technique T1566.001 identified in Initial Access phase.",
+      "decision_factors": [
+        "Source IP reputation: 65.5%",
+        "Threat pattern match: threat_simulator",
+        "Severity assessment: medium",
+        "MITRE technique: T1566.001 (Spearphishing Attachment)"
+      ],
+      "mitre_context": {
+        "technique_id": "T1566.001",
+        "technique_name": "Spearphishing Attachment",
+        "tactic": "Initial Access",
+        "tactic_id": "TA0001",
+        "description": "Adversaries may send spearphishing emails with a malicious attachment",
+        "platforms": [
+          "Linux",
+          "macOS",
+          "Windows"
+        ],
+        "data_sources": [
+          "Email gateway",
+          "File monitoring"
+        ]
+      },
+      "confidence_score": 0.89,
+      "model_version": "Sentient-AI-v2.1"
+    },
+    "mitre_data": {
+      "technique_id": "T1566.001",
+      "technique_name": "Spearphishing Attachment",
+      "tactic": "Initial Access",
+      "tactic_id": "TA0001",
+      "description": "Adversaries may send spearphishing emails with a malicious attachment",
+      "platforms": [
+        "Linux",
+        "macOS",
+        "Windows"
+      ],
+      "data_sources": [
+        "Email gateway",
+        "File monitoring"
+      ]
+    },
+    "threat_id": 22,
+    "threat_type": "threat_simulator",
+    "severity": "medium"
+  },
+  {
+    "quality_score": 0.8400000000000001,
+    "metrics": {
+      "completeness": 1.0,
+      "clarity": 0.6,
+      "technical_accuracy": 0.7,
+      "mitre_integration": 1.0,
+      "actionability": 0.8999999999999999
+    },
+    "xai_data": {
+      "reasoning": "High confidence detection based on threat_simulator patterns and IP reputation analysis. MITRE ATT&CK technique T1566.001 identified in Initial Access phase.",
+      "decision_factors": [
+        "Source IP reputation: 45.0%",
+        "Threat pattern match: threat_simulator",
+        "Severity assessment: low",
+        "MITRE technique: T1566.001 (Spearphishing Attachment)"
+      ],
+      "mitre_context": {
+        "technique_id": "T1566.001",
+        "technique_name": "Spearphishing Attachment",
+        "tactic": "Initial Access",
+        "tactic_id": "TA0001",
+        "description": "Adversaries may send spearphishing emails with a malicious attachment",
+        "platforms": [
+          "Linux",
+          "macOS",
+          "Windows"
+        ],
+        "data_sources": [
+          "Email gateway",
+          "File monitoring"
+        ]
+      },
+      "confidence_score": 0.89,
+      "model_version": "Sentient-AI-v2.1"
+    },
+    "mitre_data": {
+      "technique_id": "T1566.001",
+      "technique_name": "Spearphishing Attachment",
+      "tactic": "Initial Access",
+      "tactic_id": "TA0001",
+      "description": "Adversaries may send spearphishing emails with a malicious attachment",
+      "platforms": [
+        "Linux",
+        "macOS",
+        "Windows"
+      ],
+      "data_sources": [
+        "Email gateway",
+        "File monitoring"
+      ]
+    },
+    "threat_id": 21,
+    "threat_type": "threat_simulator",
+    "severity": "low"
+  },
+  {
+    "quality_score": 0.8400000000000001,
+    "metrics": {
+      "completeness": 1.0,
+      "clarity": 0.6,
+      "technical_accuracy": 0.7,
+      "mitre_integration": 1.0,
+      "actionability": 0.8999999999999999
+    },
+    "xai_data": {
+      "reasoning": "High confidence detection based on threat_simulator patterns and IP reputation analysis. MITRE ATT&CK technique T1071.001 identified in Command and Control phase.",
+      "decision_factors": [
+        "Source IP reputation: 45.0%",
+        "Threat pattern match: threat_simulator",
+        "Severity assessment: low",
+        "MITRE technique: T1071.001 (Web Protocols)"
+      ],
+      "mitre_context": {
+        "technique_id": "T1071.001",
+        "technique_name": "Web Protocols",
+        "tactic": "Command and Control",
+        "tactic_id": "TA0011",
+        "description": "Adversaries may communicate using application layer protocols",
+        "platforms": [
+          "Linux",
+          "macOS",
+          "Windows"
+        ],
+        "data_sources": [
+          "Network protocol analysis",
+          "Process monitoring"
+        ]
+      },
+      "confidence_score": 0.89,
+      "model_version": "Sentient-AI-v2.1"
+    },
+    "mitre_data": {
+      "technique_id": "T1071.001",
+      "technique_name": "Web Protocols",
+      "tactic": "Command and Control",
+      "tactic_id": "TA0011",
+      "description": "Adversaries may communicate using application layer protocols",
+      "platforms": [
+        "Linux",
+        "macOS",
+        "Windows"
+      ],
+      "data_sources": [
+        "Network protocol analysis",
+        "Process monitoring"
+      ]
+    },
+    "threat_id": 20,
+    "threat_type": "threat_simulator",
+    "severity": "low"
+  },
+  {
+    "quality_score": 0.8400000000000001,
+    "metrics": {
+      "completeness": 1.0,
+      "clarity": 0.6,
+      "technical_accuracy": 0.7,
+      "mitre_integration": 1.0,
+      "actionability": 0.8999999999999999
+    },
+    "xai_data": {
+      "reasoning": "High confidence detection based on threat_simulator patterns and IP reputation analysis. MITRE ATT&CK technique T1071.001 identified in Command and Control phase.",
+      "decision_factors": [
+        "Source IP reputation: 45.0%",
+        "Threat pattern match: threat_simulator",
+        "Severity assessment: critical",
+        "MITRE technique: T1071.001 (Web Protocols)"
+      ],
+      "mitre_context": {
+        "technique_id": "T1071.001",
+        "technique_name": "Web Protocols",
+        "tactic": "Command and Control",
+        "tactic_id": "TA0011",
+        "description": "Adversaries may communicate using application layer protocols",
+        "platforms": [
+          "Linux",
+          "macOS",
+          "Windows"
+        ],
+        "data_sources": [
+          "Network protocol analysis",
+          "Process monitoring"
+        ]
+      },
+      "confidence_score": 0.89,
+      "model_version": "Sentient-AI-v2.1"
+    },
+    "mitre_data": {
+      "technique_id": "T1071.001",
+      "technique_name": "Web Protocols",
+      "tactic": "Command and Control",
+      "tactic_id": "TA0011",
+      "description": "Adversaries may communicate using application layer protocols",
+      "platforms": [
+        "Linux",
+        "macOS",
+        "Windows"
+      ],
+      "data_sources": [
+        "Network protocol analysis",
+        "Process monitoring"
+      ]
+    },
+    "threat_id": 19,
+    "threat_type": "threat_simulator",
+    "severity": "critical"
+  },
+  {
+    "quality_score": 0.8400000000000001,
+    "metrics": {
+      "completeness": 1.0,
+      "clarity": 0.6,
+      "technical_accuracy": 0.7,
+      "mitre_integration": 1.0,
+      "actionability": 0.8999999999999999
+    },
+    "xai_data": {
+      "reasoning": "High confidence detection based on threat_simulator patterns and IP reputation analysis. MITRE ATT&CK technique T1046 identified in Discovery phase.",
+      "decision_factors": [
+        "Source IP reputation: 45.0%",
+        "Threat pattern match: threat_simulator",
+        "Severity assessment: low",
+        "MITRE technique: T1046 (Network Service Scanning)"
+      ],
+      "mitre_context": {
+        "technique_id": "T1046",
+        "technique_name": "Network Service Scanning",
+        "tactic": "Discovery",
+        "tactic_id": "TA0007",
+        "description": "Adversaries may attempt to get a listing of services running on remote hosts",
+        "platforms": [
+          "Linux",
+          "macOS",
+          "Windows"
+        ],
+        "data_sources": [
+          "Network protocol analysis",
+          "Process monitoring"
+        ]
+      },
+      "confidence_score": 0.89,
+      "model_version": "Sentient-AI-v2.1"
+    },
+    "mitre_data": {
+      "technique_id": "T1046",
+      "technique_name": "Network Service Scanning",
+      "tactic": "Discovery",
+      "tactic_id": "TA0007",
+      "description": "Adversaries may attempt to get a listing of services running on remote hosts",
+      "platforms": [
+        "Linux",
+        "macOS",
+        "Windows"
+      ],
+      "data_sources": [
+        "Network protocol analysis",
+        "Process monitoring"
+      ]
+    },
+    "threat_id": 18,
+    "threat_type": "threat_simulator",
+    "severity": "low"
+  }
+]
